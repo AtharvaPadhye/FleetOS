@@ -34,10 +34,6 @@ jobs:
         run: npm run build
       - name: Configure Pages
         uses: actions/configure-pages@v5
-        with:
-          # The first deployment must enable Pages before an artifact can be
-          # published. This is safe to leave enabled for subsequent runs.
-          enablement: true
       - name: Upload site artifact
         uses: actions/upload-pages-artifact@v3
         with:
