@@ -2,6 +2,10 @@
 
 A polished operations control tower for autonomous vehicle fleet owners and operators. This interactive prototype includes fleet health, exception management, service workflows, hub capacity, vendor SLAs, vehicle-level economics, institutional reporting, and FleetOS Copilot.
 
+## Live site
+
+FleetOS is deployed at [https://atharvapadhye.github.io/FleetOS/](https://atharvapadhye.github.io/FleetOS/).
+
 ## Run locally
 
 ```bash
