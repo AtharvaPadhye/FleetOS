@@ -1,6 +1,6 @@
 # FleetOS — KPI Dictionary
 
-> Roadmap task 0.2 · Status: **draft for review** · 2026-09-26
+> Roadmap task 0.2 · Status: **accepted** (recommended defaults, Akshat, 2026-09-26) · 2026-09-26
 > Every number FleetOS shows is defined here. Implementations live in `packages/domain/kpis` (task 3.1) and are unit-tested against the worked examples in §6. If code and this file disagree, this file wins until it's amended.
 
 ## 1. Conventions
@@ -201,7 +201,11 @@ The insight that "cleaning and downtime drag 047 down" survives: cleaning is fla
 
 **E7. Vehicle P&L, car 047:** see §5.
 
-## 7. Open questions for sign-off
+## 7. Open questions → resolved 2026-09-26
+
+Resolved with the recommended defaults: **1** yes, contribution = revenue − variable costs; **2** grade weights as proposed; **3** 24 h default service window, configurable per org; **4** 40% low-SOC threshold at org level (per-hub override later); **5** 28-day hour-of-week baseline with hub → fleet fallback.
+
+Original questions:
 
 1. **Resolution #4** (contribution excludes fixed costs and opportunity cost): agree? *Recommended: yes.*
 2. **Asset health grade weights** in §3.7: acceptable as a starting point?

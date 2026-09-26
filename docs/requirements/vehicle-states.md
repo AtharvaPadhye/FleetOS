@@ -1,6 +1,6 @@
 # FleetOS — Vehicle Status State Machine
 
-> Roadmap task 0.3 · Status: **draft for review** · 2026-09-26
+> Roadmap task 0.3 · Status: **accepted** (recommended defaults, Akshat, 2026-09-26) · 2026-09-26
 > Every minute of a commissioned vehicle is in exactly one of 7 operational statuses (`kpis.md` §2). This file defines what each status means, how FleetOS decides it, and what may move a vehicle between statuses. Implemented in `packages/domain/status` (task 3.1) and run by the worker on every ingest (task 3.5).
 
 ## 1. Two separate dimensions
@@ -131,7 +131,11 @@ The timeline on Vehicle detail (VD-5) and all hour-based KPIs read from these ev
 | 074 "Incident · tire pressure · roadside dispatched" | Incident (roadside exception) |
 | 052 "Offline · I-10 / 7th Ave · Tow assigned" | **Incident**, not Offline: an open recovery exception outranks lost telemetry (precedence 1 > 2). Offline is for "we can't see it and don't know why". |
 
-## 9. Open questions
+## 9. Open questions → resolved 2026-09-26
+
+Resolved with the recommended defaults: **1** yes, an open recovery exception shows Incident; **2** 15 min (streaming) / 30 min (polling-only), revisit with real parking-garage data; **3** only `admin` and `owner` may override an open blocking ticket.
+
+Original questions:
 
 1. **052:** agree that a car with an open recovery exception shows Incident rather than Offline?
 2. **Offline threshold** 15 min: too aggressive for cars that lose signal in parking garages?

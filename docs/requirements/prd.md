@@ -1,6 +1,6 @@
 # FleetOS — Product Requirements (PRD)
 
-> Roadmap task 0.1 · Status: **draft for review** (Akshat + Atharva) · 2026-09-26
+> Roadmap task 0.1 · Status: **accepted** (recommended defaults, Akshat, 2026-09-26) · 2026-09-26
 > Source of truth for *what* FleetOS does. KPI formulas live in `kpis.md` (0.2), vehicle states in `vehicle-states.md` (0.3), field-level sources in `data-sources.md` (0.4), quality bars in `nfr.md` (0.5).
 
 ## 1. Problem
@@ -213,7 +213,11 @@ All stories above tagged [S]; preview capabilities served by the simulator in de
 | A4 | Hub charging is observable from vehicle state | Inference now; OCPP charger integration later (`charger_telemetry`) |
 | A5 | The MVP's numbers are illustrative, not a spec | `kpis.md` defines formulas; the simulator seed reproduces the MVP's orders of magnitude |
 
-## 9. Open questions (for Akshat / Atharva)
+## 9. Open questions → resolved 2026-09-26
+
+Resolved with these defaults (revisit if a pilot customer changes them): **1** demo org only until a pilot operator is identified; **2** USD and North America only; **3** keep "Atlas Mobility" as the demo org; **4** use the grade formula proposed in `kpis.md` §3.7; **5** reports support configurable covenants: uptime, minimum contribution margin and reserve funded %.
+
+Original questions:
 
 1. **Target customer for the pilot:** a real operator in Phoenix, or a demo org only for now?
 2. **Currency and regions:** USD and North America only for the first release?
