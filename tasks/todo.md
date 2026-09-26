@@ -7,7 +7,7 @@ Progress also logged in Obsidian: `claude_memory/projects/FleetOS/progress-log.m
 - [x] Study MVP + live site (identical to `6a32124`)
 - [x] Decisions: simulator-first · simulated + CSV revenue · Next.js + Supabase + worker · multi-tenant · monorepo · push per phase
 - [x] Roadmap written + committed
-- [x] API versioning split: v1 = sources available now, v2 = sources needed later (simulated)
+- [x] API versioning: single `/api/v1`; `stable` vs `preview` (placeholder) tags; `/api/v2` reserved for breaking changes
 
 ## Phase 0 — Requirements & discovery
 - [ ] 0.1 PRD — personas, JTBD, stories per screen
@@ -20,7 +20,7 @@ Progress also logged in Obsidian: `claude_memory/projects/FleetOS/progress-log.m
 ## Phase 1 — Design
 - [ ] 1.1 Architecture + ADRs
 - [ ] 1.2 Domain model / ERD
-- [ ] 1.3 API contract (v1 available-now / v2 needed-later) + VehicleProvider interface
+- [ ] 1.3 API contract (single v1, stable/preview tags) + VehicleProvider interface
 - [ ] 1.4 Design system (tokens + components)
 - [ ] 1.5 UX flows & states
 - [ ] Phase 1 review → push
@@ -42,8 +42,8 @@ Progress also logged in Obsidian: `claude_memory/projects/FleetOS/progress-log.m
 - [ ] 3.5 Worker ingestion (Fly)
 - [ ] 3.6 Rides & revenue + CSV import
 - [ ] 3.7 Cost ledger
-- [ ] 3.8 v1 read APIs + rollups
-- [ ] 3.9 v2 preview APIs (simulated) + capability registry
+- [ ] 3.8 Stable read APIs + rollups
+- [ ] 3.9 Preview (placeholder) APIs + capability registry
 - [ ] Phase 3 exit check → push
 
 ## Phase 4 — Tesla Fleet API (read)
