@@ -1,12 +1,15 @@
 # FleetOS — Progress Checklist
 
-Spec: `docs/superpowers/plans/2026-09-26-fleetos-roadmap.md` · One task = one commit · Push per phase.
+Spec: `docs/superpowers/plans/2026-09-26-fleetos-roadmap.md`
+
+**Workflow:** one task = one commit that includes the ticked checkbox here → pushed immediately to `origin/feature/akshat_implementation` (so Atharva can follow along) → PR to `main` at each phase exit.
 Progress also logged in Obsidian: `claude_memory/projects/FleetOS/progress-log.md`.
 
 ## Phase −1 — Planning
 - [x] Study MVP + live site (identical to `6a32124`)
-- [x] Decisions: simulator-first · simulated + CSV revenue · Next.js + Supabase + worker · multi-tenant · monorepo · push per phase
+- [x] Decisions: simulator-first · simulated + CSV revenue · Next.js + Supabase + worker · multi-tenant · monorepo · push every task
 - [x] Roadmap written + committed
+- [x] Git workflow: commit + push `tasks/todo.md` with every task
 - [x] API versioning: single `/api/v1`; `stable` vs `preview` (placeholder) tags; `/api/v2` reserved for breaking changes
 
 ## Phase 0 — Requirements & discovery
@@ -15,7 +18,7 @@ Progress also logged in Obsidian: `claude_memory/projects/FleetOS/progress-log.m
 - [ ] 0.3 Vehicle status state machine
 - [ ] 0.4 Data-source matrix + Tesla docs re-verification
 - [ ] 0.5 Non-functional requirements
-- [ ] Phase 0 review with Akshat → push
+- [ ] Phase 0 review with Akshat + Atharva → PR
 
 ## Phase 1 — Design
 - [ ] 1.1 Architecture + ADRs
@@ -23,7 +26,7 @@ Progress also logged in Obsidian: `claude_memory/projects/FleetOS/progress-log.m
 - [ ] 1.3 API contract (single v1, stable/preview tags) + VehicleProvider interface
 - [ ] 1.4 Design system (tokens + components)
 - [ ] 1.5 UX flows & states
-- [ ] Phase 1 review → push
+- [ ] Phase 1 review → PR
 
 ## Phase 2 — Foundation
 - [ ] 2.1 Monorepo + move MVP to prototype/ (Pages still works)
@@ -32,7 +35,7 @@ Progress also logged in Obsidian: `claude_memory/projects/FleetOS/progress-log.m
 - [ ] 2.4 Auth, orgs, roles
 - [ ] 2.5 App shell
 - [ ] 2.6 Env + observability
-- [ ] Phase 2 exit check → push
+- [ ] Phase 2 exit check → PR
 
 ## Phase 3 — Data platform & simulator
 - [ ] 3.1 packages/domain
@@ -44,7 +47,7 @@ Progress also logged in Obsidian: `claude_memory/projects/FleetOS/progress-log.m
 - [ ] 3.7 Cost ledger
 - [ ] 3.8 Stable read APIs + rollups
 - [ ] 3.9 Preview (placeholder) APIs + capability registry
-- [ ] Phase 3 exit check → push
+- [ ] Phase 3 exit check → PR
 
 ## Phase 4 — Tesla Fleet API (read)
 - [ ] 4.1 Registration + public key
@@ -52,7 +55,7 @@ Progress also logged in Obsidian: `claude_memory/projects/FleetOS/progress-log.m
 - [ ] 4.3 TeslaProvider read
 - [ ] 4.4 Fleet Telemetry server
 - [ ] 4.5 Integrations page
-- [ ] Phase 4 exit check → push
+- [ ] Phase 4 exit check → PR
 
 ## Phase 5 — Features
 - [ ] 5.1 Fleet list
@@ -66,7 +69,7 @@ Progress also logged in Obsidian: `claude_memory/projects/FleetOS/progress-log.m
 - [ ] 5.9 Reports
 - [ ] 5.10 Settings
 - [ ] 5.11 Notifications
-- [ ] Phase 5 exit check → push
+- [ ] Phase 5 exit check → PR
 
 ## Phase 6 — Copilot
 - [ ] 6.1 Tool layer

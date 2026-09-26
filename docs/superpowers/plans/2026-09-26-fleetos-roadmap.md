@@ -2,7 +2,7 @@
 
 > **Status:** Planning complete, Phase 0 not started. Created 2026-09-26.
 > **Fresh session?** Read "Handoff" + "Decision log", then open `tasks/todo.md` and resume at the first unchecked task.
-> **Rule:** one task = one commit. Push `feature/akshat_implementation` (and offer a PR) only when a phase's exit criteria pass.
+> **Rule:** one task = one commit, and every commit ticks `tasks/todo.md` and is **pushed immediately** to `origin/feature/akshat_implementation` so Atharva can follow progress. Offer a PR to `main` when a phase's exit criteria pass.
 
 ## Handoff
 
@@ -22,7 +22,7 @@ detect issue → rank by **revenue at risk** → dispatch vendor → track **SLA
 | Move-to-AWS triggers | >1–2k streaming vehicles, customer demands VPC/KMS, or Tesla grants production command access | — |
 | Tenancy | **Multi-tenant B2B SaaS**; `org_id` on every row + Postgres RLS from day one | Single-operator tool (hard to sell later); vendor portal deferred to optional Phase 9 |
 | Repo | **Monorepo in this repo**: MVP → `prototype/` (still deployed to Pages), `apps/web`, `apps/worker`, `packages/*`, `supabase/` | Separate repo (splits history + design reference); replace-in-place (breaks live demo) |
-| Git | Commit per task locally; push per phase | — |
+| Git | Commit per task **with the `tasks/todo.md` update in the same commit**, then push right away; PR to `main` per phase | Push per phase (decided 2026-09-26, reversed same day: Atharva needs to follow progress continuously) |
 | Copilot LLM | Claude (default `claude-sonnet-5`) with tool-use over RLS-scoped read APIs; verify via `claude-api` skill at build time | — |
 | API versioning | **Single `/api/v1` with per-endpoint stability tags.** `stable` = backed by a source we have today (Tesla Fleet API fields, native records, CSV imports). `preview` = placeholder for a source we don't have yet (platform rides/earnings, cabin & autonomy events, dispatch, charger/vendor/tariff feeds): simulated in demo orgs, `501 capability_unavailable` elsewhere, shape may change until it goes stable. `/api/v2` is reserved for real breaking changes. See §3a | `/v1` = available + `/v2` = future: misuses versions to mean source availability, so a real breaking change to v1 would have to jump to v3 (decided 2026-09-26, then reversed the same day) |
 | Charts | Recharts (or ECharts for dense time-series), validated with the `dataviz` skill | — |
