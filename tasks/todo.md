@@ -13,7 +13,7 @@ Progress also logged in Obsidian: `claude_memory/projects/FleetOS/progress-log.m
 - [x] API versioning: single `/api/v1`; `stable` vs `preview` (placeholder) tags; `/api/v2` reserved for breaking changes
 
 ## Phase 0 — Requirements & discovery
-- [ ] 0.1 PRD — personas, JTBD, stories per screen
+- [x] 0.1 PRD — personas, JTBD, stories per screen (`docs/requirements/prd.md`, draft for review)
 - [ ] 0.2 KPI dictionary + resolve MVP inconsistencies
 - [ ] 0.3 Vehicle status state machine
 - [ ] 0.4 Data-source matrix + Tesla docs re-verification
