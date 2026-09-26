@@ -49,27 +49,16 @@ Everything is static, hard-coded HTML strings in `src/main.js`. Only navigation,
 
 **Inconsistencies to resolve in Phase 0:** see `docs/requirements/kpis.md` §4 (exceptions 7 vs 6, two meanings of "contribution", downtime counted as a cost, revenue-at-risk mismatch, "P0A7F" OBD code, vehicle detail always renders 047). *"76 available / 68 earning" was wrongly listed here: it reconciles with the fleet mini-stats.*
 
-## 2. Tesla APIs — what they expose (verify all in task 0.4)
+## 2. Tesla APIs — verified 2026-09-26
 
-**Tesla Fleet API** — OAuth 2.0 partner API.
-- Auth: authorize `https://auth.tesla.com/oauth2/v3/authorize`, token `https://fleet-auth.prd.vn.cloud.tesla.com/oauth2/v3/token`; partner token (client_credentials) + `POST /api/1/partner_accounts` once per region; public key hosted at `https://<domain>/.well-known/appspecific/com.tesla.3p.public-key.pem`.
-- Regional hosts: `fleet-api.prd.na.vn.cloud.tesla.com` (NA/APAC), `fleet-api.prd.eu.vn.cloud.tesla.com` (EU), `fleet-api.prd.cn.vn.cloud.tesla.cn` (CN).
-- Scopes: `openid offline_access user_data vehicle_device_data vehicle_location vehicle_cmds vehicle_charging_cmds`.
-- Paid per request with rate limits (data, commands, wakes) — polling wakes cars and costs money; prefer Fleet Telemetry.
-
-| Capability | Endpoint / mechanism | FleetOS use |
-|---|---|---|
-| Roster | `GET /api/1/vehicles`, `/vehicles/{vin}` | Fleet table, online/asleep |
-| Full state | `GET /api/1/vehicles/{vin}/vehicle_data?endpoints=charge_state;drive_state;location_data;vehicle_state;climate_state;vehicle_config` | SOC, range, charging, lat/lon, heading, speed, odometer, locks, doors, TPMS, software |
-| Fleet status | `POST /api/1/vehicles/fleet_status` | Virtual-key paired? firmware eligibility |
-| Alerts / service | `/vehicles/{vin}/recent_alerts`, `/service_data` | Fault exceptions, "in service" status |
-| Charging | `/api/1/dx/charging/history`, `/invoice/{id}`, `/vehicles/{vin}/nearby_charging_sites` | Supercharger energy cost |
-| **Fleet Telemetry** | `POST /api/1/vehicles/fleet_telemetry_config` → vehicles stream to our self-hosted `teslamotors/fleet-telemetry` (Go, mTLS) | Live SOC, location, speed, gear, odometer, charge state/power, TPMS, alerts, connectivity — without wake/poll cost |
-| Commands | Signed via Vehicle Command protocol (`tesla-http-proxy`), requires **virtual key** pairing | Charge start/stop/limit, navigate to hub, lock, flash/honk for vendor, climate |
-
-**NOT exposed (as far as known) → must come from elsewhere:** rides/fares/earnings/platform fees; interior-camera cleanliness events; autonomy incidents/remote-assist events; control of Tesla's Robotaxi dispatch; confirmation that third-party-owned Cybercabs are reachable via Fleet API (needs Tesla business contact).
-
-**Data-source split:** Tesla ≈ vehicle state (~40% of MVP fields). Simulator/CSV ≈ rides & revenue. FleetOS-native ≈ hubs, vendors, tickets, exceptions, policies, cost ledger, reports. Derived ≈ all KPIs.
+Full verified reference, costs and the field → source matrix: **`docs/requirements/data-sources.md`** (task 0.4). Summary:
+- Auth: authorize `https://auth.tesla.com/oauth2/v3/authorize`; **all** server-side token calls to `https://fleet-auth.prd.vn.cloud.tesla.com/oauth2/v3/token` (mandated 2025-07). Hosts `fleet-api.prd.{na,eu}.vn.cloud.tesla.com`, `fleet-api.prd.cn.vn.cloud.tesla.cn`. Refresh tokens are single-use (3-month expiry, 24 h grace).
+- **Business token** (Tesla-for-Business consent) covers a whole fleet; personal OAuth for owner-operators.
+- 12 scopes; FleetOS needs `openid offline_access vehicle_device_data vehicle_location vehicle_charging_cmds` (+ `vehicle_cmds` in Phase 7, partner `vehicle_specs`).
+- Paid since 2025-01-01: streaming 150k signals/$1, data 500 req/$1, commands 1k/$1, wakes 50/$1; $10/month credit; app disabled until a payment method is added. ≈ $4 per robotaxi per month streaming vs ≈ $72 polling → **never poll on a schedule**.
+- **Fleet Telemetry needs the virtual key + signed config via `tesla-http-proxy`**, so pairing moves to Phase 4.
+- **No sandbox**: Phase 4 needs a real Tesla.
+- Not exposed by Tesla: rides, earnings, cabin cleanliness, autonomy incidents, dispatch. These stay preview capabilities. Tesla doesn't sell Cybercab fleets yet (interest form only, 2026-09-03).
 
 ## 3. Target architecture
 
@@ -111,6 +100,7 @@ Browser ── Next.js app (Vercel): UI, route handlers, server actions, Copilot
 | `/api/v1/vehicles/{id}/status-events` | GET | derived from telemetry + tickets |
 | `/api/v1/vehicles/{id}/alerts` | GET | Tesla `recent_alerts` / simulator |
 | `/api/v1/vehicles/{id}/charging-sessions` | GET | Tesla charging history + hub tariffs |
+| `/api/v1/vehicles/{id}/battery-health` | GET | Tesla `specs` (partner token): SoH, capacity |
 | `/api/v1/vehicles/{id}/commands` | POST, GET | Tesla signed commands (enabled in Phase 7) |
 | `/api/v1/hubs`, `/hubs/{id}` | GET, POST, PATCH | native |
 | `/api/v1/hubs/{id}/occupancy`, `/hubs/{id}/forecast` | GET | derived (vehicle state at hub + SOC projection) |
@@ -190,17 +180,18 @@ Exit: simulator runs 24 h for 84 Cybercabs across 3 Phoenix hubs; state, rides, 
 - **3.3 `VehicleProvider` interface** — `listVehicles`, `getSnapshot`, `streamTelemetry`, `sendCommand`; contract tests any provider must pass.
 - **3.4 Simulator provider** — seeded RNG; Phoenix geography; SOC drain/charge; trips with fares; events (cleanliness, tire pressure, fault, breakdown, offline); emits Tesla-shaped payloads.
 - **3.5 Worker ingestion** — `apps/worker` Dockerfile; normalize → upsert current state, append samples, derive status events; Realtime broadcast; deploy to Fly.
-- **3.6 Rides & revenue + CSV import** — rides, revenue_lines; payout CSV importer with column mapping + validation report.
+- **3.6 Rides & revenue + CSV import** — rides, revenue_lines; payout CSV importer with column mapping + validation report; default layout modelled on the Uber Fleet Portal vehicle-earnings export.
 - **3.7 Cost ledger** — hub tariffs → energy cost; vendor job costs; per-vehicle allocations (insurance, financing, platform fees) → cost_lines.
 - **3.8 Stable read APIs + rollups** — `/api/v1` fleet list (filter/sort/paginate), vehicle detail, KPI materialized views refreshed by worker; Realtime subscriptions.
 - **3.9 Preview (placeholder) APIs** — the preview routes from §3a, served by the simulator in demo orgs and `501 capability_unavailable` elsewhere; `/api/v1/capabilities`; contract tests assert both behaviours and that preview routes never return `200` with empty data for unconnected orgs.
 
 ### Phase 4 — Tesla Fleet API (read-only)
-Exit: a real Tesla (any model) connected via OAuth appears in the fleet within 60 s with live SOC/location via Fleet Telemetry; without a car, recorded-fixture contract tests pass.
-- **4.1 Registration** — EC P-256 keypair, public key at `/.well-known/appspecific/com.tesla.3p.public-key.pem`, partner registration script per region.
-- **4.2 OAuth** — connect → authorize → callback → server-side token exchange; refresh tokens in Supabase Vault; refresh job; disconnect.
-- **4.3 `TeslaProvider` read** — roster sync, `vehicle_data` polling with request budget & sleep awareness (never wake just to poll), `fleet_status`, `recent_alerts`, charging history; passes provider contract tests.
-- **4.4 Fleet Telemetry** — deploy `teslamotors/fleet-telemetry` (Fly, TLS), per-VIN `fleet_telemetry_config`, dispatcher → worker normalizer (same path as simulator).
+Exit: a real Tesla (any model; there's no sandbox) connected via OAuth, with the virtual key paired, appears in the fleet within 60 s with live SOC/location via Fleet Telemetry. CI runs recorded-fixture contract tests. Prerequisite: payment method on the Tesla developer account (default billing limit is $0).
+- **4.1 Registration** — EC P-256 keypair, public key at `/.well-known/appspecific/com.tesla.3p.public-key.pem` on the product domain (must match `allowed_origins`), partner token + `POST /api/1/partner_accounts` script per region.
+- **4.1a Virtual key + command proxy** — pairing flow (`https://tesla.com/_ak/<domain>?vin=`), per-vehicle key status from `fleet_status`, `tesla-http-proxy` deployed in the worker with the private key in Vault. Required for signing telemetry configs; commands stay disabled until Phase 7.
+- **4.2 OAuth** — business-token consent flow (Tesla-for-Business `auth_code`) first, personal OAuth second; all token calls to `fleet-auth.prd.vn.cloud.tesla.com` with regional `audience`; single-use refresh tokens stored atomically in Supabase Vault; refresh job; region lookup; disconnect.
+- **4.3 `TeslaProvider` read** — roster sync, `fleet_status`, `recent_alerts`, `service_data`, `specs` battery health, charging history/invoices; `vehicle_data` (with `location_data`) only for backfill or on demand, never scheduled, never waking; 408 handling; passes provider contract tests.
+- **4.4 Fleet Telemetry** — deploy `tesla/fleet-telemetry` on Fly (mTLS, full CA chain) with the Redis Pub/Sub dispatcher; signed per-VIN `fleet_telemetry_config` with the field set in `data-sources.md` §3; poll until `synced`; alerts/errors/connectivity streams → worker normalizer (same path as simulator).
 - **4.5 Integrations page** — real connection status, region, scopes, per-vehicle telemetry health & errors.
 
 ### Phase 5 — Features (vertical slices, each UI + API + tests)
@@ -225,8 +216,8 @@ Exit: golden-question eval ≥ 90% grounded answers on simulator seed; every rec
 
 ### Phase 7 — Vehicle commands (write path)
 Exit: with a paired test vehicle (or simulator), a dispatcher can start charging with confirmation; every command is audited.
-- **7.1 Virtual-key pairing** — pairing link flow + per-vehicle key status.
-- **7.2 Signed commands** — `tesla-http-proxy` in worker; private key in Vault (KMS if moved to AWS).
+- **7.1 Command enablement** — request `vehicle_cmds` scope (re-consent), per-org admin switch, check key presence via `fleet_status` before sending (rejected commands are still billed). *(Pairing moved to 4.1a.)*
+- **7.2 Signed commands** — route commands through the proxy deployed in 4.1a; idempotency guards (no auto-retry of non-idempotent commands on 408); 30 commands/min per vehicle budget.
 - **7.3 Command policy** — RBAC, confirmations, dual approval for risky commands, rate limits, command_log, audit_log.
 - **7.4 Wire actions** — charge start/stop/limit, navigate to hub, lock, flash/honk for vendor.
 

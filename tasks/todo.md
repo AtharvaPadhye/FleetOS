@@ -17,7 +17,7 @@ Progress also logged in Obsidian: `claude_memory/projects/FleetOS/progress-log.m
 - [x] 0.1 PRD — personas, JTBD, stories per screen (`docs/requirements/prd.md`, accepted)
 - [x] 0.2 KPI dictionary + resolve MVP inconsistencies (`docs/requirements/kpis.md`, accepted)
 - [x] 0.3 Vehicle status state machine (`docs/requirements/vehicle-states.md`, accepted)
-- [ ] 0.4 Data-source matrix + Tesla docs re-verification
+- [x] 0.4 Data-source matrix + Tesla docs re-verification (`docs/requirements/data-sources.md`)
 - [ ] 0.5 Non-functional requirements
 - [ ] Phase 0 review with Akshat + Atharva → checkpoint
 
@@ -52,6 +52,7 @@ Progress also logged in Obsidian: `claude_memory/projects/FleetOS/progress-log.m
 
 ## Phase 4 — Tesla Fleet API (read)
 - [ ] 4.1 Registration + public key
+- [ ] 4.1a Virtual key pairing + command proxy (needed for telemetry)
 - [ ] 4.2 OAuth + token vault
 - [ ] 4.3 TeslaProvider read
 - [ ] 4.4 Fleet Telemetry server
@@ -78,7 +79,7 @@ Progress also logged in Obsidian: `claude_memory/projects/FleetOS/progress-log.m
 - [ ] 6.3 Evals
 
 ## Phase 7 — Vehicle commands
-- [ ] 7.1 Virtual-key pairing
+- [ ] 7.1 Command enablement (scope, admin switch, key check)
 - [ ] 7.2 Signed commands
 - [ ] 7.3 Command policy + audit
 - [ ] 7.4 Wire actions
