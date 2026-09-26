@@ -14,7 +14,7 @@ Progress also logged in Obsidian: `claude_memory/projects/FleetOS/progress-log.m
 
 ## Phase 0 — Requirements & discovery
 - [x] 0.1 PRD — personas, JTBD, stories per screen (`docs/requirements/prd.md`, draft for review)
-- [ ] 0.2 KPI dictionary + resolve MVP inconsistencies
+- [x] 0.2 KPI dictionary + resolve MVP inconsistencies (`docs/requirements/kpis.md`, draft for review)
 - [ ] 0.3 Vehicle status state machine
 - [ ] 0.4 Data-source matrix + Tesla docs re-verification
 - [ ] 0.5 Non-functional requirements

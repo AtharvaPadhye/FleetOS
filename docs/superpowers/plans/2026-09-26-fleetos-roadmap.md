@@ -46,7 +46,7 @@ Everything is static, hard-coded HTML strings in `src/main.js`. Only navigation,
 | Settings | Tesla Fleet API connect flow (client ID, region, scopes), data mapping; stubs for org, policies, rules, users/roles, notifications, billing | — |
 | Copilot | Grounded Q&A + recommendations over fleet data | — |
 
-**Inconsistencies to resolve in Phase 0:** exceptions badge 7 vs 6 listed; overview "76 available / 68 earning" vs fleet mini-stats; "P0A7F" is an OBD code (Tesla exposes its own alert names); vehicle detail always renders 047.
+**Inconsistencies to resolve in Phase 0:** see `docs/requirements/kpis.md` §4 (exceptions 7 vs 6, two meanings of "contribution", downtime counted as a cost, revenue-at-risk mismatch, "P0A7F" OBD code, vehicle detail always renders 047). *"76 available / 68 earning" was wrongly listed here: it reconciles with the fleet mini-stats.*
 
 ## 2. Tesla APIs — what they expose (verify all in task 0.4)
 
