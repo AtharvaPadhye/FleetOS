@@ -24,6 +24,7 @@ detect issue → rank by **revenue at risk** → dispatch vendor → track **SLA
 | Repo | **Monorepo in this repo**: MVP → `prototype/` (still deployed to Pages), `apps/web`, `apps/worker`, `packages/*`, `supabase/` | Separate repo (splits history + design reference); replace-in-place (breaks live demo) |
 | Git | Commit per task locally; push per phase | — |
 | Copilot LLM | Claude (default `claude-sonnet-5`) with tool-use over RLS-scoped read APIs; verify via `claude-api` skill at build time | — |
+| API versioning | **`/api/v1` = data we can source today** (Tesla Fleet API fields, FleetOS-native records, CSV imports). **`/api/v2` = contract-first endpoints for data we don't have yet** (platform rides/earnings, cabin & autonomy events, dispatch, charger/vendor integrations), simulator-backed until a real source is connected. See §3a | One `/v1` + capability flags (versions normally signal breaking changes; accepted trade-off, mitigated by the one-resource-one-version rule) |
 | Charts | Recharts (or ECharts for dense time-series), validated with the `dataviz` skill | — |
 
 ## 1. What the MVP implements (inventory)
@@ -86,6 +87,58 @@ Browser ── Next.js app (Vercel): UI, route handlers, server actions, Copilot
         Simulator · Tesla Fleet API + fleet-telemetry (Go, mTLS) · CSV imports · Claude API
 ```
 
+## 3a. API surface: v1 (available now) vs v2 (needed later)
+
+**Rules**
+1. **One resource, one version.** A resource lives in v1 *or* v2, never both, so clients never choose between two copies.
+2. **v1 = stable.** Backed by a source we can connect today. No breaking changes without a deprecation cycle.
+3. **v2 = contract-first preview** (`x-fleetos-stability: preview`). The schema is defined now in `packages/domain` (zod → OpenAPI). In demo/simulator orgs it returns simulated data with `x-fleetos-data-source: simulated`. In orgs without a real source it returns `501 {"error":"capability_unavailable","capability":"<name>"}`.
+4. **No promotion.** When a v2 source goes live, the endpoint stays at v2 and becomes stable. It doesn't move to v1, so clients don't break.
+5. **Capability registry.** `GET /api/v1/capabilities` lists which v2 capabilities are live, simulated or unavailable for the current org. The UI shows a "Simulated" badge or a "Connect source" empty state from this.
+6. All routes are org-scoped via the user's JWT + RLS; the org id is never passed in the URL.
+
+**v1: sources available now**
+
+| Endpoint | Methods | Source |
+|---|---|---|
+| `/api/v1/capabilities` | GET | native |
+| `/api/v1/vehicles` (filters: status, hub, soc, issue, q, sort, page) | GET, POST | Tesla roster / simulator + native |
+| `/api/v1/vehicles/{id}` | GET, PATCH | Tesla state / simulator + native |
+| `/api/v1/vehicles/{id}/telemetry?fields&from&to&interval` | GET | Tesla Fleet Telemetry / simulator |
+| `/api/v1/vehicles/{id}/status-events` | GET | derived from telemetry + tickets |
+| `/api/v1/vehicles/{id}/alerts` | GET | Tesla `recent_alerts` / simulator |
+| `/api/v1/vehicles/{id}/charging-sessions` | GET | Tesla charging history + hub tariffs |
+| `/api/v1/vehicles/{id}/commands` | POST, GET | Tesla signed commands (enabled in Phase 7) |
+| `/api/v1/hubs`, `/hubs/{id}` | GET, POST, PATCH | native |
+| `/api/v1/hubs/{id}/occupancy`, `/hubs/{id}/forecast` | GET | derived (vehicle state at hub + SOC projection) |
+| `/api/v1/exceptions`, `/exceptions/{id}` | GET, POST, PATCH | rules engine over v1 data + manual |
+| `/api/v1/exception-rules` | GET, POST, PATCH, DELETE | native |
+| `/api/v1/tickets`, `/tickets/{id}`, `/tickets/{id}/events`, `/tickets/{id}/attachments` | GET, POST, PATCH | native + Storage |
+| `/api/v1/vendors`, `/vendors/{id}`, `/vendors/{id}/jobs` | GET, POST, PATCH | native |
+| `/api/v1/revenue/imports` | POST (CSV), GET | payout-statement CSV |
+| `/api/v1/revenue-lines`, `/api/v1/cost-lines` | GET, POST | CSV + native ledger |
+| `/api/v1/kpis/fleet`, `/kpis/hubs`, `/kpis/vehicles/{id}` | GET | derived |
+| `/api/v1/financials/pnl?scope=fleet\|hub\|vehicle&period` | GET | derived from ledger |
+| `/api/v1/reports`, `/reports/{id}`, `/reports/{id}/pdf` | GET, POST | derived snapshots |
+| `/api/v1/policies`, `/api/v1/members`, `/api/v1/notifications` | CRUD | native |
+| `/api/v1/integrations/tesla` (+ `/connect`, `/callback`, `/disconnect`) | GET, POST | Tesla OAuth |
+| `/api/v1/copilot/chat` | POST (stream) | Claude over v1 tools |
+
+**v2: needed later, simulated until the source exists**
+
+| Endpoint | Methods | Future real source | Screens that need it |
+|---|---|---|---|
+| `/api/v2/rides`, `/rides/{id}` | GET | Robotaxi platform trip feed (pickup/dropoff, fare, duration, distance) | Fleet revenue, vehicle detail, financials |
+| `/api/v2/vehicles/{id}/earnings` | GET | Platform payout API (live gross, platform fee, net) | Overview revenue, vehicle P&L |
+| `/api/v2/vehicles/{id}/cabin-events` | GET | Interior camera / cleanliness signals (spill, debris, lost item + confidence) | Exceptions, service tickets, cleaning KPIs |
+| `/api/v2/vehicles/{id}/autonomy-events` | GET | Disengagements, remote-assist sessions, incidents | Exceptions, reports (incidents/10K rides) |
+| `/api/v2/dispatch/availability` | GET, POST | Robotaxi network control (put vehicle in/out of service, zones) | "Return to service", rebalancing actions |
+| `/api/v2/hubs/{id}/chargers/live` | GET | Depot charger telemetry (OCPP / charger vendor API) | Hubs occupancy, capacity forecast accuracy |
+| `/api/v2/vendor-jobs/{id}/tracking` | GET, POST (webhook) | Vendor integrations / portal (ETA, geofenced arrival, evidence) | Service SLA countdown, vendor SLA stats |
+| `/api/v2/energy/tariffs/live` | GET | Utility time-of-use pricing API | Hub $/kWh, charging cost optimisation |
+
+Until v2 sources are live, the matching v1 figures come from the best available fallback: revenue from CSV imports into the ledger, cleanliness exceptions created manually or from simulator events, and "return to service" as a FleetOS status change only.
+
 Monorepo (pnpm + Turborepo):
 ```
 prototype/            MVP static site (still deployed to Pages)
@@ -107,14 +160,14 @@ Exit: every MVP number has a written formula and a named data source; PRD review
 - **0.1 PRD** — personas (fleet owner/CFO, ops manager/dispatcher, hub lead, finance/investor-relations, org admin; vendor later), jobs-to-be-done, user stories per screen. `docs/requirements/prd.md`. Verify: every MVP screen has ≥3 stories with acceptance criteria.
 - **0.2 KPI dictionary** — formulas, units, time windows, targets for availability, rev/avail-hr, contribution & margin, downtime cost, revenue at risk, cost/revenue-mile, SLA compliance, cleaning/1K rides, incidents/10K rides, asset health grade, maintenance reserve. Resolve the MVP inconsistencies. `docs/requirements/kpis.md`. Verify: MVP overview numbers reproducible from a worked example.
 - **0.3 Vehicle status state machine** — In Service, Ready, Charging, Cleaning, Maintenance, Incident, Offline; transitions, triggers, who/what can cause each. `docs/requirements/vehicle-states.md` (mermaid stateDiagram).
-- **0.4 Data-source matrix + Tesla verification** — every field → Tesla endpoint/telemetry field | simulator | CSV | native | derived. Re-verify Tesla endpoints, scopes, telemetry fields, pricing, rate limits against developer.tesla.com. `docs/requirements/data-sources.md`.
+- **0.4 Data-source matrix + Tesla verification** — every field → Tesla endpoint/telemetry field | simulator | CSV | native | derived, and tagged **v1** (source available now) or **v2** (source needed later) per §3a. Re-verify Tesla endpoints, scopes, telemetry fields, pricing, rate limits against developer.tesla.com. `docs/requirements/data-sources.md`.
 - **0.5 NFRs** — tenancy, RBAC matrix, token/key security, audit, freshness (live ≤ 15 s), retention (raw telemetry 30 d, rollups forever), a11y (WCAG 2.2 AA), browser support, costs. `docs/requirements/nfr.md`.
 
 ### Phase 1 — Design
 Exit: ERD, API contract, provider interface, design tokens reviewed.
 - **1.1 Architecture + ADRs** — the decisions above as ADR files. `docs/architecture/`.
 - **1.2 Domain model / ERD** — orgs, memberships, hubs, chargers, bays, vehicles, vehicle_state_current, telemetry_samples (daily partitions), vehicle_status_events, rides, revenue_lines, cost_lines, exception_rules, exceptions, tickets, ticket_events, vendors, vendor_services, vendor_jobs, attachments, policies, report_snapshots, integrations, command_log, audit_log. `docs/architecture/erd.md` (mermaid erDiagram).
-- **1.3 API contract** — OpenAPI for route handlers, Realtime channel list, `VehicleProvider` TS interface + normalized `VehicleSnapshot` (Tesla-shaped). `docs/architecture/api.md` + `openapi.yaml`.
+- **1.3 API contract** — v1 + v2 OpenAPI (§3a) generated from zod schemas, capability registry, 501 `capability_unavailable` shape, preview/data-source headers, Realtime channel list, `VehicleProvider` TS interface + normalized `VehicleSnapshot` (Tesla-shaped). `docs/architecture/api.md` + `openapi.yaml`.
 - **1.4 Design system** — `frontend-design` → `ui-ux-pro-max`: extract MVP tokens (dark palette, DM Sans/Manrope, spacing, radii, status colors) and component inventory (Metric, Card, StatusPill, Bar, Sparkline, DataTable, Timeline, Modal, Toast, CommandPalette). `docs/design/design-system.md`.
 - **1.5 UX flows** — states the MVP lacks: loading/empty/error, filters, detail tabs, exception→ticket→dispatch→return flow, command confirmation, CSV import mapping. `docs/design/flows.md`.
 
@@ -136,7 +189,8 @@ Exit: simulator runs 24 h for 84 Cybercabs across 3 Phoenix hubs; state, rides, 
 - **3.5 Worker ingestion** — `apps/worker` Dockerfile; normalize → upsert current state, append samples, derive status events; Realtime broadcast; deploy to Fly.
 - **3.6 Rides & revenue + CSV import** — rides, revenue_lines; payout CSV importer with column mapping + validation report.
 - **3.7 Cost ledger** — hub tariffs → energy cost; vendor job costs; per-vehicle allocations (insurance, financing, platform fees) → cost_lines.
-- **3.8 Read APIs + rollups** — fleet list (filter/sort/paginate), vehicle detail, KPI materialized views refreshed by worker; Realtime subscriptions.
+- **3.8 v1 read APIs + rollups** — `/api/v1` fleet list (filter/sort/paginate), vehicle detail, KPI materialized views refreshed by worker; Realtime subscriptions.
+- **3.9 v2 preview APIs** — `/api/v2` routes from §3a served by the simulator in demo orgs, 501 elsewhere; `/api/v1/capabilities`; contract tests assert both behaviours.
 
 ### Phase 4 — Tesla Fleet API (read-only)
 Exit: a real Tesla (any model) connected via OAuth appears in the fleet within 60 s with live SOC/location via Fleet Telemetry; without a car, recorded-fixture contract tests pass.
