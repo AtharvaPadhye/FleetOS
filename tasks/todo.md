@@ -19,7 +19,7 @@ Progress also logged in Obsidian: `claude_memory/projects/FleetOS/progress-log.m
 - [x] 0.2 KPI dictionary + resolve MVP inconsistencies (`docs/requirements/kpis.md`, accepted)
 - [x] 0.3 Vehicle status state machine (`docs/requirements/vehicle-states.md`, accepted)
 - [x] 0.4 Data-source matrix + Tesla docs re-verification (`docs/requirements/data-sources.md`)
-- [ ] 0.5 Non-functional requirements
+- [x] 0.5 Non-functional requirements (`docs/requirements/nfr.md`)
 - [ ] Phase 0 review with Akshat + Atharva → checkpoint
 
 ## Phase 1 — Design
@@ -90,3 +90,9 @@ Progress also logged in Obsidian: `claude_memory/projects/FleetOS/progress-log.m
 
 ## Review
 _(filled in at the end of each phase)_
+
+### Phase 0 — Requirements (tasks done 2026-09-26, awaiting Akshat + Atharva checkpoint)
+- **Delivered:** `docs/requirements/` → `prd.md` (67 stories), `kpis.md` (formulas + worked examples), `vehicle-states.md` (7-state machine), `data-sources.md` (verified Tesla reference + field matrix), `nfr.md` (tenancy, RBAC, security, performance, retention); research evidence in `docs/research/`.
+- **Exit criterion** "every MVP number has a written formula and a named source": met via `kpis.md` + `data-sources.md` §4.
+- **Changed the plan:** contribution redefined (variable costs only); virtual key + command proxy moved to Phase 4; business-token auth first; no scheduled Tesla polling; Pages path filter in 2.1; `SUBSTITUTE(...)` markers required.
+- **Open for the checkpoint:** Cybercab fleets aren't purchasable yet, so who is the pilot customer (Tesla rideshare fleets?); a real Tesla + payment method needed for Phase 4.
