@@ -13,6 +13,10 @@ describe("format", () => {
   });
   it("formats ratios, hours and rates", () => {
     expect(formatPct(0.5668)).toBe("56.7%");
+    expect(formatPct(-0.125)).toBe("−12.5%");
+    expect(formatPct(-0.0001)).toBe("0.0%");
+    expect(formatPct(-120.702)).toBe("<−999%");
+    expect(formatPct(36.249)).toBe(">999%");
     expect(formatHours(3.4667)).toBe("3 h 28 m");
     expect(formatHours(0.7833)).toBe("47 m");
     expect(formatRatePerHour(2_312)).toBe("$23.12/h");

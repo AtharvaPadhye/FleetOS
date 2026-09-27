@@ -1,3 +1,4 @@
+import type { TariffPeriod } from "@fleetos/domain";
 import type { GeoPoint } from "../types";
 
 /**
@@ -89,3 +90,24 @@ export const PHOENIX = {
 } as const;
 
 export type HubKey = HubSpec["key"];
+
+const WEEKDAYS = [1, 2, 3, 4, 5];
+const EVERY_DAY = [0, 1, 2, 3, 4, 5, 6];
+const SUMMER = [5, 6, 7, 8, 9, 10];
+const WINTER = [1, 2, 3, 4, 11, 12];
+
+// SUBSTITUTE(live_tariffs, static): illustrative Phoenix-style time-of-use rates scaled from each hub's MVP $/kWh.
+//   Real source: the hub's actual APS/SRP tariff from OpenEI URDB (seeded) or a live Arcadia feed (ADR-0015).
+//   Replace by: a hub tariff picker that loads URDB schedules into `tariffs.schedule` (task 5.x settings).
+//   Docs: docs/requirements/data-sources.md §5
+/** Summer weekday afternoon peak, winter morning/evening peaks, off-peak = the hub's MVP rate. Not a published tariff. */
+export function phoenixTouSchedule(hub: Pick<HubSpec, "centsPerKwh">): TariffPeriod[] {
+  const off = hub.centsPerKwh;
+  const r = (x: number) => Math.round(off * x * 10) / 10;
+  return [
+    { label: "Summer on-peak", months: SUMMER, days: WEEKDAYS, from: "14:00", to: "20:00", cents_per_kwh: r(2.2) },
+    { label: "Winter on-peak", months: WINTER, days: WEEKDAYS, from: "05:00", to: "09:00", cents_per_kwh: r(1.5) },
+    { label: "Winter on-peak", months: WINTER, days: WEEKDAYS, from: "17:00", to: "21:00", cents_per_kwh: r(1.5) },
+    { label: "Off-peak", days: EVERY_DAY, from: "00:00", to: "24:00", cents_per_kwh: off },
+  ];
+}

@@ -1,4 +1,6 @@
 import { expect, test } from "@playwright/test";
+import { dailyAllocationCents } from "@fleetos/domain";
+import { formatCents } from "../src/lib/format";
 import { signIn, uniqueEmail } from "./helpers/auth";
 
 test.describe("demo fleet", () => {
@@ -15,6 +17,16 @@ test.describe("demo fleet", () => {
     const switcher = page.getByRole("button", { name: /Switch organization/ });
     await expect(switcher).toContainText("Atlas Mobility (demo)");
     await expect(switcher).toContainText("Simulated");
+
+    // Costs are booked from day one: today's insurance and financing for all 84 cars (task 3.7).
+    await page.goto("/financials");
+    const pnl = page.getByRole("region", { name: "Profit and loss" });
+    for (const line of ["Ride revenue", "Platform fees", "Electricity", "Contribution", "Insurance", "Financing"])
+      await expect(pnl.getByRole("rowheader", { name: line, exact: true })).toBeVisible();
+    const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Phoenix" }).format(new Date());
+    const day = (monthly: number) => formatCents(-84 * dailyAllocationCents(monthly, today), { decimals: true });
+    await expect(pnl.getByRole("row", { name: /Insurance/ })).toContainText(day(48_600)); // $486/month per car
+    await expect(pnl.getByRole("row", { name: /Financing/ })).toContainText(day(114_300)); // $1,143/month per car
   });
 });
 
@@ -25,5 +37,5 @@ test("the tick endpoint rejects callers without the secret and runs with it", as
     headers: { Authorization: `Bearer ${process.env.TICK_SECRET}` },
   });
   expect(ok.status()).toBe(200);
-  expect(await ok.json()).toMatchObject({ ok: true });
+  expect(await ok.json()).toMatchObject({ ok: true, allocationLines: expect.any(Number) });
 });

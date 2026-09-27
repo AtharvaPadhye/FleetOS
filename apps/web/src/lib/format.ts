@@ -11,8 +11,13 @@ export function formatCents(cents: number | null, opts: { decimals?: boolean; si
   return opts.signed && cents > 0 ? `+${abs}` : abs;
 }
 
+/** Ratios as percentages, real minus sign; beyond ±999% the exact figure is noise, so it's capped. */
 export function formatPct(ratio: number | null, digits = 1): string {
-  return ratio === null ? "—" : `${(ratio * 100).toFixed(digits)}%`;
+  if (ratio === null) return "—";
+  const pct = ratio * 100;
+  if (Math.abs(pct) > 999) return pct < 0 ? "<−999%" : ">999%";
+  const s = `${Math.abs(pct).toFixed(digits)}%`;
+  return pct < 0 && s !== `${(0).toFixed(digits)}%` ? `−${s}` : s;
 }
 
 export function formatHours(hours: number): string {

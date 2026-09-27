@@ -2,6 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { PHOENIX, SimulatorProvider } from "@fleetos/providers";
 import { tickOrg } from "./tick";
+import { allocateFixedCosts } from "./costs";
 
 /**
  * Fill a new org with the simulated Phoenix fleet (flows.md F2 "Demo data"): 3 hubs, 84 Cybercabs (or `vehicles`), and a
@@ -83,6 +84,8 @@ export async function provisionDemoFleet(
     snapshot: provider.snapshot(),
   });
   if (sErr) throw new Error(sErr.message);
-  // First tick right away so the fleet appears immediately.
-  return tickOrg(db, orgId, now);
+  // First tick right away so the fleet appears immediately, and today's fixed costs with it.
+  const result = await tickOrg(db, orgId, now);
+  await allocateFixedCosts(db, now, orgId);
+  return result;
 }

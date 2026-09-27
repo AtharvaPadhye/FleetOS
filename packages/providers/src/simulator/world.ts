@@ -83,6 +83,8 @@ export interface OpsRecord {
   detectedAt: Date;
   resolvedAt: Date;
   costCents: number;
+  /** costCents split into ledger categories (sums to costCents). */
+  costLines: { category: "cleaning" | "maintenance" | "roadside"; cents: number }[];
   location: GeoPoint;
 }
 
@@ -502,14 +504,18 @@ export class SimulatorWorld {
       return;
     }
     const costs = PHOENIX.costs;
-    const cost =
+    const costLines: OpsRecord["costLines"] =
       p.kind === "cleaning"
-        ? costs.cleaningCents
+        ? [{ category: "cleaning", cents: costs.cleaningCents }]
         : p.kind === "tyre"
-          ? costs.tyreCents
+          ? [{ category: "roadside", cents: costs.tyreCents }]
           : p.kind === "fault"
-            ? costs.diagnosticsCents + costs.repairCents
-            : costs.towCents + costs.repairCents;
+            ? [{ category: "maintenance", cents: costs.diagnosticsCents + costs.repairCents }]
+            : [
+                { category: "roadside", cents: costs.towCents },
+                { category: "maintenance", cents: costs.repairCents },
+              ];
+    const cost = costLines.reduce((sum, l) => sum + l.cents, 0);
     // SUBSTITUTE(vendor_tracking, simulated): the ops autopilot plays the vendors (cleaners, tow, mechanics).
     //   Real source: FleetOS tickets + vendor dispatch (task 5.5), Agero-style integrations or Airtable forms later.
     //   Replace by: engine-created tickets whose completion releases the vehicle (task 3.5/5.5).
@@ -521,6 +527,7 @@ export class SimulatorWorld {
       detectedAt: new Date(p.startedAt),
       resolvedAt: new Date(this.now),
       costCents: cost,
+      costLines,
       location: { ...v.pos },
     });
     this.emit("onAlert", {

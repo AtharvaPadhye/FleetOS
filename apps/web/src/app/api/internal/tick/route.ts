@@ -2,6 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { serverEnv } from "@/lib/server-env";
 import { tickAll } from "@/lib/engine/tick";
+import { allocateFixedCosts } from "@/lib/engine/costs";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -17,9 +18,11 @@ export async function POST(request: Request) {
   if (!authorized(request.headers.get("authorization"), serverEnv().TICK_SECRET)) {
     return Response.json({ error: "unauthenticated" }, { status: 401 });
   }
-  const results = await tickAll(createAdminClient());
+  const db = createAdminClient();
+  const results = await tickAll(db);
+  const allocationLines = await allocateFixedCosts(db);
   return Response.json(
-    { ok: true, at: new Date().toISOString(), orgs: results },
+    { ok: true, at: new Date().toISOString(), orgs: results, allocationLines },
     { headers: { "Cache-Control": "no-store" } },
   );
 }

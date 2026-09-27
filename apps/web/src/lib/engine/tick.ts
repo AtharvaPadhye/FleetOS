@@ -5,9 +5,12 @@ import {
   SimulatorProvider,
   type GeoPoint,
   type ProviderEvent,
+  type ChargeRecord,
+  type OpsRecord,
   type ProviderSnapshot,
   type RideRecord,
 } from "@fleetos/providers";
+import { demoHubPricing, writeCharging, writeOps } from "./costs";
 
 /**
  * Database adapter for the engine tick (task 3.5, ADR-0014). For each demo org: restore its simulator,
@@ -85,7 +88,10 @@ export async function tickOrg(db: SupabaseClient, orgId: string, now = new Date(
   await db.rpc("engine_ensure_partitions");
 
   const vehicleIdByVin = new Map(engineVehicles.map((v) => [v.ref, v.id]));
-  const localDay = new Intl.DateTimeFormat("en-CA", { timeZone: (org?.timezone as string | undefined) ?? "UTC" });
+  const timeZone = (org?.timezone as string | undefined) ?? "UTC";
+  const localDay = new Intl.DateTimeFormat("en-CA", { timeZone });
+  const day = (d: Date) => localDay.format(d);
+  const pricing = await demoHubPricing(db, orgId);
   let minutes = 0;
   const totals = { events: 0, statusChanges: 0, samples: 0, alerts: 0 };
   while (provider.now().getTime() + 10_000 <= now.getTime()) {
@@ -93,16 +99,24 @@ export async function tickOrg(db: SupabaseClient, orgId: string, now = new Date(
     const step = Math.min(CHUNK_MS, now.getTime() - from.getTime());
     const events: ProviderEvent[] = [];
     const rides: RideRecord[] = [];
+    const charges: ChargeRecord[] = [];
+    const jobs: OpsRecord[] = [];
     const ac = new AbortController();
     await provider.subscribe((e) => events.push(e), ac.signal);
-    const stopRides = provider.world.observe({ onRide: (r) => rides.push(r) });
+    const stopObserving = provider.world.observe({
+      onRide: (r) => rides.push(r),
+      onCharge: (c) => charges.push(c),
+      onOps: (o) => jobs.push(o),
+    });
     await provider.advance(step);
-    stopRides();
+    stopObserving();
     ac.abort();
     const roster = new Map((await provider.listVehicles()).map((v) => [v.vehicleRef, v.connectivity]));
     const r = runTick(cfg, engineVehicles, previous, events, { from, to: provider.now() }, roster);
     await writeResult(db, orgId, r);
-    await writeRides(db, orgId, rides, vehicleIdByVin, (d) => localDay.format(d));
+    await writeRides(db, orgId, rides, vehicleIdByVin, day);
+    await writeCharging(db, orgId, charges, vehicleIdByVin, pricing, timeZone, day);
+    await writeOps(db, orgId, jobs, vehicleIdByVin, day);
     previous = new Map(r.live.map((l) => [l.vehicleId, l]));
     minutes += (provider.now().getTime() - from.getTime()) / 60_000;
     for (const k of Object.keys(totals) as (keyof typeof totals)[]) totals[k] += r.counts[k];

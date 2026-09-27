@@ -1,6 +1,6 @@
-import { isValidVin } from "@fleetos/domain";
+import { isValidVin, scheduleGap } from "@fleetos/domain";
 import { distanceM } from "./geo";
-import { PHOENIX } from "./phoenix";
+import { PHOENIX, phoenixTouSchedule } from "./phoenix";
 import { SimulatorProvider } from "./provider";
 import { SimulatorWorld, type OpsRecord, type RideRecord } from "./world";
 import { phoenixMidnight } from "./day-summary";
@@ -68,6 +68,12 @@ describe("a full simulated day stays physically sane", () => {
     expect(ops.some((o) => o.kind === "cleaning")).toBe(true);
     expect(ops.every((o) => o.resolvedAt > o.detectedAt)).toBe(true);
   });
+  it("bills every job in ledger categories that add up to its cost", () => {
+    for (const o of ops) expect(o.costLines.reduce((s, l) => s + l.cents, 0)).toBe(o.costCents);
+    expect(ops.find((o) => o.kind === "cleaning")?.costLines).toEqual([
+      { category: "cleaning", cents: PHOENIX.costs.cleaningCents },
+    ]);
+  });
   it("never lets more cars charge at a hub than it has chargers", () => {
     for (const h of PHOENIX.hubs) expect(w.chargersInUse(h.key)).toBeLessThanOrEqual(h.chargers);
   });
@@ -106,5 +112,17 @@ describe("streaming behaves like Fleet Telemetry", () => {
     const p = new SimulatorProvider({ seed: 2, start: START, commandsEnabled: true });
     const [v] = await p.listVehicles();
     await expect(p.sendCommand(v!.vehicleRef, "flash_lights")).resolves.toMatchObject({ ok: true });
+  });
+});
+
+describe("demo hub tariffs", () => {
+  it("price every minute of the year, with peaks above the off-peak rate", () => {
+    for (const h of PHOENIX.hubs) {
+      const schedule = phoenixTouSchedule(h);
+      expect(scheduleGap(schedule)).toBeNull();
+      const offPeak = schedule.at(-1)!.cents_per_kwh;
+      expect(offPeak).toBe(h.centsPerKwh);
+      expect(schedule.slice(0, -1).every((p) => p.cents_per_kwh > offPeak)).toBe(true);
+    }
   });
 });

@@ -65,11 +65,17 @@ test("skip link moves focus to the main content", async ({ page }) => {
 });
 
 test("placeholders never show fake numbers", async ({ page }) => {
-  for (const s of SECTIONS) {
+  for (const s of SECTIONS.filter((x) => x.path !== "/financials")) {
     await page.goto(s.path);
     await expect(page.getByText("is being built")).toBeVisible();
     await expect(page.locator("main")).not.toContainText("$");
   }
+});
+
+test("Financials names an empty ledger instead of showing $0", async ({ page }) => {
+  await page.goto("/financials");
+  await expect(page.getByText("Nothing booked this month yet")).toBeVisible();
+  await expect(page.locator("main")).not.toContainText("$");
 });
 
 for (const s of SECTIONS) {
