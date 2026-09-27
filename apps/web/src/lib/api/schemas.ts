@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { CAPABILITIES, CAPABILITY_STATES, VEHICLE_STATUSES } from "@fleetos/domain";
+import { CAPABILITIES, CAPABILITY_STATES, LEDGER_CATEGORIES, VEHICLE_STATUSES } from "@fleetos/domain";
+import { PeriodQuery } from "./period";
 
 /**
  * Response and request schemas for /api/v1 (task 3.8). Each mirrors a schema in
@@ -168,4 +169,76 @@ export const HistoryQuery = z.strictObject({
   to: isoDateTime.optional(),
   limit: Limit,
   cursor: Cursor,
+});
+
+const ratio = z.number().nullable();
+const Period = z.object({ from: isoDateTime, to: isoDateTime });
+
+export const FleetKpis = z.object({
+  period: Period,
+  total_vehicles: z.number().int(),
+  available_now: z.number().int(),
+  earning_now: z.number().int(),
+  status_counts: z.record(z.string(), z.number().int()),
+  availability: ratio,
+  availability_target: z.number(),
+  uptime: ratio,
+  utilization: z.object({ value: z.number(), estimated: z.boolean() }).nullable(),
+  downtime_hours_by_cause: z.record(z.string(), z.number()),
+  avg_soc: ratio,
+  low_soc_count: z.number().int(),
+  // Money: null for roles without money access.
+  gross_revenue_cents: cents.nullable(),
+  contribution_cents: cents.nullable(),
+  contribution_margin: ratio,
+  downtime_cost_cents: cents.nullable(),
+  revenue_per_available_hour_cents: cents.nullable(),
+  data_sources: z.record(z.string(), z.string()),
+});
+
+export const VehicleKpis = z.object({
+  vehicle_id: z.uuid(),
+  metrics: z.array(
+    z.object({
+      key: z.string(),
+      value: z.number().nullable(),
+      fleet_avg: z.number().nullable(),
+      unit: z.string(),
+      flag: z.enum(["good", "warn", "bad"]).nullable(),
+      data_source: z.string().nullable(),
+    }),
+  ),
+  performance_label: z.enum(["strong", "monitor", "review"]).optional(),
+});
+
+export const LedgerCategory = z.enum(LEDGER_CATEGORIES);
+
+export const Pnl = z.object({
+  scope: z.enum(["fleet", "vehicle"]),
+  scope_id: z.uuid().nullable(),
+  period: Period,
+  view: z.enum(["accounting", "economic"]),
+  lines: z.array(
+    z.object({
+      category: LedgerCategory,
+      amount_cents: cents,
+      vs_fleet_avg_pct: z.number().nullable(),
+      flagged: z.boolean(),
+    }),
+  ),
+  gross_revenue_cents: cents,
+  contribution_cents: cents,
+  contribution_margin: ratio,
+  fixed_allocations_cents: cents,
+  net_contribution_cents: cents,
+  downtime_cost_cents: cents,
+  economic_net_cents: cents.nullable(),
+});
+
+export const KpiPeriodQuery = z.strictObject({ ...PeriodQuery });
+export const PnlQuery = z.strictObject({
+  scope: z.enum(["fleet", "vehicle"]).default("fleet"),
+  scope_id: z.uuid().optional(),
+  view: z.enum(["accounting", "economic"]).default("accounting"),
+  ...PeriodQuery,
 });

@@ -2,12 +2,17 @@ import { z } from "zod";
 import {
   Capabilities,
   ChargingSession,
+  FleetKpis,
   HistoryQuery,
+  KpiPeriodQuery,
   Me,
   OrgList,
+  Pnl,
+  PnlQuery,
   StatusEvent,
   Vehicle,
   VehicleListItem,
+  VehicleKpis,
   VehicleListQuery,
   page,
   type ROLES,
@@ -104,6 +109,37 @@ export const getVehicleChargingSessions = op({
   response: page(ChargingSession),
 });
 
+export const getFleetKpis = op({
+  operationId: "getKpisFleet",
+  method: "GET",
+  path: "/kpis/fleet",
+  stability: "stable",
+  org: "required",
+  query: KpiPeriodQuery,
+  response: FleetKpis,
+});
+
+export const getVehicleKpis = op({
+  operationId: "getKpisVehiclesBy_id",
+  method: "GET",
+  path: "/kpis/vehicles/{id}",
+  stability: "stable",
+  org: "required",
+  query: KpiPeriodQuery,
+  response: VehicleKpis,
+});
+
+export const getPnl = op({
+  operationId: "getFinancialsPnl",
+  method: "GET",
+  path: "/financials/pnl",
+  stability: "stable",
+  org: "required",
+  roles: ["owner", "admin", "finance"],
+  query: PnlQuery,
+  response: Pnl,
+});
+
 export const OPERATIONS: Operation[] = [
   getMe,
   getOrgs,
@@ -112,4 +148,7 @@ export const OPERATIONS: Operation[] = [
   getVehicle,
   getVehicleStatusEvents,
   getVehicleChargingSessions,
+  getFleetKpis,
+  getVehicleKpis,
+  getPnl,
 ];

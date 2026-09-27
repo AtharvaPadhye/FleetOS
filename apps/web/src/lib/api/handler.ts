@@ -5,6 +5,9 @@ import type { z } from "zod";
 import { publicEnv } from "@/lib/env";
 import { createClient as createCookieClient } from "@/lib/supabase/server";
 import type { ErrorCode } from "./schemas";
+import { ApiProblem } from "./problem";
+
+export { ApiProblem };
 import type { Operation } from "./operations";
 
 /**
@@ -26,16 +29,6 @@ const STATUS: Record<ErrorCode, number> = {
   upstream_unavailable: 503,
   internal: 500,
 };
-
-export class ApiProblem extends Error {
-  constructor(
-    readonly code: ErrorCode,
-    message: string,
-    readonly details?: Record<string, unknown>[],
-  ) {
-    super(message);
-  }
-}
 
 export type DataSource = "live" | "simulated" | "csv" | "inferred" | "static" | "manual" | "mixed";
 

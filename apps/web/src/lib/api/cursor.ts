@@ -1,4 +1,4 @@
-import { ApiProblem } from "./handler";
+import { ApiProblem } from "./problem";
 
 /** Opaque page cursors: base64url JSON. Clients must pass them back unchanged. */
 export function encodeCursor(value: Record<string, string | number>): string {

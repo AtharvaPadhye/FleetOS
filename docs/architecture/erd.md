@@ -87,6 +87,7 @@ erDiagram
 | `telemetry_samples` | PK (`vehicle_id`, `field`, `ts`), `org_id`, `value_num double`, `value_text`, `value_geo geography(Point)` | **worker-only**; `PARTITION BY RANGE (ts)` daily, dropped after 30 days; PK = dedupe key (REL-3) |
 | `telemetry_rollup_1m` / `_1h` | PK (`vehicle_id`, `field`, `bucket`), `min`, `max`, `avg`, `last`, `count` | **worker-only**; 13 months / forever |
 | `vehicle_status_events` | `vehicle_id`, `from_status`, `to_status`, `at`, `cause_type` (`telemetry`/`ticket`/`exception`/`policy`/`manual`/`platform`), `cause_id`, `detail` | **worker-only**; source of all hour accounting (`kpis.md` §2) |
+| `vehicle_day_hours` | `vehicle_id`, `day` (org-local), `in_service_h` … `offline_h` (one column per status) | **worker-only** rollup of `vehicle_status_events` inside the service window (task 3.8c); KPI periods sum it |
 | `vehicle_alerts` | `vehicle_id`, `name`, `audiences text[]`, `started_at`, `ended_at`, `source` (`telemetry`/`recent_alerts`/`simulator`) | Active while `ended_at is null` |
 | `vehicle_holds` | `vehicle_id`, `kind` (`pull_from_service`), `reason`, `created_by`, `released_at`, `released_by` | Manual Maintenance hold (`vehicle-states.md` §5) |
 | `battery_health_snapshots` | `vehicle_id`, `taken_at`, `soh_pct`, `capacity_kwh`, `source` (`tesla_specs`/`simulator`) | Monthly job; reports' residual-value section |
@@ -150,7 +151,7 @@ One ledger holds every revenue and cost line; `/api/v1/revenue-lines` and `/api/
 
 | Requirement | Tables |
 |---|---|
-| Vehicle-time accounting (`kpis.md` §2) | `vehicle_status_events` |
+| Vehicle-time accounting (`kpis.md` §2) | `vehicle_status_events` → `vehicle_day_hours` |
 | Revenue at risk / baselines | `ledger_entries` + `vehicle_status_events` (+ `rides` when live) |
 | Vehicle P&L (PRD VD-3) | `ledger_entries` grouped by category |
 | Status derivation inputs (`vehicle-states.md` §3) | `vehicle_state_current`, `exceptions`, `tickets`, `vehicle_holds`, `hubs.geofence` |

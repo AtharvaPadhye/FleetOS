@@ -56,7 +56,7 @@ Progress also logged in Obsidian: `claude_memory/projects/FleetOS/progress-log.m
 - [ ] 3.8 Stable read APIs + rollups
   - [x] 3.8a API foundation: `apiRoute` (cookie or Bearer auth, `X-FleetOS-Org` membership check → foreign org 404, 401/400 JSON errors with request id, stability header, runtime response validation); operation registry + contract test against `openapi.yaml` (catches undocumented fields, types, formats, nulls, enums, unregistered routes); `GET /me`, `/orgs`, `/capabilities`; proxy no longer redirects `/api`
   - [x] 3.8b Vehicles: `vehicle_list` view (security invoker); `GET /vehicles` (status / hub / SOC / search filters, sort, cursor pages), `/vehicles/{id}` (money hidden from non-money roles), `/status-events` and `/charging-sessions` (keyset pages, half-open from/to); freshness rule in domain; spec fix: status-event ids are opaque strings; e2e fixture org + pgTAP view isolation
-  - [ ] 3.8c KPIs: per-vehicle-day rollup refreshed by the tick → `GET /kpis/fleet`, `/kpis/vehicles/{id}`, `/financials/pnl`
+  - [x] 3.8c KPIs: `vehicle_day_hours` rollup (hours per status per local service day, SQL, refreshed by the tick with catch-up) + `vehicle_hours_totals` / `ledger_vehicle_totals` RPCs; `GET /kpis/fleet` (default today), `/kpis/vehicles/{id}` (vs fleet avg, flags, performance label), `/financials/pnl` (fleet or vehicle, accounting / economic, cost flags); money null for non-money roles; period parser (DST-safe); pgTAP for the rollup maths; e2e on a fixture org
   - [ ] 3.8d Realtime: tick broadcasts vehicle state on a private `org:{id}:vehicles` channel
 - [ ] 3.9 Preview (placeholder) APIs + capability registry
 - [ ] Phase 3 exit check → checkpoint

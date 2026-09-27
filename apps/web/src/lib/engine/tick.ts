@@ -122,6 +122,10 @@ export async function tickOrg(db: SupabaseClient, orgId: string, now = new Date(
     for (const k of Object.keys(totals) as (keyof typeof totals)[]) totals[k] += r.counts[k];
   }
 
+  // KPI rollup: hours per status per vehicle-day (task 3.8c), finishing yesterday and catching up if paused.
+  const { error: hErr2 } = await db.rpc("engine_refresh_day_hours", { p_org: orgId });
+  if (hErr2) throw new Error(hErr2.message);
+
   const durationMs = Date.now() - t0;
   const nowIso = now.toISOString();
   const { error: sErr } = await db
