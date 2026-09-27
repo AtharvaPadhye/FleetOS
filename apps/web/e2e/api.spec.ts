@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { createClient } from "@supabase/supabase-js";
 import { userToken } from "./helpers/api";
 
 /** /api/v1 platform endpoints (task 3.8a): auth, org scoping, error shape, headers. */
@@ -54,4 +55,19 @@ test.describe("without a session", () => {
     expect(res.status()).toBe(200);
     expect(await res.json()).toMatchObject({ email: u.email, memberships: [] });
   });
+});
+
+test("realtime: a user can't listen to another org's channel", async () => {
+  const outsider = await userToken("rt-outsider");
+  const c = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!, {
+    auth: { persistSession: false },
+  });
+  await c.realtime.setAuth(outsider.token);
+  const result = await new Promise<string>((resolve) => {
+    c.channel(`org:${crypto.randomUUID()}:vehicles`, { config: { private: true } }).subscribe((status, err) => {
+      if (status !== "CLOSED") resolve(`${status}${err ? `: ${err.message}` : ""}`);
+    });
+  });
+  await c.removeAllChannels();
+  expect(result).toMatch(/^CHANNEL_ERROR: Unauthorized/);
 });

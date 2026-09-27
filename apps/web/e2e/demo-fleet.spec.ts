@@ -18,6 +18,19 @@ test.describe("demo fleet", () => {
     await expect(switcher).toContainText("Atlas Mobility (demo)");
     await expect(switcher).toContainText("Simulated");
 
+    // Live updates (task 3.8d): the header chip subscribes to the org's private channel, and the next tick's
+    // changes arrive without a reload.
+    const chip = page.locator("[data-realtime]");
+    await expect(chip).toHaveAttribute("data-realtime", "connected", { timeout: 15_000 });
+    const before = await chip.getAttribute("data-last-update");
+    await page.waitForTimeout(6_000); // the tick skips an org ticked in the last 5 s
+    const tick = await page.request.post("/api/internal/tick", {
+      headers: { Authorization: `Bearer ${process.env.TICK_SECRET}` },
+    });
+    expect(tick.status()).toBe(200);
+    await expect(chip).not.toHaveAttribute("data-last-update", before ?? "", { timeout: 30_000 });
+    await expect(chip).toContainText("Live");
+
     // Costs are booked from day one: today's insurance and financing for all 84 cars (task 3.7).
     await page.goto("/financials");
     const pnl = page.getByRole("region", { name: "Profit and loss" });

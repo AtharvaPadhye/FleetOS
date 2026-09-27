@@ -11,6 +11,8 @@ import {
   type RideRecord,
 } from "@fleetos/providers";
 import { demoHubPricing, writeCharging, writeOps } from "./costs";
+import { statePatches, statusMessages } from "./broadcast";
+import type { StatusEventOut } from "@fleetos/engine";
 
 /**
  * Database adapter for the engine tick (task 3.5, ADR-0014). For each demo org: restore its simulator,
@@ -94,6 +96,8 @@ export async function tickOrg(db: SupabaseClient, orgId: string, now = new Date(
   const pricing = await demoHubPricing(db, orgId);
   let minutes = 0;
   const totals = { events: 0, statusChanges: 0, samples: 0, alerts: 0 };
+  const startLive = previous;
+  const statusEvents: StatusEventOut[] = [];
   while (provider.now().getTime() + 10_000 <= now.getTime()) {
     const from = provider.now();
     const step = Math.min(CHUNK_MS, now.getTime() - from.getTime());
@@ -118,6 +122,7 @@ export async function tickOrg(db: SupabaseClient, orgId: string, now = new Date(
     await writeCharging(db, orgId, charges, vehicleIdByVin, pricing, timeZone, day);
     await writeOps(db, orgId, jobs, vehicleIdByVin, day);
     previous = new Map(r.live.map((l) => [l.vehicleId, l]));
+    statusEvents.push(...r.statusEvents);
     minutes += (provider.now().getTime() - from.getTime()) / 60_000;
     for (const k of Object.keys(totals) as (keyof typeof totals)[]) totals[k] += r.counts[k];
   }
@@ -125,6 +130,15 @@ export async function tickOrg(db: SupabaseClient, orgId: string, now = new Date(
   // KPI rollup: hours per status per vehicle-day (task 3.8c), finishing yesterday and catching up if paused.
   const { error: hErr2 } = await db.rpc("engine_refresh_day_hours", { p_org: orgId });
   if (hErr2) throw new Error(hErr2.message);
+
+  // Realtime (task 3.8d): changed fields per vehicle and each status change, on private org channels.
+  // Best effort: the database is the source of truth, and clients re-fetch on reconnect.
+  const { error: bErr } = await db.rpc("engine_broadcast", {
+    p_org: orgId,
+    p_state: statePatches(startLive, [...previous.values()]),
+    p_status: statusMessages(statusEvents),
+  });
+  if (bErr) console.error(`[tick] broadcast failed for ${orgId}: ${bErr.message}`);
 
   const durationMs = Date.now() - t0;
   const nowIso = now.toISOString();

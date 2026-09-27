@@ -69,6 +69,8 @@
 
 ## 4. Realtime channels (ADR-0011)
 
+**Implemented (task 3.8d):** `org:{org_id}:vehicles` (`state`, one batched message per tick: `{vehicles: [{vehicle_id, …changed fields}]}`) and `org:{org_id}:status` (`status_changed`), sent by the engine tick through `public.engine_broadcast` (`realtime.send`, private). A policy on `realtime.messages` lets only members of that org subscribe. The header freshness chip listens and updates live. Batching is per tick (1/min in the prototype), within the ≤ 1/s budget below.
+
 | Channel | Mechanism | Payload | Consumers |
 |---|---|---|---|
 | `org:{org_id}:vehicles` | Broadcast event `state` (batched ≤ 1/s) | `[{vehicle_id, status, soc, location, speed_mps, charge_state, current_hub_id, last_telemetry_at}]` (changed fields only) | Overview, Fleet, Vehicle, Hubs |
