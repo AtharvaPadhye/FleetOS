@@ -75,7 +75,8 @@ jobs:
       - name: Unit tests
         run: pnpm test
       - name: Start local Supabase (auth, API, realtime, inbox) for the build and e2e
-        run: pnpm exec supabase start -x studio,imgproxy,edge-runtime,logflare,vector,postgres-meta,supavisor,storage-api
+        # storage-api stays on: ticket attachments (task 5.5) are uploaded in e2e.
+        run: pnpm exec supabase start -x studio,imgproxy,edge-runtime,logflare,vector,postgres-meta,supavisor
       - name: Write apps/web/.env.local from the local stack
         run: pnpm db:env
       - name: Build
