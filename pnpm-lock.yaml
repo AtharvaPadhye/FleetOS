@@ -20,6 +20,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@fleetos/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
       '@fleetos/ui':
         specifier: workspace:*
         version: link:../../packages/ui

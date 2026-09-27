@@ -11,6 +11,7 @@ Operations control tower for autonomous (Tesla Cybercab) fleet owners. Plan: `do
 - Toolchain pins and why: TypeScript 6.0 (typescript-eslint needs < 6.1), ESLint 9 (Next's plugins don't support 10), pnpm 10 (corepack 0.34 can't run 12). See `tasks/lessons.md`.
 - After each task, append an entry to the Obsidian progress log (`claude_memory/projects/FleetOS/fleetos-progress-log.md`, via the `obsidian` CLI when the app is running).
 - Record corrections in `tasks/lessons.md`.
+- Before each build task, show Akshat a mental map (diagram) of what's being added and how it connects; after each task, explain what it achieved in product terms, not just files and test counts.
 
 ## Substitute data must be marked in code
 Wherever code uses a **stand-in instead of the real source** (simulator data, a CSV import instead of an API, manual entry, an inferred estimate instead of a direct measurement, a static table instead of a live feed, or test fixtures used at runtime), put a `SUBSTITUTE` marker directly above it. The marker is how we find everything to replace when a real source arrives, so **no substitute ships without one**.

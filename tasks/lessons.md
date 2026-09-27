@@ -10,3 +10,4 @@ _Patterns learned from corrections and mistakes. Review at session start._
 - **Verify a regression test fails without the fix** before trusting it.
 - **Don't state commit hashes from memory**; read them from `git log`.
 - **Check contrast on every surface a token can sit on.** Task 1.4 checked text colours on 3 dark surfaces but not the popover (`overlay`); `fg-subtle` failed there at 4.21:1 and axe caught it in the ⌘K menu (task 2.5). Rule: contrast tables list all surfaces, and the e2e axe scan covers open dialogs/menus, not just pages.
+- **Horizontally scrolling tables must be keyboard-reachable** (`role="region"`, `aria-label`, `tabIndex={0}` on the overflow wrapper) and `<dl>` children must be `<dt>`/`<dd>` (or `div` groups of them). Caught by axe on the phone viewport of the Rulebook page; the future DataTable component must bake this in.

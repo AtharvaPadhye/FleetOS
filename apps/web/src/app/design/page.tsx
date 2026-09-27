@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Button } from "@fleetos/ui/components/button";
 import { DataSourceBadge } from "@fleetos/ui/components/data-source-badge";
 import { SeverityBadge, type Severity } from "@fleetos/ui/components/severity-badge";
@@ -34,6 +35,9 @@ export default function DesignSystemPage() {
         <div>
           <DataSourceBadge source="simulated" />
         </div>
+        <Link href="/design/kpis" className="text-label text-fg-muted underline underline-offset-4 hover:text-fg">
+          Rulebook: how FleetOS calculates
+        </Link>
       </header>
 
       <section aria-labelledby="money-heading" className="rounded-md border border-divider bg-surface p-6">

@@ -44,6 +44,7 @@ Progress also logged in Obsidian: `claude_memory/projects/FleetOS/progress-log.m
 
 ## Phase 3 — Data platform & simulator
 - [x] 3.1 packages/domain (status rules + debounce, vehicle-time accounting, P&L/rates/baselines/revenue at risk, SLA, labels, anomalies, grade, covenants; 85 tests incl. kpis.md E1–E7; 100% lines, 98.8% branches)
+  - [x] Rulebook page `/design/kpis`: runs the real rules on the kpis.md examples so 3.1 is visible (42 e2e incl. axe)
 - [ ] 3.2 Vehicle/hub schema
 - [ ] 3.3 VehicleProvider interface + contract tests
 - [ ] 3.4 Simulator provider

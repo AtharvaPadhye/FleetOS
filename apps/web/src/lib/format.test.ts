@@ -1,0 +1,20 @@
+import { formatCents, formatHours, formatPct, formatRatePerHour } from "./format";
+
+describe("format", () => {
+  it("formats cents with a real minus sign", () => {
+    expect(formatCents(450_000)).toBe("$4,500");
+    expect(formatCents(-74_100)).toBe("−$741");
+    expect(formatCents(12_716, { decimals: true })).toBe("$127.16");
+    expect(formatCents(888, { decimals: true, signed: true })).toBe("+$8.88");
+  });
+  it("shows a dash, never zero, for missing values", () => {
+    expect(formatCents(null)).toBe("—");
+    expect(formatPct(null)).toBe("—");
+  });
+  it("formats ratios, hours and rates", () => {
+    expect(formatPct(0.5668)).toBe("56.7%");
+    expect(formatHours(3.4667)).toBe("3 h 28 m");
+    expect(formatHours(0.7833)).toBe("47 m");
+    expect(formatRatePerHour(2_312)).toBe("$23.12/h");
+  });
+});

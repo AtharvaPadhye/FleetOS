@@ -4,7 +4,7 @@ import { cn } from "../lib/cn";
  * Where a number comes from. Driven by GET /api/v1/capabilities and the X-FleetOS-Data-Source header
  * (docs/architecture/api.md). Live data shows no badge.
  */
-export type DataSource = "simulated" | "csv" | "estimated" | "static" | "manual" | "not_connected";
+export type DataSource = "simulated" | "csv" | "estimated" | "static" | "manual" | "not_connected" | "sample";
 
 const LABELS: Record<DataSource, string> = {
   simulated: "Simulated",
@@ -13,6 +13,7 @@ const LABELS: Record<DataSource, string> = {
   static: "Published rate",
   manual: "Entered manually",
   not_connected: "Not connected",
+  sample: "Sample data",
 };
 
 export interface DataSourceBadgeProps {
