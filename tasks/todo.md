@@ -13,6 +13,7 @@ Progress also logged in Obsidian: `claude_memory/projects/FleetOS/progress-log.m
 - [x] Open questions from 0.1–0.3 resolved with recommended defaults
 - [x] Research archive + `SUBSTITUTE(...)` code-marker convention (`CLAUDE.md`)
 - [x] ADR-0014: prototype on Vercel + Supabase only (free tiers); container + domain from Phase 4
+- [x] Paused Atharva's legacy Vercel project `fleet-os` (auto-deploys failing since 2026-09-07) via root `vercel.json` `git.deploymentEnabled: false`; re-enable when the app's Vercel project is set up (2.6/4.0)
 - [x] API versioning: single `/api/v1`; `stable` vs `preview` (placeholder) tags; `/api/v2` reserved for breaking changes
 
 ## Phase 0 — Requirements & discovery
