@@ -33,6 +33,7 @@ Progress also logged in Obsidian: `claude_memory/projects/FleetOS/progress-log.m
 
 ## Phase 2 — Foundation
 - [x] 2.1 Monorepo + move MVP to prototype/ + Pages path filter (pnpm 10.34.5 + Turborepo; prototype build byte-identical)
+  - Verified 2026-09-26: Pages run 36284425903 succeeded with the pnpm build; live `index.html`, `main.js`, `style.css` byte-identical to the pre-move build; this docs-only commit triggered no Pages run.
 - [ ] 2.2 Next.js app + CI + `pnpm substitutes` marker inventory
 - [ ] 2.3 Supabase baseline + RLS tests
 - [ ] 2.4 Auth, orgs, roles
