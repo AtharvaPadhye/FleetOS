@@ -89,6 +89,7 @@ function norm(input: unknown): Norm {
 /** Problems where `impl` (from zod) could send something `api` (the spec) doesn't allow. */
 function diff(impl: Norm, api: Norm, at: string): string[] {
   if (api.union) return impl.union || impl.type ? [] : [`${at}: expected one of the spec's variants`];
+  if (!api.type && !api.enum) return []; // an untyped spec schema ({}) allows any value
   const out: string[] = [];
   if (impl.type !== api.type) return [`${at}: type ${impl.type} ≠ spec ${api.type}`];
   if (impl.nullable && !api.nullable) out.push(`${at}: may be null, spec says it can't`);
@@ -144,10 +145,18 @@ describe("implemented /api/v1 operations match openapi.yaml", () => {
         const names = documented.map((p) => p.name as string);
         const shape = (o.query as unknown as z.ZodObject).shape as Record<string, z.ZodType>;
         expect(Object.keys(shape).filter((k) => !names.includes(k))).toEqual([]);
-        for (const p of documented.filter((p) => (p.name as string) in shape))
-          expect(
-            diff(norm(z.toJSONSchema(shape[p.name as string]!, { io: "input" })), norm(p.schema), `?${p.name}`),
-          ).toEqual([]);
+        for (const p of documented.filter((p) => (p.name as string) in shape)) {
+          const impl = norm(z.toJSONSchema(shape[p.name as string]!, { io: "input" }));
+          const api = norm(p.schema);
+          // Query strings are text: a documented boolean arrives as "true" / "false".
+          if (
+            api.type === "boolean" &&
+            impl.type === "string" &&
+            impl.enum?.every((v) => v === "true" || v === "false")
+          )
+            continue;
+          expect(diff(impl, api, `?${p.name}`)).toEqual([]);
+        }
       });
       it("reads the documented request body", () => {
         const documented = ((s?.requestBody as Json | undefined)?.content as Json | undefined)?.["application/json"] as

@@ -163,10 +163,11 @@ export function vehicleKpis(input: {
         : av >= input.availabilityTarget - 0.05
           ? "warn"
           : "bad";
+  // Within half a point of the fleet counts as on par, so "80.0% vs 80.0%" never reads as a warning.
   const marginFlag: Flag =
     margin === null || fleetMargin === null
       ? null
-      : margin >= fleetMargin
+      : margin >= fleetMargin - 0.005
         ? "good"
         : margin >= fleetMargin - 0.1
           ? "warn"

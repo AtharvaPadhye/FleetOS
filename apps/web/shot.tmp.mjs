@@ -9,7 +9,8 @@ for (const [name, opts] of [
   const p = await ctx.newPage();
   const errs = [];
   p.on("console", (m) => m.type() === "error" && errs.push(m.text().slice(0, 160)));
-  await p.goto("http://localhost:3000" + path, { waitUntil: "networkidle" });
+  await p.goto("http://localhost:3000" + path, { waitUntil: "load" });
+  await p.waitForTimeout(3500);
   await p.screenshot({ path: `${dir}/${tag}-${name}.png`, fullPage: name === "phone" ? false : true });
   console.log(name, p.url(), errs.slice(0, 3));
   await ctx.close();

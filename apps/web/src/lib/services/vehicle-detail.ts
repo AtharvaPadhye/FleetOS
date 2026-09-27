@@ -23,5 +23,19 @@ export async function getVehicleDetail(
     .eq("vehicle_id", row.id)
     .is("released_at", null)
     .order("created_at", { ascending: false });
-  return { ...toVehicle(row, holds ?? [], MONEY_ROLES.has(org.role), now), display_name: row.display_name };
+  const hubName = row.current_hub_id
+    ? ((await db.from("hubs").select("name").eq("org_id", org.id).eq("id", row.current_hub_id).maybeSingle()).data
+        ?.name as string | undefined)
+    : undefined;
+  const v = toVehicle(row, holds ?? [], MONEY_ROLES.has(org.role), now);
+  return {
+    ...v,
+    display_name: row.display_name,
+    state: {
+      ...v.state,
+      location_name: row.current_hub_id ? (hubName ?? "At a hub") : row.lat !== null ? "On the road" : null,
+    },
+    /** When the facts were computed (ISO), for relative ages without reading the clock during render. */
+    as_of: now.toISOString(),
+  };
 }

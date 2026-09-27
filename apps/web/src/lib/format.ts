@@ -40,3 +40,9 @@ export function formatAge(iso: string | null, now = Date.now()): string {
 
 /** Minutes as "0 m", "47 m", "2 h 05 m". */
 export const formatMinutes = (min: number) => formatHours(min / 60).replace(/^0 m$/, "0 m");
+
+const MI = 1609.344;
+/** Distances in miles (US orgs; the API stays in metres). */
+export const formatMiles = (m: number | null, digits = 0) =>
+  m === null ? "—" : `${(m / MI).toLocaleString("en-US", { maximumFractionDigits: digits })} mi`;
+export const formatMph = (mps: number | null) => (mps === null ? "—" : `${Math.round(mps * 2.236936)} mph`);

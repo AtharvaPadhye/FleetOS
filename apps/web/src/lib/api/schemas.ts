@@ -367,3 +367,48 @@ export const VehicleCreate = z.strictObject({
   financing_monthly_cents: z.number().int().min(0).max(100_000_00).optional(),
 });
 export type VehicleCreate = z.infer<typeof VehicleCreate>;
+
+export const TelemetryQuery = z.strictObject({
+  fields: listOf(
+    z.enum([
+      "soc",
+      "speed_mps",
+      "odometer_m",
+      "charge_power_kw",
+      "tpms_fl_bar",
+      "tpms_fr_bar",
+      "tpms_rl_bar",
+      "tpms_rr_bar",
+    ]),
+  ),
+  from: isoDateTime.optional(),
+  to: isoDateTime.optional(),
+  interval: z.enum(["raw", "1m", "1h", "1d"]).optional(),
+});
+export const TelemetrySeries = z.object({
+  vehicle_id: z.uuid(),
+  interval: z.string(),
+  series: z.array(
+    z.object({
+      field: z.string(),
+      points: z.array(z.object({ t: isoDateTime, v: z.number(), min: z.number(), max: z.number() })),
+    }),
+  ),
+});
+
+export const VehicleAlert = z.object({
+  id: z.uuid(),
+  name: z.string(),
+  audiences: z.array(z.string()),
+  started_at: isoDateTime,
+  ended_at: isoDateTime.nullable(),
+  source: z.string(),
+});
+export const AlertQuery = z.strictObject({
+  active: z
+    .enum(["true", "false"])
+    .transform((v) => v === "true")
+    .optional(),
+  limit: Limit,
+  cursor: Cursor,
+});

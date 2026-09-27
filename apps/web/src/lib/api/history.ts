@@ -16,9 +16,11 @@ export async function historyPage<Row extends { id: string | number }>(
     orgId: string;
     vehicleId: string | null;
     query: { from?: string; to?: string; limit: number; cursor?: string };
+    /** Extra filter applied to both the page and the total. */
+    where?: <Q extends { is: (c: string, v: null) => Q; not: (c: string, op: string, v: null) => Q }>(q: Q) => Q;
   },
 ): Promise<{ rows: Row[]; nextCursor: string | null; total: number }> {
-  const { table, columns, timeColumn: t, orgId, vehicleId, query } = opts;
+  const { table, columns, timeColumn: t, orgId, vehicleId, query, where } = opts;
   if (vehicleId) {
     const { count: exists } = await db
       .from("vehicles")
@@ -34,7 +36,7 @@ export async function historyPage<Row extends { id: string | number }>(
     if (vehicleId) q = q.eq("vehicle_id", vehicleId);
     if (query.from) q = q.gte(t, query.from);
     if (query.to) q = q.lt(t, query.to);
-    return q;
+    return where ? where(q) : q;
   };
   let q = base();
   if (cursor) q = q.or(`${t}.lt."${cursor.at}",and(${t}.eq."${cursor.at}",id.lt."${cursor.id}")`);

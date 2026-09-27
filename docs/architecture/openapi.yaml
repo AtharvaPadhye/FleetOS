@@ -4581,7 +4581,9 @@ components:
                     t:
                       type: string
                       format: date-time
-                    v: {}
+                    v:
+                      type: number
+                      description: Bucket average in SI units (soc 0-1, m/s, m, kW, bar)
                     min:
                       type: number
                     max:

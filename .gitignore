@@ -33,3 +33,4 @@ test-results/
 !**/public/.well-known/**/*.pem
 coverage/
 apps/web/e2e/.auth/
+apps/web/public/vendor/

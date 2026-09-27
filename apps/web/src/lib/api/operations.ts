@@ -23,6 +23,10 @@ import {
   Pnl,
   PnlQuery,
   StatusEvent,
+  TelemetryQuery,
+  TelemetrySeries,
+  VehicleAlert,
+  AlertQuery,
   Vehicle,
   VehicleListItem,
   VehicleCreate,
@@ -121,6 +125,26 @@ export const getVehicle = op({
   org: "required",
   query: NoQuery,
   response: Vehicle,
+});
+
+export const getVehicleTelemetry = op({
+  operationId: "getVehiclesBy_idTelemetry",
+  method: "GET",
+  path: "/vehicles/{id}/telemetry",
+  stability: "stable",
+  org: "required",
+  query: TelemetryQuery,
+  response: TelemetrySeries,
+});
+
+export const getVehicleAlerts = op({
+  operationId: "getVehiclesBy_idAlerts",
+  method: "GET",
+  path: "/vehicles/{id}/alerts",
+  stability: "stable",
+  org: "required",
+  query: AlertQuery,
+  response: page(VehicleAlert),
 });
 
 export const getVehicleStatusEvents = op({
@@ -297,6 +321,8 @@ export const OPERATIONS: Operation[] = [
   getVehicles,
   postVehicle,
   getVehicle,
+  getVehicleTelemetry,
+  getVehicleAlerts,
   getVehicleStatusEvents,
   getVehicleChargingSessions,
   getFleetKpis,

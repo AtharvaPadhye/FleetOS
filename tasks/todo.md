@@ -74,7 +74,7 @@ Progress also logged in Obsidian: `claude_memory/projects/FleetOS/progress-log.m
 
 ## Phase 5 — Features
 - [x] 5.1 Fleet list (`/fleet`: status chips with counts, hub / battery / 30-day performance / search filters in the URL, server-side sort with `aria-sort`, pagination, column chooser + row density saved per user, CSV export of all matching rows, add vehicle by VIN (owner/admin), click-through to the vehicle, live refresh, all Part 4 states, phone layout with folded filters; one `listFleet` service behind the page and `GET /api/v1/vehicles` (now with `today`, `profitability`, `format=csv`) + `POST /vehicles`; shared realtime channel (fixed a double-join that dropped broadcasts); popovers capped to the viewport; phase plan in `docs/superpowers/plans/2026-09-27-phase-5-features.md`)
-- [ ] 5.2 Vehicle detail
+- [x] 5.2 Vehicle detail (`/fleet/[number]` with a header of live facts and tabs at their own URLs, arrow keys between them: Overview = MapLibre map (keyless CARTO basemap, worker served from `public/vendor`) with the car and its home-hub geofence + six 30-day indicators vs fleet average with good/watch/below-par flags; Operations = the day's timeline (status changes, alerts, charging, cabin/autonomy events, service costs) with Earlier/Later; Service = alerts + 90-day service costs; Financials = P&L vs fleet average with flags, accounting/economic toggle, period pills; Telemetry = field picker, 1h/24h/7d, dataviz-checked step chart that breaks after an hour without data, text summary and table. KPI/P&L logic moved into shared services; new `GET /vehicles/{id}/telemetry` and `/alerts`; `hub_list` view; margin flag treats ±0.5 pt as on par)
 - [ ] 5.3 Overview
 - [ ] 5.4 Exceptions engine
 - [ ] 5.5 Service tickets
