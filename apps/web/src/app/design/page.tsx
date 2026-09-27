@@ -4,7 +4,7 @@ import { DataSourceBadge } from "@fleetos/ui/components/data-source-badge";
 import { SeverityBadge, type Severity } from "@fleetos/ui/components/severity-badge";
 import { StatusBadge, STATUS_META, type VehicleStatus } from "@fleetos/ui/components/status-badge";
 
-export const metadata: Metadata = { title: "Foundation" };
+export const metadata: Metadata = { title: "Design system" };
 
 const statuses = Object.keys(STATUS_META) as VehicleStatus[];
 const severities: Severity[] = ["critical", "high", "medium", "low"];
@@ -20,17 +20,16 @@ const moneyStrip = [
   { label: "Revenue at risk", value: "−$590", loss: true },
 ];
 
-export default function FoundationPage() {
+export default function DesignSystemPage() {
   return (
     <main className="mx-auto flex max-w-5xl flex-col gap-10 px-6 py-12">
       <header className="flex flex-col gap-2">
-        <p className="text-label font-semibold tracking-[0.06em] text-fg-muted uppercase">FleetOS · foundation</p>
+        <p className="text-label font-semibold tracking-[0.06em] text-fg-muted uppercase">FleetOS · design system</p>
         <h1 className="font-display text-display-l font-semibold [font-stretch:112.5%]">
           Operations control tower for autonomous fleets
         </h1>
         <p className="max-w-2xl text-fg-muted">
-          This page previews the design system while the app is being built. The app shell arrives in task 2.5; live
-          data arrives with the simulator in Phase 3.
+          This page previews the design system tokens and components. Live data arrives with the simulator in Phase 3.
         </p>
         <div>
           <DataSourceBadge source="simulated" />

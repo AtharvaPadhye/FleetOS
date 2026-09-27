@@ -1,15 +1,15 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
-test("foundation page renders the design system", async ({ page }) => {
-  await page.goto("/");
+test("design system page renders tokens and components", async ({ page }) => {
+  await page.goto("/design");
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Operations control tower");
   await expect(page.getByRole("button", { name: "Dispatch cleaner" })).toBeVisible();
   await expect(page.getByText("Simulated").first()).toBeVisible();
 });
 
-test("foundation page has no WCAG 2.2 AA violations", async ({ page }) => {
-  await page.goto("/");
+test("design system page has no WCAG 2.2 AA violations", async ({ page }) => {
+  await page.goto("/design");
   const results = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
     .analyze();
@@ -25,7 +25,7 @@ test("health endpoint and security headers", async ({ request }) => {
 });
 
 test("primary button text is readable (computed contrast ≥ 4.5:1)", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/design");
   const ratio = await page.getByRole("button", { name: "Dispatch cleaner" }).evaluate((el) => {
     const parse = (c: string) => (c.match(/[\d.]+/g) ?? []).slice(0, 3).map(Number);
     const lum = ([r, g, b]: number[]) => {

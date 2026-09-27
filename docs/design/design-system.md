@@ -82,7 +82,7 @@ Three layers: **primitive** (raw values, never used in components) → **semanti
 | `neutral-750` | `#252D39` | divider |
 | `neutral-700` | `#33404F` | strong divider |
 | `neutral-600` | `#627085` | control border (≥ 3.37:1 on all surfaces) |
-| `neutral-500` | `#7B8796` | subtle text (≥ 4.64:1) |
+| `neutral-500` | `#838F9E` | subtle text (≥ 4.69:1 on all four surfaces; was `#7B8796`, which failed on overlay at 4.21:1, fixed in task 2.5) |
 | `neutral-400` | `#8D98A6` | offline status |
 | `neutral-300` | `#A1ACBA` | muted text (≥ 7.36:1) |
 | `neutral-200` | `#C9D1DB` | secondary emphasis |
@@ -99,7 +99,7 @@ Three layers: **primitive** (raw values, never used in components) → **semanti
 | `red` | `#FF6B6B` | `#C23434` | critical, incident |
 | `ember` | `#FF8A52` | `#B8461A` | **money being lost** (Bleed line only) |
 
-All signal hues on dark surfaces: ≥ 6.1:1; on paper: ≥ 4.59:1.
+All signal hues on dark surfaces (canvas, surface, raised **and overlay**): ≥ 5.27:1; on paper: ≥ 4.59:1. Contrast must be checked on every surface a token can sit on, including popovers and dialogs.
 
 **Paper neutrals:** canvas `#F7F6F2`, card `#FFFFFF`, ink `#16202B` (15.2:1), ink-muted `#56616E` (5.8:1), ink-subtle `#5F6874` (5.2:1), control border `#7A8490` (3.5:1), divider `#E3E1DA`.
 

@@ -38,7 +38,7 @@ Progress also logged in Obsidian: `claude_memory/projects/FleetOS/progress-log.m
 - [x] 2.2 Next.js app + CI + `pnpm substitutes` marker inventory (Next 16.3.6, React 19.2.8, Tailwind 4.3.3, TS 6.0.3, ESLint 9.39.5, Vitest 5, Playwright 1.63; 21 ui + 1 web unit tests, 4 script tests, 8 e2e incl. axe WCAG 2.2 AA)
 - [ ] 2.3 Supabase baseline + RLS tests — waiting for Supabase project creation (Supabase confirmed, ADR-0015)
 - [ ] 2.4 Auth, orgs, roles — **parked** (depends on 2.3)
-- [ ] 2.5 App shell
+- [x] 2.5 App shell (sidebar with 9 sections, header with org/date/freshness, ⌘K menu, phone nav sheet, skip link, focus on navigate, honest section placeholders; typed routes; 38 e2e incl. axe on every page + open menu)
 - [ ] 2.6 Env + observability — local parts can proceed; hosted parts parked with 2.3
 - [ ] Phase 2 exit check → checkpoint
 

@@ -17,7 +17,7 @@
   --fo-neutral-750: #252d39;
   --fo-neutral-700: #33404f;
   --fo-neutral-600: #627085;
-  --fo-neutral-500: #7b8796;
+  --fo-neutral-500: #838f9e; /* ≥ 4.69:1 on all four dark surfaces incl. overlay */
   --fo-neutral-400: #8d98a6;
   --fo-neutral-300: #a1acba;
   --fo-neutral-200: #c9d1db;

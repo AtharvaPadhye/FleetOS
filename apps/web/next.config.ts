@@ -11,6 +11,7 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  typedRoutes: true,
   // @fleetos/ui ships TypeScript source (no build step); Next compiles it.
   transpilePackages: ["@fleetos/ui"],
   async headers() {
