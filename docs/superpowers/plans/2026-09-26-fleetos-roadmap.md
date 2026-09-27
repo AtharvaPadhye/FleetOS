@@ -29,6 +29,7 @@ Full reasoning for architecture decisions: `docs/architecture/adr/` (ADR-0001…
 | API versioning | **Single `/api/v1` with per-endpoint stability tags.** `stable` = backed by a source we have today (Tesla Fleet API fields, native records, CSV imports). `preview` = placeholder for a source we don't have yet (platform rides/earnings, cabin & autonomy events, dispatch, charger/vendor/tariff feeds): simulated in demo orgs, `501 capability_unavailable` elsewhere, shape may change until it goes stable. `/api/v2` is reserved for real breaking changes. See §3a | `/v1` = available + `/v2` = future: misuses versions to mean source availability, so a real breaking change to v1 would have to jump to v3 (decided 2026-09-26, then reversed the same day) |
 | Requirements defaults | Recommended answers to the open questions in `prd.md` §9, `kpis.md` §7 and `vehicle-states.md` §9 accepted by Akshat on 2026-09-26 (contribution = revenue − variable costs, proposed grade weights, 24 h service window, 40% low-SOC, Incident outranks Offline, …) | — |
 | Substitute data | Every stand-in for a real source (simulator, CSV, manual, inferred, static, fixture) carries a `SUBSTITUTE(<capability>, <kind>)` comment with the real source and replacement step; inventoried by `pnpm substitutes`. Rule lives in `CLAUDE.md` | Tracking substitutes only in docs (drifts from code) |
+| Prototype infra | **Vercel + Supabase only** (free tiers) with a per-minute `pg_cron` tick until a real Tesla is connected; always-on container + domain added in task 4.0 (ADR-0014) | Fly worker from day one (cost/setup with no prototype benefit) |
 | Charts | Recharts (or ECharts for dense time-series), validated with the `dataviz` skill | — |
 
 ## 1. What the MVP implements (inventory)
@@ -174,7 +175,7 @@ Exit: on a Vercel preview URL you can sign in, create/switch org, and navigate t
 - **2.3 Supabase baseline** — local CLI stack, migrations for orgs/memberships/profiles, `auth.org_ids()` helper, RLS policies, pgTAP isolation tests.
 - **2.4 Auth + orgs + roles** — magic link + Google; roles owner/admin/ops/finance/viewer; middleware route protection; org switcher.
 - **2.5 App shell** — sidebar, header, 9 routes, ⌘K palette stub, mobile nav, ported from MVP look.
-- **2.6 Env + observability** — zod env schema, Sentry, structured logs, Vercel previews, Supabase remote project.
+- **2.6 Env + observability** — zod env schema, Sentry (free), structured logs, Vercel previews, Supabase remote project (free tiers per ADR-0014).
 
 ### Phase 3 — Data platform & simulator (API implementation, part 1)
 Exit: simulator runs 24 h for 84 Cybercabs across 3 Phoenix hubs; state, rides, costs, status events land in Postgres; KPI views match hand-calculated fixtures.
@@ -182,7 +183,7 @@ Exit: simulator runs 24 h for 84 Cybercabs across 3 Phoenix hubs; state, rides, 
 - **3.2 Vehicle/hub schema** — hubs, chargers, bays, vehicles, vehicle_state_current, telemetry_samples (partitioned), status_events + RLS.
 - **3.3 `VehicleProvider` interface** — `listVehicles`, `getSnapshot`, `streamTelemetry`, `sendCommand`; contract tests any provider must pass.
 - **3.4 Simulator provider** — seeded RNG; Phoenix geography; SOC drain/charge; trips with fares; events (cleanliness, tire pressure, fault, breakdown, offline); emits Tesla-shaped payloads.
-- **3.5 Worker ingestion** — `apps/worker` Dockerfile; normalize → upsert current state, append samples, derive status events; Realtime broadcast; deploy to Fly.
+- **3.5 Engine + tick** — `packages/engine` (ingest → normalise → upsert current state, append samples, derive status events, rules, SLA sweep, rollups) run by a per-minute `pg_cron` → tick route (ADR-0014); Realtime via Postgres Changes. No Fly yet; `apps/worker` container comes in Phase 4.
 - **3.6 Rides & revenue + CSV import** — `rides`, `revenue_imports`, revenue categories in `ledger_entries`; payout CSV importer with column mapping + validation report; default layout modelled on the Uber Fleet Portal vehicle-earnings export.
 - **3.7 Cost ledger** — hub tariffs → energy cost; vendor job costs; per-vehicle allocations (insurance, financing, platform fees) → cost categories in `ledger_entries` (one ledger, see `docs/architecture/erd.md`).
 - **3.8 Stable read APIs + rollups** — `/api/v1` fleet list (filter/sort/paginate), vehicle detail, KPI materialized views refreshed by worker; Realtime subscriptions.
@@ -190,6 +191,7 @@ Exit: simulator runs 24 h for 84 Cybercabs across 3 Phoenix hubs; state, rides, 
 
 ### Phase 4 — Tesla Fleet API (read-only)
 Exit: a real Tesla (any model; there's no sandbox) connected via OAuth, with the virtual key paired, appears in the fleet within 60 s with live SOC/location via Fleet Telemetry. CI runs recorded-fixture contract tests. Prerequisite: payment method on the Tesla developer account (default billing limit is $0).
+- **4.0 Always-on infrastructure** — custom domain; one container host (Fly or equivalent) for `apps/worker` + `tesla/fleet-telemetry` + Redis; move the tick's `packages/engine` into the worker; pg-boss + Broadcast per ADR-0007/0010/0011.
 - **4.1 Registration** — EC P-256 keypair, public key at `/.well-known/appspecific/com.tesla.3p.public-key.pem` on the product domain (must match `allowed_origins`), partner token + `POST /api/1/partner_accounts` script per region.
 - **4.1a Virtual key + command proxy** — pairing flow (`https://tesla.com/_ak/<domain>?vin=`), per-vehicle key status from `fleet_status`, `tesla-http-proxy` deployed in the worker with the private key in Vault. Required for signing telemetry configs; commands stay disabled until Phase 7.
 - **4.2 OAuth** — business-token consent flow (Tesla-for-Business `auth_code`) first, personal OAuth second; all token calls to `fleet-auth.prd.vn.cloud.tesla.com` with regional `audience`; single-use refresh tokens stored atomically in Supabase Vault; refresh job; region lookup; disconnect.

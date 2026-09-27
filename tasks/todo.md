@@ -12,6 +12,7 @@ Progress also logged in Obsidian: `claude_memory/projects/FleetOS/progress-log.m
 - [x] Git workflow: commit + push `tasks/todo.md` with every task, directly to `main`
 - [x] Open questions from 0.1–0.3 resolved with recommended defaults
 - [x] Research archive + `SUBSTITUTE(...)` code-marker convention (`CLAUDE.md`)
+- [x] ADR-0014: prototype on Vercel + Supabase only (free tiers); container + domain from Phase 4
 - [x] API versioning: single `/api/v1`; `stable` vs `preview` (placeholder) tags; `/api/v2` reserved for breaking changes
 
 ## Phase 0 — Requirements & discovery
@@ -44,7 +45,7 @@ Progress also logged in Obsidian: `claude_memory/projects/FleetOS/progress-log.m
 - [ ] 3.2 Vehicle/hub schema
 - [ ] 3.3 VehicleProvider interface + contract tests
 - [ ] 3.4 Simulator provider
-- [ ] 3.5 Worker ingestion (Fly)
+- [ ] 3.5 Engine + per-minute tick (pg_cron, no Fly yet)
 - [ ] 3.6 Rides & revenue + CSV import
 - [ ] 3.7 Cost ledger
 - [ ] 3.8 Stable read APIs + rollups
@@ -52,6 +53,7 @@ Progress also logged in Obsidian: `claude_memory/projects/FleetOS/progress-log.m
 - [ ] Phase 3 exit check → checkpoint
 
 ## Phase 4 — Tesla Fleet API (read)
+- [ ] 4.0 Always-on container + custom domain (ADR-0014 switch-over)
 - [ ] 4.1 Registration + public key
 - [ ] 4.1a Virtual key pairing + command proxy (needed for telemetry)
 - [ ] 4.2 OAuth + token vault

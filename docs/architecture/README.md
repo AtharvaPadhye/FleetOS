@@ -4,6 +4,8 @@
 
 ## 1. System context
 
+> **Prototype stage (ADR-0014):** until a real Tesla is connected, the Fly.io box below doesn't exist. A per-minute `pg_cron` tick runs the same `packages/engine` code, the simulator feeds it directly, and live updates use Postgres Changes. The diagram shows the target from Phase 4.
+
 ```mermaid
 flowchart LR
   subgraph Users
@@ -120,6 +122,7 @@ User question → server route calls Claude with tools → each tool calls `/api
 | [0011](adr/0011-realtime-updates-via-supabase-realtime.md) | Realtime via Supabase (Broadcast + Postgres Changes) |
 | [0012](adr/0012-mark-every-substitute-data-source-in-code.md) | Mark every substitute data source in code |
 | [0013](adr/0013-copilot-rls-scoped-tools-propose-only.md) | Copilot: RLS-scoped tools, propose-only actions |
+| [0014](adr/0014-prototype-infrastructure-vercel-supabase-only.md) | **Prototype:** Vercel + Supabase only; per-minute `pg_cron` tick instead of worker/Redis/Fly until Phase 4 |
 
 ## 7. To verify when building (Phase 2)
 - TimescaleDB availability on our Supabase Postgres version (ADR-0009).

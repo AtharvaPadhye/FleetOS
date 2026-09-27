@@ -18,3 +18,6 @@ SLA countdowns, escalations, rollups, partition maintenance, report generation a
 - BullMQ on Redis: Redis is fire-and-forget in our setup (ADR-0007) and adds persistence concerns.
 - Supabase pg_cron + pgmq: workable but Supabase-specific.
 - Vercel cron: not durable per-ticket timers.
+
+## Prototype note (ADR-0014)
+Until Phase 4, this decision is implemented in a simplified form: a once-a-minute `pg_cron` tick replaces the always-on worker. See ADR-0014.

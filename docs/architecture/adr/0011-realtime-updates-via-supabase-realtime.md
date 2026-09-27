@@ -19,3 +19,6 @@ Screens must reflect telemetry within 15 s p95 (NFR PERF-1) and show new excepti
 ## Alternatives rejected
 - Postgres Changes for telemetry: too much write amplification.
 - SSE from Next.js route handlers: serverless timeouts on Vercel.
+
+## Prototype note (ADR-0014)
+Until Phase 4, this decision is implemented in a simplified form: a once-a-minute `pg_cron` tick replaces the always-on worker. See ADR-0014.

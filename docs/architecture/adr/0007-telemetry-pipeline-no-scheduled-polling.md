@@ -19,3 +19,6 @@ Tesla bills per request; polling `vehicle_data` every minute costs ~$72 per car 
 ## Alternatives rejected
 - Kafka: operationally heavy for pilot scale.
 - Polling: 18× the cost and battery drain.
+
+## Prototype note (ADR-0014)
+Until Phase 4, this decision is implemented in a simplified form: a once-a-minute `pg_cron` tick replaces the always-on worker. See ADR-0014.

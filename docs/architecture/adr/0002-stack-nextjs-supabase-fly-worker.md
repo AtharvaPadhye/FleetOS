@@ -22,3 +22,6 @@ FleetOS needs a web app, Postgres with row-level security, auth, realtime update
 - **AWS (ECS, RDS + Timescale, Redis, Redpanda, KMS):** 2–3× setup, $250–600/month floor, idle at pilot scale.
 - **Keep the vanilla-JS prototype:** innerHTML templates don't scale to 12 data-driven screens.
 - **Vite SPA instead of Next.js:** viable; Next.js chosen for route handlers + server-side auth in one deployable.
+
+## Prototype note (ADR-0014)
+Until Phase 4, this decision is implemented in a simplified form: a once-a-minute `pg_cron` tick replaces the always-on worker. See ADR-0014.
