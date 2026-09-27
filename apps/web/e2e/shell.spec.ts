@@ -65,7 +65,7 @@ test("skip link moves focus to the main content", async ({ page }) => {
 });
 
 test("placeholders never show fake numbers", async ({ page }) => {
-  for (const s of SECTIONS.filter((x) => x.path !== "/financials")) {
+  for (const s of SECTIONS.filter((x) => !["/financials", "/fleet"].includes(x.path))) {
     await page.goto(s.path);
     await expect(page.getByText("is being built")).toBeVisible();
     await expect(page.locator("main")).not.toContainText("$");

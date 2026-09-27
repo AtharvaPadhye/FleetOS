@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { CAPABILITIES, CAPABILITY_STATES, LEDGER_CATEGORIES, VEHICLE_STATUSES } from "@fleetos/domain";
 import { PeriodQuery } from "./period";
+import { FLEET_SORTS } from "../services/fleet-sorts";
 
 /**
  * Response and request schemas for /api/v1 (task 3.8). Each mirrors a schema in
@@ -90,6 +91,8 @@ export const VehicleState = z.object({
   charge_state: z.string().nullable(),
   charge_power_kw: z.number().nullable(),
   location: GeoPoint.nullable(),
+  /** Hub name when inside one, "On the road" otherwise. */
+  location_name: z.string().nullable().optional(),
   heading: z.number().nullable(),
   speed_mps: z.number().nullable(),
   odometer_m: z.number().nullable(),
@@ -105,8 +108,19 @@ export const VehicleListItem = z.object({
   id: z.uuid(),
   number: z.string(),
   vin: z.string(),
+  display_name: z.string().nullable().optional(),
   home_hub: z.object({ id: z.uuid(), name: z.string() }).nullable(),
   state: VehicleState,
+  /** Today in the org's time zone; money is null without money access. */
+  today: z
+    .object({
+      revenue_cents: cents.nullable(),
+      contribution_cents: cents.nullable(),
+      revenue_per_available_hour_cents: cents.nullable(),
+      downtime_min: z.number().int(),
+    })
+    .optional(),
+  profitability: z.enum(["strong", "monitor", "review"]).nullable().optional(),
 });
 
 export const Vehicle = VehicleListItem.extend({
@@ -151,7 +165,7 @@ export const Cursor = z.string().max(200).optional();
 const listOf = <T extends z.ZodType>(item: T) =>
   z.preprocess((v) => (v === undefined || Array.isArray(v) ? v : [v]), z.array(item)).optional();
 
-export const VEHICLE_SORTS = ["number", "status", "soc", "status_since", "last_telemetry_at"] as const;
+export const VEHICLE_SORTS = FLEET_SORTS;
 
 export const VehicleListQuery = z.strictObject({
   status: listOf(VehicleStatus),
@@ -159,9 +173,12 @@ export const VehicleListQuery = z.strictObject({
   soc_lt: z.coerce.number().min(0).max(1).optional(),
   soc_gte: z.coerce.number().min(0).max(1).optional(),
   q: z.string().trim().max(80).optional(),
+  profitability: z.enum(["strong", "monitor", "review"]).optional(),
   sort: z.enum([...VEHICLE_SORTS, ...VEHICLE_SORTS.map((s) => `-${s}` as const)]).default("number"),
   limit: Limit,
   cursor: Cursor,
+  /** csv: every matching vehicle (all pages) as a download (PRD FL-4). */
+  format: z.enum(["json", "csv"]).default("json"),
 });
 
 export const HistoryQuery = z.strictObject({
@@ -332,3 +349,21 @@ export const RideListQuery = HistoryQuery.extend({ vehicle_id: z.uuid().optional
 export const TariffLiveQuery = z.strictObject({ hub_id: z.uuid().optional() });
 /** Webhook body: vendors may not know an ETA, location or evidence yet. */
 export const VendorTrackingUpdate = VendorTracking.partial({ eta_at: true, location: true, evidence_urls: true });
+
+/** POST /vehicles: add a vehicle manually (owner/admin). VIN check digit validated in the service. */
+export const VehicleCreate = z.strictObject({
+  vin: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .regex(/^[A-HJ-NPR-Z0-9]{17}$/, "A VIN is 17 letters and digits (no I, O or Q)."),
+  number: z
+    .string()
+    .trim()
+    .regex(/^[A-Za-z0-9-]{1,12}$/, "Up to 12 letters, digits or dashes."),
+  display_name: z.string().trim().max(60).optional(),
+  home_hub_id: z.uuid().optional(),
+  insurance_monthly_cents: z.number().int().min(0).max(100_000_00).optional(),
+  financing_monthly_cents: z.number().int().min(0).max(100_000_00).optional(),
+});
+export type VehicleCreate = z.infer<typeof VehicleCreate>;

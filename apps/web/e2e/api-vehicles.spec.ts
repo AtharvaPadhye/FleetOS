@@ -140,8 +140,8 @@ test("filters by status, SOC, hub and search, and sorts", async ({ request }) =>
 });
 
 test("rejects unknown parameters and bad cursors with 400", async ({ request }) => {
-  const unsupported = await (await get(request, owner, "/vehicles?profitability=strong")).json();
-  expect(unsupported).toMatchObject({ error: "invalid_request", details: [{ param: "profitability" }] });
+  const unsupported = await (await get(request, owner, "/vehicles?issue=tyre")).json();
+  expect(unsupported).toMatchObject({ error: "invalid_request", details: [{ param: "issue" }] });
   expect((await get(request, owner, "/vehicles?cursor=nope")).status()).toBe(400);
 });
 

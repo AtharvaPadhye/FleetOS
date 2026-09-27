@@ -56,6 +56,8 @@ export interface ApiContext<Q, B = unknown> {
 }
 
 export interface ApiResult<R> {
+  /** A non-JSON response (e.g. a CSV download), sent as-is with the standard headers added. */
+  raw?: Response;
   body: R;
   dataSource?: DataSource;
   status?: number;
@@ -199,6 +201,11 @@ export function apiRoute<Q extends z.ZodType, R extends z.ZodType, B extends z.Z
         body: requestBody as z.infer<B>,
         params: (await route?.params) ?? {},
       });
+      if (result.raw) {
+        for (const [k, v] of headers) if (!result.raw.headers.has(k)) result.raw.headers.set(k, v);
+        if (result.dataSource) result.raw.headers.set("X-FleetOS-Data-Source", result.dataSource);
+        return result.raw;
+      }
       const body = op.response.safeParse(result.body);
       if (!body.success) {
         console.error(`[api] ${op.operationId} response failed its schema`, requestId, body.error.issues.slice(0, 5));

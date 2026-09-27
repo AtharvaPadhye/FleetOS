@@ -25,6 +25,7 @@ import {
   StatusEvent,
   Vehicle,
   VehicleListItem,
+  VehicleCreate,
   VehicleKpis,
   VehicleListQuery,
   page,
@@ -98,6 +99,18 @@ export const getVehicles = op({
   org: "required",
   query: VehicleListQuery,
   response: page(VehicleListItem),
+});
+
+export const postVehicle = op({
+  operationId: "postVehicles",
+  method: "POST",
+  path: "/vehicles",
+  stability: "stable",
+  org: "required",
+  roles: ["owner", "admin"],
+  query: NoQuery,
+  body: VehicleCreate,
+  response: Vehicle,
 });
 
 export const getVehicle = op({
@@ -282,6 +295,7 @@ export const OPERATIONS: Operation[] = [
   getOrgs,
   getCapabilities,
   getVehicles,
+  postVehicle,
   getVehicle,
   getVehicleStatusEvents,
   getVehicleChargingSessions,

@@ -4395,6 +4395,10 @@ components:
           type: string
         vin:
           type: string
+        display_name:
+          oneOf:
+            - type: string
+            - type: "null"
         home_hub:
           oneOf:
             - type: object
@@ -4442,6 +4446,15 @@ components:
         next_action:
           oneOf:
             - type: string
+            - type: "null"
+        profitability:
+          description: Performance label over the last 30 days (kpis.md §3.7); null without money access or history
+          oneOf:
+            - type: string
+              enum:
+                - strong
+                - monitor
+                - review
             - type: "null"
     Vehicle:
       allOf:
@@ -4510,6 +4523,9 @@ components:
           pattern: ^[A-HJ-NPR-Z0-9]{17}$
         number:
           type: string
+        display_name:
+          type: string
+          maxLength: 60
         home_hub_id:
           type: string
           format: uuid

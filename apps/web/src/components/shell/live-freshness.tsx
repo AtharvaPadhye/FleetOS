@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { browserClient } from "@/lib/supabase/browser";
+import { subscribeOrgChannel } from "@/lib/realtime/org-channel";
 
 /**
  * The prototype ticks every minute (ADR-0014), so "live" allows up to 2.5 minutes; amber up to 5 minutes,
@@ -17,24 +17,21 @@ export function LiveFreshness({ orgId, lastTickAt }: { orgId: string; lastTickAt
     return () => clearInterval(timer);
   }, []);
 
-  useEffect(() => {
-    const supabase = browserClient();
-    let cancelled = false;
-    const channel = supabase
-      .channel(`org:${orgId}:vehicles`, { config: { private: true } })
-      .on("broadcast", { event: "state" }, () => {
-        const t = Date.now();
-        setLast(t);
-        setNow(t);
-      });
-    void supabase.realtime.setAuth().then(() => {
-      if (!cancelled) channel.subscribe((status) => setConnected(status === "SUBSCRIBED"));
-    });
-    return () => {
-      cancelled = true;
-      void supabase.removeChannel(channel);
-    };
-  }, [orgId]);
+  useEffect(
+    () =>
+      subscribeOrgChannel(
+        orgId,
+        "vehicles",
+        (event) => {
+          if (event !== "state") return;
+          const t = Date.now();
+          setLast(t);
+          setNow(t);
+        },
+        setConnected,
+      ),
+    [orgId],
+  );
 
   if (last === null) {
     return (

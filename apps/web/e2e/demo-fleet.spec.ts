@@ -23,12 +23,19 @@ test.describe("demo fleet", () => {
     const chip = page.locator("[data-realtime]");
     await expect(chip).toHaveAttribute("data-realtime", "connected", { timeout: 15_000 });
     const before = await chip.getAttribute("data-last-update");
-    await page.waitForTimeout(6_000); // the tick skips an org ticked in the last 5 s
-    const tick = await page.request.post("/api/internal/tick", {
-      headers: { Authorization: `Bearer ${process.env.TICK_SECRET}` },
-    });
-    expect(tick.status()).toBe(200);
-    await expect(chip).not.toHaveAttribute("data-last-update", before ?? "", { timeout: 30_000 });
+    // Tick until a broadcast lands. Other tests also call the tick, and it skips an org ticked in the last
+    // 5 s, so one call isn't guaranteed to produce a new broadcast for this org.
+    await expect
+      .poll(
+        async () => {
+          await page.request.post("/api/internal/tick", {
+            headers: { Authorization: `Bearer ${process.env.TICK_SECRET}` },
+          });
+          return chip.getAttribute("data-last-update");
+        },
+        { timeout: 45_000, intervals: [6_000] },
+      )
+      .not.toBe(before);
     await expect(chip).toContainText("Live");
 
     // Costs are booked from day one: today's insurance and financing for all 84 cars (task 3.7).

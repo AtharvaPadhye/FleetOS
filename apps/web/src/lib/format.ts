@@ -27,3 +27,16 @@ export function formatHours(hours: number): string {
 }
 
 export const formatRatePerHour = (centsPerHour: number) => `${usd2.format(centsPerHour / 100)}/h`;
+
+/** "12 s ago", "7 min ago", "3 h ago", "2 d ago"; null → "—". */
+export function formatAge(iso: string | null, now = Date.now()): string {
+  if (!iso) return "—";
+  const s = Math.max(0, Math.round((now - Date.parse(iso)) / 1000));
+  if (s < 90) return `${s} s ago`;
+  if (s < 90 * 60) return `${Math.round(s / 60)} min ago`;
+  if (s < 36 * 3600) return `${Math.round(s / 3600)} h ago`;
+  return `${Math.round(s / 86400)} d ago`;
+}
+
+/** Minutes as "0 m", "47 m", "2 h 05 m". */
+export const formatMinutes = (min: number) => formatHours(min / 60).replace(/^0 m$/, "0 m");
