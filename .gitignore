@@ -34,3 +34,6 @@ test-results/
 coverage/
 apps/web/e2e/.auth/
 apps/web/public/vendor/
+
+# Throwaway scripts run from inside the repo (e.g. Playwright screenshots needing its node_modules)
+*.tmp.*

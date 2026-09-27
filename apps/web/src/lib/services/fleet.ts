@@ -6,7 +6,9 @@ import {
   performanceLabel,
   perHour,
   VEHICLE_STATUSES,
+  type ExceptionClass,
   type LedgerCategory,
+  type Severity,
   type PerformanceLabel,
   type VehicleStatus,
 } from "@fleetos/domain";
@@ -16,6 +18,7 @@ import { toHours, type MoneyRow } from "@/lib/api/kpis";
 import { localDay } from "@/lib/api/period";
 import { MONEY_ROLES, toVehicleListItem, VEHICLE_LIST_COLUMNS, type VehicleListRow } from "@/lib/api/vehicles";
 import type { OrgContext } from "@/lib/api/handler";
+import { openIssuesByVehicle } from "./exceptions";
 
 /**
  * The fleet list (task 5.1): one service behind both GET /api/v1/vehicles and the /fleet page, so they can't
@@ -26,6 +29,8 @@ import type { OrgContext } from "@/lib/api/handler";
 import { FLEET_SORTS, type FleetSort } from "./fleet-sorts";
 
 export { FLEET_SORTS, type FleetSort };
+export { FLEET_ISSUE_FILTERS, type FleetIssueFilter } from "./fleet-issues";
+import type { FleetIssueFilter } from "./fleet-issues";
 
 export interface FleetQuery {
   status?: VehicleStatus[];
@@ -34,6 +39,8 @@ export interface FleetQuery {
   soc_gte?: number;
   q?: string;
   profitability?: PerformanceLabel;
+  /** any / none: has an open exception or not; a class (e.g. `incident`) narrows to that kind. */
+  issue?: FleetIssueFilter;
   sort: FleetSort | `-${FleetSort}`;
   limit: number;
   offset: number;
@@ -51,6 +58,9 @@ export type FleetItem = ReturnType<typeof toVehicleListItem> & {
   location_name: string | null;
   today: FleetToday;
   profitability: PerformanceLabel | null;
+  /** The vehicle's most severe open exception (PRD FL-1). */
+  open_issue: { exception_id: string; type: string; title: string; severity: Severity; class: ExceptionClass } | null;
+  next_action: string | null;
 };
 
 export interface FleetResult {
@@ -117,7 +127,7 @@ export async function listFleet(
 
   const today = localDay(now, org.timezone);
   const from30 = addDays(today, -29);
-  const [rows, hubsRes, hoursToday, moneyToday, hours30, money30, settings, sizeRes] = await Promise.all([
+  const [rows, hubsRes, hoursToday, moneyToday, hours30, money30, settings, sizeRes, issues] = await Promise.all([
     allRows<VehicleListRow & { display_name: string | null }>((a, b) => {
       let q = db
         .from("vehicle_list")
@@ -143,6 +153,7 @@ export async function listFleet(
     canSeeMoney ? vehicleMoney(db, org.id, from30, today) : Promise.resolve(null),
     orgSettings(db, org.id),
     db.from("vehicles").select("id", { count: "exact", head: true }).eq("org_id", org.id).neq("lifecycle", "retired"),
+    openIssuesByVehicle(db, org.id, now),
   ]);
   const hubs = (hubsRes.data ?? []) as { id: string; name: string }[];
   const hubName = new Map(hubs.map((h) => [h.id, h.name]));
@@ -170,6 +181,7 @@ export async function listFleet(
         availability: t30.available / t30.scheduled,
         availabilityTarget: settings.availabilityTarget,
       });
+    const issue = issues.get(r.id);
     const location = r.current_hub_id
       ? (hubName.get(r.current_hub_id) ?? "At a hub")
       : r.lat !== null
@@ -186,6 +198,16 @@ export async function listFleet(
         downtime_min: t ? Math.round((t.plannedDowntime + t.unplannedDowntime) * 60) : 0,
       },
       profitability,
+      open_issue: issue
+        ? {
+            exception_id: issue.id,
+            type: issue.type,
+            title: issue.title,
+            severity: issue.severity,
+            class: issue.class,
+          }
+        : null,
+      next_action: issue?.recommended_action?.label ?? null,
     };
   });
 
@@ -195,6 +217,9 @@ export async function listFleet(
   let filtered = items;
   if (query.status?.length) filtered = filtered.filter((i) => query.status!.includes(i.state.status));
   if (query.profitability) filtered = filtered.filter((i) => i.profitability === query.profitability);
+  if (query.issue === "any") filtered = filtered.filter((i) => i.open_issue);
+  else if (query.issue === "none") filtered = filtered.filter((i) => !i.open_issue);
+  else if (query.issue) filtered = filtered.filter((i) => i.open_issue?.class === query.issue);
 
   const desc = query.sort.startsWith("-");
   const key = (i: FleetItem): number | string | null => {

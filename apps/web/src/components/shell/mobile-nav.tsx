@@ -10,7 +10,15 @@ import { SidebarNav } from "./sidebar-nav";
 import type { OrgSummary } from "@/lib/session";
 
 /** Below 1024px the sidebar becomes a sheet (design-system.md §2.4). */
-export function MobileNav({ orgs, active }: { orgs: OrgSummary[]; active: OrgSummary }) {
+export function MobileNav({
+  orgs,
+  active,
+  badges,
+}: {
+  orgs: OrgSummary[];
+  active: OrgSummary;
+  badges?: Record<string, number>;
+}) {
   const [open, setOpen] = useState(false);
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -29,7 +37,7 @@ export function MobileNav({ orgs, active }: { orgs: OrgSummary[]; active: OrgSum
           </SheetClose>
         </div>
         <OrgBlock orgs={orgs} active={active} />
-        <SidebarNav onNavigate={() => setOpen(false)} />
+        <SidebarNav onNavigate={() => setOpen(false)} badges={badges} />
       </SheetContent>
     </Sheet>
   );

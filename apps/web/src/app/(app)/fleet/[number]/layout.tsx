@@ -1,5 +1,7 @@
+import type { Route } from "next";
 import Link from "next/link";
 import { DataSourceBadge } from "@fleetos/ui/components/data-source-badge";
+import { SeverityBadge } from "@fleetos/ui/components/severity-badge";
 import { StatusBadge } from "@fleetos/ui/components/status-badge";
 import { LiveRefresh } from "@/components/live/live-refresh";
 import { TabNav } from "@/components/vehicle/tab-nav";
@@ -9,7 +11,7 @@ import { loadVehiclePage } from "@/lib/services/vehicle-page";
 /** Vehicle header (PRD VD-1) and tabs (VD-2), shared by every tab. */
 export default async function VehicleLayout({ params, children }: LayoutProps<"/fleet/[number]">) {
   const { number } = await params;
-  const { org, vehicle: v } = await loadVehiclePage(number);
+  const { org, vehicle: v, issues } = await loadVehiclePage(number);
   const base = `/fleet/${encodeURIComponent(v.number)}`;
   const s = v.state;
   const facts: [string, string][] = [
@@ -59,6 +61,26 @@ export default async function VehicleLayout({ params, children }: LayoutProps<"/
             </div>
           ))}
         </dl>
+        {issues.length ? (
+          <section aria-labelledby="open-issues" className="flex flex-col gap-2">
+            <h2 id="open-issues" className="text-label font-semibold text-fg-muted">
+              Open issues
+            </h2>
+            <ul className="flex flex-col gap-1">
+              {issues.map((e) => (
+                <li key={e.id} className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <SeverityBadge severity={e.severity} />
+                  <Link href={`/exceptions/${e.id}` as Route} className="underline underline-offset-4">
+                    {e.title}
+                  </Link>
+                  {e.recommended_action ? (
+                    <span className="text-label text-fg-muted">{e.recommended_action.label}</span>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
         {v.holds.length ? (
           <p role="status" className="rounded-sm border border-severity-high px-3 py-2 text-body">
             <span aria-hidden="true">◆ </span>Pulled from service: {v.holds.map((h) => h.reason).join("; ")}

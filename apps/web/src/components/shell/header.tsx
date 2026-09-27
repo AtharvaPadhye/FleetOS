@@ -15,10 +15,20 @@ function orgDate(timezone: string): string {
   }).format(new Date());
 }
 
-export function Header({ orgs, active, email }: { orgs: OrgSummary[]; active: OrgSummary; email: string }) {
+export function Header({
+  orgs,
+  active,
+  email,
+  badges,
+}: {
+  orgs: OrgSummary[];
+  active: OrgSummary;
+  email: string;
+  badges?: Record<string, number>;
+}) {
   return (
     <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-divider bg-canvas/95 px-4 backdrop-blur sm:px-6">
-      <MobileNav orgs={orgs} active={active} />
+      <MobileNav orgs={orgs} active={active} badges={badges} />
       <div className="flex min-w-0 flex-col leading-tight">
         <span className="truncate text-label font-semibold tracking-[0.06em] text-fg-muted uppercase">
           {active.city ?? active.name}

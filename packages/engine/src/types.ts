@@ -1,5 +1,6 @@
 import type { VehicleStatus } from "@fleetos/domain";
 import type { GeoPoint, TelemetryField } from "@fleetos/providers";
+import type { ExceptionCleared, ExceptionOpened, KnownException } from "./exceptions";
 
 export interface EngineHub {
   id: string;
@@ -40,6 +41,8 @@ export interface VehicleLive {
   lastTelemetryAt: Date | null;
   activeAlerts: string[];
   serviceMode: boolean;
+  /** Exception rules whose condition holds but hasn't lasted `for_min` yet: rule key → since (ISO). */
+  rulePending: Record<string, string>;
 }
 
 export interface StatusEventOut {
@@ -85,5 +88,6 @@ export interface TickResult {
   statusEvents: StatusEventOut[];
   samples: SampleOut[];
   alerts: AlertOut[];
-  counts: { events: number; statusChanges: number; samples: number; alerts: number };
+  exceptions: { opened: ExceptionOpened[]; cleared: ExceptionCleared[]; known: KnownException[] };
+  counts: { events: number; statusChanges: number; samples: number; alerts: number; exceptionsOpened: number };
 }

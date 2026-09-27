@@ -8,6 +8,8 @@ export interface FleetCsvRow {
   vin: string;
   home_hub: { name: string } | null;
   profitability?: string | null;
+  open_issue?: { title?: string; type: string; severity: string } | null;
+  next_action?: string | null;
   state: {
     status: string;
     soc: number | null;
@@ -45,6 +47,9 @@ export const FLEET_CSV_HEADER = [
   "Profitability (30 d)",
   "Last update (UTC)",
   "Data fresh",
+  "Open issue",
+  "Issue severity",
+  "Next action",
 ];
 
 export function fleetCsv(rows: readonly FleetCsvRow[]): string {
@@ -64,6 +69,9 @@ export function fleetCsv(rows: readonly FleetCsvRow[]): string {
       r.profitability,
       r.state.last_telemetry_at,
       r.state.fresh ? "yes" : "no",
+      r.open_issue ? (r.open_issue.title ?? r.open_issue.type) : null,
+      r.open_issue?.severity,
+      r.next_action,
     ]
       .map(cell)
       .join(","),

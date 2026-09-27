@@ -11,18 +11,25 @@ describe("fleet URL state", () => {
       sort: "-revenue",
       page: "3",
       per: "50",
+      issue: "incident",
     });
     expect(v).toEqual({
       status: ["charging", "cleaning"],
       hub: null,
       soc: "lt40",
       profitability: null,
+      issue: "incident",
       q: "047",
       sort: "-revenue",
       page: 3,
       per: 50,
     });
-    expect(parseFleetView({ sort: "-vin", per: "7", page: "-2" })).toMatchObject({ sort: "number", per: 25, page: 1 });
+    expect(parseFleetView({ sort: "-vin", per: "7", page: "-2", issue: "x" })).toMatchObject({
+      sort: "number",
+      per: 25,
+      page: 1,
+      issue: null,
+    });
   });
   it("round-trips and omits defaults", () => {
     const v = parseFleetView({ status: "charging", sort: "-soc" });

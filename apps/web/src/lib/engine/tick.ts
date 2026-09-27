@@ -13,6 +13,7 @@ import {
 import { demoHubPricing, ensureDemoVendors, writeCharging, writeOps } from "./costs";
 import { statePatches, statusMessages } from "./broadcast";
 import { writeAutonomyEvents, writeCabinEvents, type CabinEventRecord } from "./preview";
+import { loadExceptionState, writeExceptions } from "./exceptions";
 import type { StatusEventOut } from "@fleetos/engine";
 
 /**
@@ -70,7 +71,7 @@ export async function tickOrg(db: SupabaseClient, orgId: string, now = new Date(
     { data: hubRows, error: hErr },
     { data: liveRows, error: lErr },
   ] = await Promise.all([
-    db.from("orgs").select("timezone").eq("id", orgId).single(),
+    db.from("orgs").select("timezone, is_demo").eq("id", orgId).single(),
     db.from("vehicles").select("id, vin").eq("org_id", orgId),
     db.rpc("engine_hubs", { p_org: orgId }),
     db.rpc("engine_live_state", { p_org: orgId }),
@@ -96,8 +97,9 @@ export async function tickOrg(db: SupabaseClient, orgId: string, now = new Date(
   const day = (d: Date) => localDay.format(d);
   const pricing = await demoHubPricing(db, orgId);
   await ensureDemoVendors(db, orgId);
+  let exceptions = await loadExceptionState(db, orgId, Boolean(org?.is_demo));
   let minutes = 0;
-  const totals = { events: 0, statusChanges: 0, samples: 0, alerts: 0 };
+  const totals = { events: 0, statusChanges: 0, samples: 0, alerts: 0, exceptionsOpened: 0 };
   const startLive = previous;
   const replayFrom = provider.now(); // simulated time this tick starts replaying from
   const statusEvents: StatusEventOut[] = [];
@@ -121,8 +123,10 @@ export async function tickOrg(db: SupabaseClient, orgId: string, now = new Date(
     stopObserving();
     ac.abort();
     const roster = new Map((await provider.listVehicles()).map((v) => [v.vehicleRef, v.connectivity]));
-    const r = runTick(cfg, engineVehicles, previous, events, { from, to: provider.now() }, roster);
+    const r = runTick(cfg, engineVehicles, previous, events, { from, to: provider.now() }, roster, exceptions);
     await writeResult(db, orgId, r);
+    await writeExceptions(db, orgId, exceptions.rules, r.exceptions.opened, r.exceptions.cleared);
+    exceptions = { rules: exceptions.rules, known: r.exceptions.known };
     await writeRides(db, orgId, rides, vehicleIdByVin, day);
     await writeCharging(db, orgId, charges, vehicleIdByVin, pricing, timeZone, day);
     await writeOps(db, orgId, jobs, vehicleIdByVin, day);
@@ -195,6 +199,7 @@ async function writeResult(db: SupabaseClient, orgId: string, r: ReturnType<type
       current_hub_id: l.currentHubId,
       last_telemetry_at: l.lastTelemetryAt?.toISOString() ?? null,
       active_alerts: l.activeAlerts,
+      rule_pending: l.rulePending,
       updated_at: new Date().toISOString(),
     })),
     (b) => db.from("vehicle_state_current").upsert(b),
@@ -309,6 +314,7 @@ interface LiveRow {
   current_hub_id: string | null;
   last_telemetry_at: string | null;
   active_alerts: string[];
+  rule_pending: Record<string, string> | null;
 }
 
 const d = (s: string | null) => (s ? new Date(s) : null);
@@ -340,6 +346,7 @@ function fromRow(r: LiveRow): VehicleLive {
     lastTelemetryAt: d(r.last_telemetry_at),
     activeAlerts: r.active_alerts ?? [],
     serviceMode: false,
+    rulePending: r.rule_pending ?? {},
   };
 }
 

@@ -1,5 +1,6 @@
 import { VEHICLE_STATUSES, type VehicleStatus } from "@fleetos/domain";
 import { FLEET_SORTS, type FleetSort } from "./services/fleet-sorts";
+import { FLEET_ISSUE_FILTERS, type FleetIssueFilter } from "./services/fleet-issues";
 
 /**
  * View model for /fleet (task 5.1): parse the URL into a query, define the columns, build links that change
@@ -8,6 +9,7 @@ import { FLEET_SORTS, type FleetSort } from "./services/fleet-sorts";
 
 export const FLEET_COLUMNS = [
   { key: "status", label: "Status", sort: "status", money: false },
+  { key: "issue", label: "Open issue", money: false },
   { key: "soc", label: "Battery", sort: "soc", money: false, numeric: true },
   { key: "location", label: "Location", money: false },
   { key: "hub", label: "Home hub", money: false },
@@ -22,6 +24,7 @@ export type FleetColumnKey = (typeof FLEET_COLUMNS)[number]["key"];
 
 export const DEFAULT_COLUMNS: FleetColumnKey[] = [
   "status",
+  "issue",
   "soc",
   "location",
   "hub",
@@ -47,6 +50,7 @@ export interface FleetView {
   hub: string | null;
   soc: SocBand | null;
   profitability: "strong" | "monitor" | "review" | null;
+  issue: FleetIssueFilter | null;
   q: string;
   sort: FleetSort | `-${FleetSort}`;
   page: number;
@@ -68,11 +72,13 @@ export function parseFleetView(sp: SearchParams): FleetView {
   const soc = one(sp.soc);
   const prof = one(sp.profitability);
   const hub = one(sp.hub);
+  const issue = one(sp.issue);
   return {
     status: [...new Set(status)],
     hub: UUID.test(hub) ? hub : null,
     soc: soc in SOC_BANDS ? (soc as SocBand) : null,
     profitability: prof === "strong" || prof === "monitor" || prof === "review" ? prof : null,
+    issue: (FLEET_ISSUE_FILTERS as readonly string[]).includes(issue) ? (issue as FleetIssueFilter) : null,
     q: one(sp.q).trim().slice(0, 80),
     sort: sortOk ? (sort as FleetView["sort"]) : "number",
     page,
@@ -88,6 +94,7 @@ export function fleetHref(view: FleetView, change: Partial<FleetView> = {}): str
   if (v.hub) p.set("hub", v.hub);
   if (v.soc) p.set("soc", v.soc);
   if (v.profitability) p.set("profitability", v.profitability);
+  if (v.issue) p.set("issue", v.issue);
   if (v.q) p.set("q", v.q);
   if (v.sort !== "number") p.set("sort", v.sort);
   if (v.per !== 25) p.set("per", String(v.per));
@@ -109,7 +116,8 @@ export function toggleStatusHref(view: FleetView, s: VehicleStatus): string {
   return fleetHref(view, { status, page: 1 });
 }
 
-export const isFiltered = (v: FleetView) => Boolean(v.status.length || v.hub || v.soc || v.profitability || v.q);
+export const isFiltered = (v: FleetView) =>
+  Boolean(v.status.length || v.hub || v.soc || v.profitability || v.issue || v.q);
 
 /** Saved column choice, keeping only known keys in the canonical order. */
 export function visibleColumns(saved: unknown, canSeeMoney: boolean): FleetColumnKey[] {

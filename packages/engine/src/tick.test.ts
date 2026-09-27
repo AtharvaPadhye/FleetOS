@@ -1,4 +1,12 @@
-import { addHours, availability, emptyHours, hourTotals, statusHours, type StatusChange } from "@fleetos/domain";
+import {
+  addHours,
+  availability,
+  emptyHours,
+  hourTotals,
+  statusHours,
+  SYSTEM_RULES,
+  type StatusChange,
+} from "@fleetos/domain";
 import {
   PHOENIX,
   SimulatorProvider,
@@ -7,7 +15,7 @@ import {
   type ProviderEvent,
   type TelemetryEvent,
 } from "@fleetos/providers";
-import { classifyAlert } from "./alert-rules";
+import type { ExceptionState } from "./exceptions";
 import { defaultConfig } from "./config";
 import { hubPresence } from "./geo";
 import { applyTelemetry, emptyLive, runTick } from "./tick";
@@ -64,16 +72,6 @@ describe("hub presence with hysteresis", () => {
   });
 });
 
-describe("provisional alert rules", () => {
-  it("maps alert names to blocking classes", () => {
-    expect(classifyAlert("SIM_cabin_cleanliness_event")).toBe("cleaning");
-    expect(classifyAlert("SIM_DI_a175_driveInverterFault")).toBe("maintenance");
-    expect(classifyAlert("SIM_VCSEC_a217_vehicleImmobilized")).toBe("incident");
-    expect(classifyAlert("SIM_TPMS_w201_tirePressureLow")).toBe("incident");
-    expect(classifyAlert("VCFRONT_a361_washerFluidLowMomentary")).toBeNull();
-  });
-});
-
 describe("runTick", () => {
   const w = { from: t("2026-09-26T16:00:00Z"), to: t("2026-09-26T16:01:00Z") };
   const outside = { lat: 33.47, lng: -112.03 };
@@ -107,8 +105,9 @@ describe("runTick", () => {
     });
   });
 
-  it("a cleanliness alert blocks service immediately, and clearing it releases the car", () => {
-    const r1 = runTick(cfg, V, new Map(), [drive("2026-09-26T16:00:05Z")], w);
+  it("a cleanliness alert opens a blocking exception at once, and clearing it releases the car", () => {
+    const ex: ExceptionState = { rules: SYSTEM_RULES, known: [] };
+    const r1 = runTick(cfg, V, new Map(), [drive("2026-09-26T16:00:05Z")], w, undefined, ex);
     const prev = new Map(r1.live.map((l) => [l.vehicleId, l]));
     const alert: ProviderEvent = {
       kind: "alert",
@@ -118,11 +117,22 @@ describe("runTick", () => {
       startedAt: t("2026-09-26T16:01:30Z"),
       endedAt: null,
     };
-    const r2 = runTick(cfg, V, prev, [alert], { from: w.to, to: t("2026-09-26T16:02:00Z") });
+    const r2 = runTick(cfg, V, prev, [alert], { from: w.to, to: t("2026-09-26T16:02:00Z") }, undefined, {
+      rules: SYSTEM_RULES,
+      known: r1.exceptions.known,
+    });
     expect(r2.statusEvents).toEqual([
       expect.objectContaining({ to: "cleaning", at: t("2026-09-26T16:01:30Z"), causeType: "exception" }),
     ]);
     expect(r2.alerts).toHaveLength(1);
+    expect(r2.exceptions.opened).toEqual([
+      expect.objectContaining({
+        ruleKey: "cabin_cleanliness",
+        dedupeKey: "cabin_cleanliness:v1",
+        at: t("2026-09-26T16:01:30Z"),
+        trigger: expect.objectContaining({ alert: "SIM_cabin_cleanliness_event" }),
+      }),
+    ]);
     const cleared: ProviderEvent = { ...alert, endedAt: t("2026-09-26T16:02:10Z") } as ProviderEvent;
     const r3 = runTick(
       cfg,
@@ -130,8 +140,12 @@ describe("runTick", () => {
       new Map(r2.live.map((l) => [l.vehicleId, l])),
       [cleared, drive("2026-09-26T16:02:15Z")],
       { from: t("2026-09-26T16:02:00Z"), to: t("2026-09-26T16:04:00Z") },
+      undefined,
+      { rules: SYSTEM_RULES, known: r2.exceptions.known },
     );
     expect(r3.live[0]!.activeAlerts).toEqual([]);
+    expect(r3.exceptions.cleared).toEqual([expect.objectContaining({ dedupeKey: "cabin_cleanliness:v1" })]);
+    expect(r3.exceptions.known).toEqual([]);
     expect(r3.statusEvents.at(-1)).toMatchObject({ from: "cleaning", to: "in_service" });
   });
 
@@ -179,6 +193,7 @@ describe("a simulated day through the engine, one-minute ticks", () => {
     const roster = await provider.listVehicles();
     const vehicles = roster.map((r) => ({ id: r.vehicleRef, ref: r.vehicleRef }));
     let prev = new Map<string, VehicleLive>();
+    let ex: ExceptionState = { rules: SYSTEM_RULES, known: [] };
     const changes = new Map<string, StatusChange[]>();
     for (let m = 0; m < 24 * 60; m++) {
       const events: ProviderEvent[] = [];
@@ -188,7 +203,8 @@ describe("a simulated day through the engine, one-minute ticks", () => {
       await provider.advance(60_000);
       ac.abort();
       const conn = new Map((await provider.listVehicles()).map((v) => [v.vehicleRef, v.connectivity]));
-      const r = runTick(cfg, vehicles, prev, events, { from, to: provider.now() }, conn);
+      const r = runTick(cfg, vehicles, prev, events, { from, to: provider.now() }, conn, ex);
+      ex = { rules: SYSTEM_RULES, known: r.exceptions.known };
       for (const e of r.statusEvents)
         changes.set(e.vehicleId, [...(changes.get(e.vehicleId) ?? []), { at: e.at, to: e.to }]);
       prev = new Map(r.live.map((l) => [l.vehicleId, l]));

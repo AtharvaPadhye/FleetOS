@@ -1,6 +1,12 @@
 import { deriveStatus, shouldCommit, type StatusInputs } from "@fleetos/domain";
 import type { Connectivity, GeoPoint, ProviderEvent, TelemetryEvent } from "@fleetos/providers";
-import { blockingFrom } from "./alert-rules";
+import {
+  blockingFor,
+  evaluateRules,
+  type ExceptionCleared,
+  type ExceptionOpened,
+  type ExceptionState,
+} from "./exceptions";
 import { hubPresence } from "./geo";
 import type {
   AlertOut,
@@ -40,6 +46,7 @@ export const emptyLive = (vehicleId: string): VehicleLive => ({
   lastTelemetryAt: null,
   activeAlerts: [],
   serviceMode: false,
+  rulePending: {},
 });
 
 const num = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) ? v : null);
@@ -109,8 +116,12 @@ export function applyTelemetry(live: VehicleLive, e: TelemetryEvent): void {
   live.connectivity = "online";
 }
 
-function statusInputs(cfg: EngineConfig, live: VehicleLive, now: Date): StatusInputs {
-  const blocking = blockingFrom(live.activeAlerts);
+function statusInputs(
+  cfg: EngineConfig,
+  live: VehicleLive,
+  now: Date,
+  blocking: ReadonlySet<"incident" | "maintenance" | "cleaning">,
+): StatusInputs {
   const charging = live.chargeState === "charging" || live.chargeState === "starting";
   return {
     now,
@@ -155,7 +166,11 @@ export function runTick(
   events: readonly ProviderEvent[],
   window: { from: Date; to: Date },
   roster?: ReadonlyMap<string, Connectivity>,
+  exceptions: ExceptionState = { rules: [], known: [] },
 ): TickResult {
+  const ex: ExceptionState = { rules: exceptions.rules, known: exceptions.known.map((k) => ({ ...k })) };
+  const opened: ExceptionOpened[] = [];
+  const cleared: ExceptionCleared[] = [];
   const byRef = new Map(vehicles.map((v) => [v.ref, v]));
   const live = new Map<string, VehicleLive>();
   for (const v of vehicles) live.set(v.id, structuredClone(previous.get(v.id) ?? emptyLive(v.id)));
@@ -250,7 +265,10 @@ export function runTick(
     for (const v of vehicles) {
       const l = live.get(v.id)!;
       l.currentHubId = hubPresence(l.location, l.currentHubId, cfg.hubs);
-      const d = deriveStatus(statusInputs(cfg, l, now));
+      const r = evaluateRules(ex, l, now);
+      opened.push(...r.opened);
+      cleared.push(...r.cleared);
+      const d = deriveStatus(statusInputs(cfg, l, now, blockingFor(ex, v.id)));
       if (l.candidateStatus !== d.status) {
         l.candidateStatus = d.status;
         l.candidateSince = now;
@@ -276,6 +294,13 @@ export function runTick(
     statusEvents,
     samples,
     alerts,
-    counts: { events: eventCount, statusChanges: statusEvents.length, samples: samples.length, alerts: alerts.length },
+    exceptions: { opened, cleared, known: ex.known },
+    counts: {
+      events: eventCount,
+      statusChanges: statusEvents.length,
+      samples: samples.length,
+      alerts: alerts.length,
+      exceptionsOpened: opened.length,
+    },
   };
 }

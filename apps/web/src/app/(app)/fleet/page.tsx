@@ -4,6 +4,7 @@ import { CarFront, Download, SearchX } from "lucide-react";
 import { VEHICLE_STATUSES } from "@fleetos/domain";
 import { DataSourceBadge } from "@fleetos/ui/components/data-source-badge";
 import { EmptyState } from "@fleetos/ui/components/empty-state";
+import { SEVERITY_META } from "@fleetos/ui/components/severity-badge";
 import { StatusBadge } from "@fleetos/ui/components/status-badge";
 import { cn } from "@fleetos/ui/lib/cn";
 import { AddVehicleDialog } from "@/components/fleet/add-vehicle-dialog";
@@ -61,6 +62,7 @@ export default async function FleetPage({ searchParams }: { searchParams: Promis
       soc_gte: band && "soc_gte" in band ? band.soc_gte : undefined,
       q: view.q || undefined,
       profitability: view.profitability ?? undefined,
+      issue: view.issue ?? undefined,
       sort: view.sort,
       limit: view.per,
       offset: (view.page - 1) * view.per,
@@ -154,7 +156,9 @@ export default async function FleetPage({ searchParams }: { searchParams: Promis
             </ul>
           </section>
 
-          <FilterDisclosure active={[view.hub, view.soc, view.profitability, view.q].filter(Boolean).length}>
+          <FilterDisclosure
+            active={[view.hub, view.soc, view.profitability, view.issue, view.q].filter(Boolean).length}
+          >
             <AutoSubmitForm
               method="get"
               action="/fleet"
@@ -201,6 +205,21 @@ export default async function FleetPage({ searchParams }: { searchParams: Promis
                       {b.label}
                     </option>
                   ))}
+                </select>
+              </div>
+              <div className="flex flex-col gap-1">
+                <label htmlFor="issue" className="text-label text-fg-muted">
+                  Open issue
+                </label>
+                <select id="issue" name="issue" defaultValue={view.issue ?? ""} className={control}>
+                  <option value="">Any vehicle</option>
+                  <option value="any">Has an open issue</option>
+                  <option value="none">No open issue</option>
+                  <option value="incident">Incident</option>
+                  <option value="maintenance">Maintenance</option>
+                  <option value="cleaning">Cleaning</option>
+                  <option value="charging">Charging</option>
+                  <option value="other">Other</option>
                 </select>
               </div>
               {canSeeMoney ? (
@@ -407,6 +426,24 @@ function Cell({ k, v, lowSoc, now }: { k: FleetColumnKey; v: FleetItem; lowSoc: 
   switch (k) {
     case "status":
       return <StatusBadge status={v.state.status} />;
+    case "issue":
+      return v.open_issue ? (
+        <span className="flex flex-col">
+          <Link
+            href={`/exceptions/${v.open_issue.exception_id}` as Route}
+            className="inline-flex items-center gap-1.5 hover:underline"
+          >
+            <span aria-hidden="true" className={SEVERITY_META[v.open_issue.severity].className}>
+              {SEVERITY_META[v.open_issue.severity].glyph}
+            </span>
+            <span className="sr-only">{SEVERITY_META[v.open_issue.severity].label}: </span>
+            {v.open_issue.title}
+          </Link>
+          {v.next_action ? <span className="text-label text-fg-muted">{v.next_action}</span> : null}
+        </span>
+      ) : (
+        <span className="text-fg-subtle">—</span>
+      );
     case "soc": {
       const soc = v.state.soc;
       if (soc === null) return <span className="text-fg-subtle">—</span>;

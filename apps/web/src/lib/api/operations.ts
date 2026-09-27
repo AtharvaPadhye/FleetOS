@@ -1,6 +1,14 @@
 import { z } from "zod";
 import type { Capability } from "@fleetos/domain";
 import {
+  ExceptionCreate,
+  ExceptionDetail,
+  ExceptionListQuery,
+  ExceptionPage,
+  ExceptionRule,
+  ExceptionRuleWrite,
+  ExceptionUpdate,
+  Exception,
   AutonomyEvent,
   CabinEvent,
   Capabilities,
@@ -259,6 +267,96 @@ export const getVendorRank = op({
   response: z.array(VendorRanking),
 });
 
+// Exceptions (task 5.4)
+export const getExceptions = op({
+  operationId: "getExceptions",
+  method: "GET",
+  path: "/exceptions",
+  stability: "stable",
+  org: "required",
+  query: ExceptionListQuery,
+  response: ExceptionPage,
+});
+
+export const postException = op({
+  operationId: "postExceptions",
+  method: "POST",
+  path: "/exceptions",
+  stability: "stable",
+  org: "required",
+  roles: ["owner", "admin", "ops"],
+  query: NoQuery,
+  body: ExceptionCreate,
+  response: Exception,
+});
+
+export const getExceptionById = op({
+  operationId: "getExceptionsBy_id",
+  method: "GET",
+  path: "/exceptions/{id}",
+  stability: "stable",
+  org: "required",
+  query: NoQuery,
+  response: ExceptionDetail,
+});
+
+export const patchException = op({
+  operationId: "patchExceptionsBy_id",
+  method: "PATCH",
+  path: "/exceptions/{id}",
+  stability: "stable",
+  org: "required",
+  roles: ["owner", "admin", "ops"],
+  query: NoQuery,
+  body: ExceptionUpdate,
+  response: Exception,
+});
+
+export const getExceptionRules = op({
+  operationId: "getExceptionRules",
+  method: "GET",
+  path: "/exception-rules",
+  stability: "stable",
+  org: "required",
+  query: NoQuery,
+  response: z.array(ExceptionRule),
+});
+
+export const postExceptionRule = op({
+  operationId: "postExceptionRules",
+  method: "POST",
+  path: "/exception-rules",
+  stability: "stable",
+  org: "required",
+  roles: ["owner", "admin"],
+  query: NoQuery,
+  body: ExceptionRuleWrite,
+  response: ExceptionRule,
+});
+
+export const patchExceptionRule = op({
+  operationId: "patchExceptionRulesBy_id",
+  method: "PATCH",
+  path: "/exception-rules/{id}",
+  stability: "stable",
+  org: "required",
+  roles: ["owner", "admin"],
+  query: NoQuery,
+  body: ExceptionRuleWrite,
+  response: ExceptionRule,
+});
+
+export const deleteExceptionRule = op({
+  operationId: "deleteExceptionRulesBy_id",
+  method: "DELETE",
+  path: "/exception-rules/{id}",
+  stability: "stable",
+  org: "required",
+  roles: ["owner", "admin"],
+  query: NoQuery,
+  response: z.null(),
+});
+
 // Preview operations (task 3.9): simulated in demo orgs, 501 capability_unavailable elsewhere (ADR-0006).
 const preview = { stability: "preview", org: "required" } as const;
 
@@ -394,6 +492,14 @@ export const OPERATIONS: Operation[] = [
   getVendor,
   patchVendor,
   getVendorRank,
+  getExceptions,
+  postException,
+  getExceptionById,
+  patchException,
+  getExceptionRules,
+  postExceptionRule,
+  patchExceptionRule,
+  deleteExceptionRule,
   getVehicleEarnings,
   getVehicleCabinEvents,
   getVehicleAutonomyEvents,

@@ -5,7 +5,8 @@ import { usePathname } from "next/navigation";
 import { cn } from "@fleetos/ui/lib/cn";
 import { isActive, NAV } from "@/lib/nav";
 
-export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
+/** `badges`: counts shown beside a section, e.g. active exceptions (PRD EX-1: equals the queue's active count). */
+export function SidebarNav({ onNavigate, badges = {} }: { onNavigate?: () => void; badges?: Record<string, number> }) {
   const pathname = usePathname();
   return (
     <nav aria-label="Main">
@@ -27,6 +28,12 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
               >
                 <Icon aria-hidden="true" className={cn("size-5 shrink-0", active ? "text-fg" : "text-fg-subtle")} />
                 {item.label}
+                {badges[item.key] ? (
+                  <span className="ml-auto rounded-full bg-raised px-2 text-label font-semibold text-fg tabular-nums">
+                    {badges[item.key]}
+                    <span className="sr-only"> active</span>
+                  </span>
+                ) : null}
               </Link>
             </li>
           );

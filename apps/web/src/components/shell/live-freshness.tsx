@@ -7,14 +7,28 @@ import { subscribeOrgChannel } from "@/lib/realtime/org-channel";
  * The prototype ticks every minute (ADR-0014), so "live" allows up to 2.5 minutes; amber up to 5 minutes,
  * red beyond. Shape + text, never colour alone. `data-realtime` says whether the push channel is connected.
  */
-export function LiveFreshness({ orgId, lastTickAt }: { orgId: string; lastTickAt: string | null }) {
+export function LiveFreshness({
+  orgId,
+  lastTickAt,
+  asOf,
+}: {
+  orgId: string;
+  lastTickAt: string | null;
+  /** The server's clock when it rendered; the first client render uses it too so hydration matches. */
+  asOf: number;
+}) {
   const [last, setLast] = useState<number | null>(lastTickAt ? Date.parse(lastTickAt) : null);
-  const [now, setNow] = useState(() => Date.now());
+  const [now, setNow] = useState(asOf);
   const [connected, setConnected] = useState(false);
 
   useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), 5_000);
-    return () => clearInterval(timer);
+    const tick = () => setNow(Date.now());
+    const first = setTimeout(tick, 0); // catch up from the server's clock right after hydrating
+    const timer = setInterval(tick, 5_000);
+    return () => {
+      clearTimeout(first);
+      clearInterval(timer);
+    };
   }, []);
 
   useEffect(

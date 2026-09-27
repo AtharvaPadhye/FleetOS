@@ -8,3 +8,4 @@ export * from "./vin";
 export * from "./payouts";
 export * from "./costs";
 export * from "./vendors";
+export * from "./exceptions";

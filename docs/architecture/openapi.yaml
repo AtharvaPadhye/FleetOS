@@ -1606,7 +1606,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Exception"
+                $ref: "#/components/schemas/ExceptionDetail"
         "401":
           $ref: "#/components/responses/Unauthenticated"
         "403":
@@ -5210,6 +5210,7 @@ components:
       required:
         - id
         - type
+        - title
         - severity
         - status
         - detected_at
@@ -5217,6 +5218,13 @@ components:
         id:
           type: string
           format: uuid
+        title:
+          type: string
+          description: The rule's name for detected exceptions; the reporter's summary for manual ones
+        description:
+          oneOf:
+            - type: string
+            - type: "null"
         vehicle:
           oneOf:
             - type: object
@@ -5333,6 +5341,57 @@ components:
         revenue_at_risk_cents:
           type: integer
           description: Minor units (cents) in the org currency
+    ExceptionDetail:
+      allOf:
+        - $ref: "#/components/schemas/Exception"
+        - type: object
+          properties:
+            trigger:
+              description: What the rule saw when it fired (alert name and vehicle facts); null for manual exceptions
+              oneOf:
+                - type: object
+                - type: "null"
+            events:
+              description: History, oldest first (opened, status and owner changes, condition cleared)
+              type: array
+              items:
+                type: object
+                required:
+                  - at
+                  - kind
+                properties:
+                  at:
+                    type: string
+                    format: date-time
+                  kind:
+                    type: string
+                    enum:
+                      - opened
+                      - status
+                      - owner
+                      - cleared
+                  actor:
+                    oneOf:
+                      - type: object
+                        properties:
+                          user_id:
+                            type: string
+                            format: uuid
+                          name:
+                            type: string
+                      - type: "null"
+                  from_status:
+                    oneOf:
+                      - $ref: "#/components/schemas/ExceptionStatus"
+                      - type: "null"
+                  to_status:
+                    oneOf:
+                      - $ref: "#/components/schemas/ExceptionStatus"
+                      - type: "null"
+                  note:
+                    oneOf:
+                      - type: string
+                      - type: "null"
     ExceptionCreate:
       type: object
       required:
@@ -5344,8 +5403,18 @@ components:
           format: uuid
         type:
           type: string
+          description: Short machine-friendly kind, e.g. `debris_in_cabin`
+        title:
+          type: string
+          description: Defaults to the type
         class:
           type: string
+          enum:
+            - incident
+            - maintenance
+            - cleaning
+            - charging
+            - other
         severity:
           $ref: "#/components/schemas/Severity"
         description:
@@ -5396,6 +5465,12 @@ components:
           type: object
         class:
           type: string
+          enum:
+            - incident
+            - maintenance
+            - cleaning
+            - charging
+            - other
         severity:
           $ref: "#/components/schemas/Severity"
         blocks_service:
@@ -5404,6 +5479,9 @@ components:
           type: object
         auto_actions:
           type: object
+        auto_resolve:
+          type: boolean
+          description: Resolve by itself when the condition stops holding
         enabled:
           type: boolean
         is_system:
@@ -5419,6 +5497,12 @@ components:
           type: object
         class:
           type: string
+          enum:
+            - incident
+            - maintenance
+            - cleaning
+            - charging
+            - other
         severity:
           $ref: "#/components/schemas/Severity"
         blocks_service:
@@ -5427,6 +5511,9 @@ components:
           type: object
         auto_actions:
           type: object
+        auto_resolve:
+          type: boolean
+          description: Resolve by itself when the condition stops holding
         enabled:
           type: boolean
     AttentionGroup:

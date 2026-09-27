@@ -1,7 +1,19 @@
 import { z } from "zod";
-import { CAPABILITIES, CAPABILITY_STATES, LEDGER_CATEGORIES, VEHICLE_STATUSES } from "@fleetos/domain";
+import {
+  CAPABILITIES,
+  CAPABILITY_STATES,
+  EXCEPTION_CLASSES,
+  EXCEPTION_STATUSES,
+  LEDGER_CATEGORIES,
+  RULE_FIELDS,
+  SEVERITIES,
+  VEHICLE_STATUSES,
+  validPattern,
+  type RuleField,
+} from "@fleetos/domain";
 import { PeriodQuery } from "./period";
 import { FLEET_SORTS } from "../services/fleet-sorts";
+import { FLEET_ISSUE_FILTERS } from "../services/fleet-issues";
 
 /**
  * Response and request schemas for /api/v1 (task 3.8). Each mirrors a schema in
@@ -121,6 +133,11 @@ export const VehicleListItem = z.object({
     })
     .optional(),
   profitability: z.enum(["strong", "monitor", "review"]).nullable().optional(),
+  open_issue: z
+    .object({ exception_id: z.uuid(), type: z.string(), severity: z.enum(SEVERITIES) })
+    .nullable()
+    .optional(),
+  next_action: z.string().nullable().optional(),
 });
 
 export const Vehicle = VehicleListItem.extend({
@@ -174,6 +191,7 @@ export const VehicleListQuery = z.strictObject({
   soc_gte: z.coerce.number().min(0).max(1).optional(),
   q: z.string().trim().max(80).optional(),
   profitability: z.enum(["strong", "monitor", "review"]).optional(),
+  issue: z.enum(FLEET_ISSUE_FILTERS).optional(),
   sort: z.enum([...VEHICLE_SORTS, ...VEHICLE_SORTS.map((s) => `-${s}` as const)]).default("number"),
   limit: Limit,
   cursor: Cursor,
@@ -481,3 +499,148 @@ export const VendorRanking = z.object({
 });
 export const VendorListQuery = z.strictObject({ category: VendorCategory.optional() });
 export const VendorRankQuery = z.strictObject({ category: VendorCategory, vehicle_id: z.uuid() });
+
+// Exceptions (task 5.4)
+export const Severity = z.enum(SEVERITIES);
+export const ExceptionStatus = z.enum(EXCEPTION_STATUSES);
+export const ExceptionClass = z.enum(EXCEPTION_CLASSES);
+export const Exception = z.object({
+  id: z.uuid(),
+  title: z.string(),
+  description: z.string().nullable(),
+  vehicle: z.object({ id: z.uuid(), number: z.string() }).nullable(),
+  hub_id: z.uuid().nullable(),
+  type: z.string(),
+  class: ExceptionClass,
+  severity: Severity,
+  status: ExceptionStatus,
+  detected_at: isoDateTime,
+  location_name: z.string().nullable(),
+  blocks_service: z.boolean(),
+  expected_downtime_min: z.number().int().nullable(),
+  revenue_at_risk_cents: cents.nullable(),
+  recommended_action: z
+    .object({
+      label: z.string(),
+      vendor_id: z.uuid().nullable(),
+      eta_min: z.number().int().nullable(),
+      cost_cents: cents.nullable(),
+    })
+    .nullable(),
+  owner: z.object({ user_id: z.uuid(), name: z.string() }).nullable(),
+  ticket_id: z.uuid().nullable(),
+  rule_id: z.uuid().nullable(),
+  resolved_at: isoDateTime.nullable(),
+});
+export const ExceptionSummary = z.object({
+  active: z.number().int(),
+  by_severity: z.object({
+    critical: z.number().int(),
+    high: z.number().int(),
+    medium: z.number().int(),
+    low: z.number().int(),
+  }),
+  resolved_today: z.number().int(),
+  revenue_at_risk_cents: cents,
+});
+export const ExceptionPage = page(Exception).extend({ summary: ExceptionSummary });
+export const ExceptionDetail = Exception.extend({
+  trigger: z.record(z.string(), z.unknown()).nullable(),
+  events: z.array(
+    z.object({
+      at: isoDateTime,
+      kind: z.enum(["opened", "status", "owner", "cleared"]),
+      actor: z.object({ user_id: z.uuid(), name: z.string() }).nullable(),
+      from_status: ExceptionStatus.nullable(),
+      to_status: ExceptionStatus.nullable(),
+      note: z.string().nullable(),
+    }),
+  ),
+});
+export const EXCEPTION_SORTS = ["detected_at", "severity", "revenue_at_risk"] as const;
+export const ExceptionListQuery = z.strictObject({
+  status: listOf(ExceptionStatus),
+  severity: listOf(Severity),
+  vehicle_id: z.uuid().optional(),
+  sort: z.enum([...EXCEPTION_SORTS, ...EXCEPTION_SORTS.map((s) => `-${s}` as const)]).default("severity"),
+  limit: Limit,
+  cursor: Cursor,
+});
+export const ExceptionCreate = z.strictObject({
+  vehicle_id: z.uuid().optional(),
+  type: z
+    .string()
+    .trim()
+    .regex(/^[a-z0-9_]{1,60}$/, "Use lower-case letters, digits and underscores (e.g. debris_in_cabin)."),
+  title: z.string().trim().min(1).max(120).optional(),
+  class: ExceptionClass.optional(),
+  severity: Severity,
+  description: z.string().trim().max(2000).optional(),
+  blocks_service: z.boolean().optional(),
+});
+export const ExceptionUpdate = z.strictObject({
+  status: ExceptionStatus.optional(),
+  owner_user_id: z.uuid().nullable().optional(),
+  note: z.string().trim().max(2000).optional(),
+});
+
+const RuleLeaf = z.strictObject({
+  field: z.enum(Object.keys(RULE_FIELDS) as [RuleField, ...RuleField[]]),
+  op: z.enum(["lt", "lte", "gt", "gte", "eq", "neq", "matches"]),
+  value: z.union([z.number(), z.boolean(), z.string().max(200)]),
+});
+export const RuleCondition = z
+  .strictObject({
+    all: z.array(RuleLeaf).max(10).optional(),
+    any: z.array(RuleLeaf).max(10).optional(),
+    for_min: z.number().int().min(0).max(1440).optional(),
+  })
+  .superRefine((c, ctx) => {
+    const leaves = [...(c.all ?? []), ...(c.any ?? [])];
+    if (!leaves.length) ctx.addIssue({ code: "custom", message: "Add at least one condition." });
+    for (const l of leaves) {
+      const kind = RULE_FIELDS[l.field].type;
+      const ok =
+        kind === "pattern"
+          ? l.op === "matches" && typeof l.value === "string" && validPattern(l.value)
+          : kind === "boolean"
+            ? (l.op === "eq" || l.op === "neq") && typeof l.value === "boolean"
+            : l.op !== "matches" && typeof l.value === "number";
+      if (!ok) ctx.addIssue({ code: "custom", message: `"${l.field} ${l.op} ${String(l.value)}" isn't a valid test.` });
+    }
+  });
+export const ExceptionRule = z.object({
+  id: z.uuid(),
+  key: z.string(),
+  name: z.string(),
+  condition: z.record(z.string(), z.unknown()),
+  class: ExceptionClass,
+  severity: Severity,
+  blocks_service: z.boolean(),
+  recommended_action: z.record(z.string(), z.unknown()),
+  auto_actions: z.record(z.string(), z.unknown()),
+  auto_resolve: z.boolean(),
+  enabled: z.boolean(),
+  is_system: z.boolean(),
+});
+export const ExceptionRuleWrite = z.strictObject({
+  key: z
+    .string()
+    .regex(/^[a-z0-9_]{1,60}$/, "Use lower-case letters, digits and underscores.")
+    .optional(),
+  name: z.string().trim().min(1).max(80).optional(),
+  condition: RuleCondition.optional(),
+  class: ExceptionClass.optional(),
+  severity: Severity.optional(),
+  blocks_service: z.boolean().optional(),
+  recommended_action: z
+    .strictObject({
+      label: z.string().trim().min(1).max(120),
+      vendor_category: VendorCategory.nullable().optional(),
+      expected_downtime_min: z.number().int().min(0).max(100_000).nullable().optional(),
+    })
+    .optional(),
+  auto_actions: z.record(z.string(), z.unknown()).optional(),
+  auto_resolve: z.boolean().optional(),
+  enabled: z.boolean().optional(),
+});
