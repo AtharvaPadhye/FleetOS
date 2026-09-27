@@ -24,7 +24,8 @@
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",
     "db:test": "supabase test db",
-    "db:lint": "supabase db lint --level warning --fail-on error"
+    "db:lint": "supabase db lint --level warning --fail-on error",
+    "db:env": "node scripts/supabase-env.mjs"
   },
   "devDependencies": {
     "prettier": "3.9.9",

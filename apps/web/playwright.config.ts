@@ -1,6 +1,11 @@
+import { existsSync } from "node:fs";
 import { defineConfig, devices } from "@playwright/test";
 
+// Local Supabase URL/keys and the Mailpit inbox (written by `pnpm db:env`).
+if (existsSync(".env.local")) process.loadEnvFile(".env.local");
+
 const PORT = 3000;
+const AUTH_FILE = "e2e/.auth/user.json";
 
 export default defineConfig({
   testDir: "./e2e",
@@ -9,8 +14,17 @@ export default defineConfig({
   reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : "list",
   use: { baseURL: `http://localhost:${PORT}`, trace: "retain-on-failure" },
   projects: [
-    { name: "desktop", use: { ...devices["Desktop Chrome"] } },
-    { name: "phone", use: { ...devices["Pixel 7"] } },
+    { name: "setup", testMatch: /auth\.setup\.ts/ },
+    {
+      name: "desktop",
+      use: { ...devices["Desktop Chrome"], storageState: AUTH_FILE },
+      dependencies: ["setup"],
+    },
+    {
+      name: "phone",
+      use: { ...devices["Pixel 7"], storageState: AUTH_FILE },
+      dependencies: ["setup"],
+    },
   ],
   webServer: {
     command: process.env.CI ? "pnpm start" : "pnpm build && pnpm start",

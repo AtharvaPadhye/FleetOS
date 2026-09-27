@@ -32,3 +32,4 @@ test-results/
 *.pem
 !**/public/.well-known/**/*.pem
 coverage/
+apps/web/e2e/.auth/

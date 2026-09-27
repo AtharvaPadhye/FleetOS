@@ -7,9 +7,10 @@ import { Sheet, SheetClose, SheetContent, SheetTrigger } from "@fleetos/ui/compo
 import { Brand } from "./brand";
 import { OrgBlock } from "./org-block";
 import { SidebarNav } from "./sidebar-nav";
+import type { OrgSummary } from "@/lib/session";
 
 /** Below 1024px the sidebar becomes a sheet (design-system.md §2.4). */
-export function MobileNav() {
+export function MobileNav({ orgs, active }: { orgs: OrgSummary[]; active: OrgSummary }) {
   const [open, setOpen] = useState(false);
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -27,7 +28,7 @@ export function MobileNav() {
             </Button>
           </SheetClose>
         </div>
-        <OrgBlock />
+        <OrgBlock orgs={orgs} active={active} />
         <SidebarNav onNavigate={() => setOpen(false)} />
       </SheetContent>
     </Sheet>

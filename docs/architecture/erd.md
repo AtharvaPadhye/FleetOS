@@ -67,7 +67,7 @@ erDiagram
 
 | Table | Key columns | Notes |
 |---|---|---|
-| `orgs` | `name`, `slug` unique, `timezone`, `currency` (default `USD`), `region` (`na`/`eu`/`cn`), `service_start time`, `service_end time` (default 00:00–24:00), `availability_target numeric` (0.92), `low_soc_threshold numeric` (0.40), `baseline_days int` (28), `is_demo bool`, `deleted_at` | Settings from `kpis.md` §7 defaults |
+| `orgs` | `name`, `slug` unique, `timezone`, `currency` (default `USD`), `region` (`na`/`eu`/`cn`), `service_start time`, `service_end time` (default 00:00–24:00), `availability_target numeric` (0.92), `low_soc_threshold numeric` (0.40), `baseline_days int` (28), `is_demo bool`, `city` (task 2.4), `deleted_at` | Settings from `kpis.md` §7 defaults |
 | `profiles` | `user_id` PK → `auth.users`, `full_name`, `avatar_url`, `mfa_required bool` | One per user, not tenant-scoped |
 | `memberships` | PK (`org_id`, `user_id`), `role` enum `owner/admin/ops/finance/viewer` | RLS helper functions read this (NFR RBAC) |
 | `invitations` | `email`, `role`, `token_hash`, `expires_at`, `accepted_at`, `created_by` | Token stored hashed |

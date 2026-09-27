@@ -1,10 +1,15 @@
+import { redirect } from "next/navigation";
 import { Brand } from "@/components/shell/brand";
 import { FocusMainOnNavigate } from "@/components/shell/focus-main";
 import { Header } from "@/components/shell/header";
 import { OrgBlock } from "@/components/shell/org-block";
 import { SidebarNav } from "@/components/shell/sidebar-nav";
+import { getAppContext } from "@/lib/session";
 
-export default function AppLayout({ children }: LayoutProps<"/">) {
+export default async function AppLayout({ children }: LayoutProps<"/">) {
+  const { user, orgs, activeOrg } = await getAppContext();
+  if (!user) redirect("/sign-in");
+  if (!activeOrg) redirect("/onboarding");
   return (
     <div className="min-h-dvh lg:pl-60">
       <a
@@ -15,10 +20,10 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
       </a>
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col gap-5 border-r border-divider bg-surface p-4 lg:flex">
         <Brand />
-        <OrgBlock />
+        <OrgBlock orgs={orgs} active={activeOrg} />
         <SidebarNav />
       </aside>
-      <Header />
+      <Header orgs={orgs} active={activeOrg} email={user.email} />
       <main id="main" className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {children}
       </main>

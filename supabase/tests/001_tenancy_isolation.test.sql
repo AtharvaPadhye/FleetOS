@@ -15,7 +15,11 @@ insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000b', 'bob@other.test'),
   ('00000000-0000-0000-0000-00000000000c', 'carol@atlas.test');
 
-select is((select count(*)::int from public.profiles), 3, 'a profile is created for each new user');
+select is(
+  (select count(*)::int from public.profiles where user_id in (
+    '00000000-0000-0000-0000-00000000000a', '00000000-0000-0000-0000-00000000000b', '00000000-0000-0000-0000-00000000000c')),
+  3, 'a profile is created for each new user'
+);
 
 -- ---------- alice and bob each create an org ----------
 set local role authenticated;

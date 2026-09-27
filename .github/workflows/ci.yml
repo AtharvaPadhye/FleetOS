@@ -74,6 +74,10 @@ jobs:
         run: pnpm typecheck
       - name: Unit tests
         run: pnpm test
+      - name: Start local Supabase (auth, API, inbox) for the build and e2e
+        run: pnpm exec supabase start -x studio,imgproxy,edge-runtime,logflare,vector,postgres-meta,supavisor,storage-api,realtime
+      - name: Write apps/web/.env.local from the local stack
+        run: pnpm db:env
       - name: Build
         run: pnpm build
       - name: Install Playwright browser
