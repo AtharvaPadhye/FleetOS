@@ -1,0 +1,6614 @@
+# FleetOS API contract (task 1.3). Hand-maintained until task 3.1 generates it from the zod schemas in packages/domain; lint: npx @redocly/cli lint docs/architecture/openapi.yaml
+openapi: 3.1.0
+info:
+  title: FleetOS API
+  version: 1.0.0-draft
+  license:
+    name: Proprietary
+    identifier: LicenseRef-Proprietary
+  description: "Contract for FleetOS `/api/v1` (roadmap task 1.3). Conventions: docs/architecture/api.md. Every operation carries `x-fleetos-stability` (`stable` | `preview`). Preview operations return simulated data in demo orgs and `501 capability_unavailable` otherwise, never an empty `200` (ADR-0006)."
+servers:
+  - url: https://{host}/api/v1
+    variables:
+      host:
+        default: app.fleetos.example
+security:
+  - SupabaseSession: []
+  - BearerJWT: []
+tags:
+  - name: Platform
+    description: Platform operations.
+  - name: Vehicles
+    description: Vehicles operations.
+  - name: Vehicles (preview)
+    description: "Vehicles: placeholder operations for data sources not yet available (simulated in demo orgs, 501 otherwise)."
+  - name: Rides & dispatch (preview)
+    description: "Rides & dispatch: placeholder operations for data sources not yet available (simulated in demo orgs, 501 otherwise)."
+  - name: Hubs
+    description: Hubs operations.
+  - name: Hubs (preview)
+    description: "Hubs: placeholder operations for data sources not yet available (simulated in demo orgs, 501 otherwise)."
+  - name: Exceptions
+    description: Exceptions operations.
+  - name: Service
+    description: Service operations.
+  - name: Vendors
+    description: Vendors operations.
+  - name: Vendors (preview)
+    description: "Vendors: placeholder operations for data sources not yet available (simulated in demo orgs, 501 otherwise)."
+  - name: Money
+    description: Money operations.
+  - name: KPIs
+    description: KPIs operations.
+  - name: Reports
+    description: Reports operations.
+  - name: Public
+    description: Public operations.
+  - name: Settings
+    description: Settings operations.
+  - name: Integrations
+    description: Integrations operations.
+  - name: Copilot
+    description: Copilot operations.
+paths:
+  /capabilities:
+    get:
+      tags:
+        - Platform
+      summary: Capability state for the active org
+      operationId: getCapabilities
+      x-fleetos-stability: stable
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Capabilities"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /me:
+    get:
+      tags:
+        - Platform
+      summary: Current user, memberships and active org
+      operationId: getMe
+      x-fleetos-stability: stable
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Me"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /orgs:
+    get:
+      tags:
+        - Platform
+      summary: Orgs the user belongs to
+      operationId: getOrgs
+      x-fleetos-stability: stable
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Org"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /orgs/current:
+    patch:
+      tags:
+        - Platform
+      summary: Update org settings (owner/admin)
+      operationId: patchOrgsCurrent
+      x-fleetos-stability: stable
+      x-fleetos-roles: owner, admin
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrgUpdate"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Org"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /vehicles:
+    get:
+      tags:
+        - Vehicles
+      summary: List vehicles with live state and today metrics
+      operationId: getVehicles
+      x-fleetos-stability: stable
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/VehicleStatus"
+        - name: hub_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: soc_lt
+          in: query
+          required: false
+          schema:
+            type: number
+        - name: soc_gte
+          in: query
+          required: false
+          schema:
+            type: number
+        - name: profitability
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - strong
+              - monitor
+              - review
+        - name: issue
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Search number, VIN or location
+        - $ref: "#/components/parameters/Sort"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+        - name: format
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - json
+              - csv
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - page
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/VehicleListItem"
+                  page:
+                    $ref: "#/components/schemas/PageInfo"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+    post:
+      tags:
+        - Vehicles
+      summary: Add a vehicle manually (owner/admin)
+      operationId: postVehicles
+      x-fleetos-stability: stable
+      x-fleetos-roles: owner, admin
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VehicleCreate"
+      responses:
+        "201":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vehicle"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /vehicles/{id}:
+    get:
+      tags:
+        - Vehicles
+      summary: Vehicle detail with live state
+      operationId: getVehiclesBy_id
+      x-fleetos-stability: stable
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vehicle"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+    patch:
+      tags:
+        - Vehicles
+      summary: Update vehicle (number, home hub, cost allocations, lifecycle)
+      operationId: patchVehiclesBy_id
+      x-fleetos-stability: stable
+      x-fleetos-roles: owner, admin
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VehicleUpdate"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vehicle"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /vehicles/{id}/telemetry:
+    get:
+      tags:
+        - Vehicles
+      summary: Time series for selected fields
+      operationId: getVehiclesBy_idTelemetry
+      x-fleetos-stability: stable
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: fields
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+        - $ref: "#/components/parameters/From"
+        - $ref: "#/components/parameters/To"
+        - name: interval
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - raw
+              - 1m
+              - 1h
+              - 1d
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TelemetrySeries"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /vehicles/{id}/status-events:
+    get:
+      tags:
+        - Vehicles
+      summary: Status history (timeline)
+      operationId: getVehiclesBy_idStatusEvents
+      x-fleetos-stability: stable
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/From"
+        - $ref: "#/components/parameters/To"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - page
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/StatusEvent"
+                  page:
+                    $ref: "#/components/schemas/PageInfo"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /vehicles/{id}/alerts:
+    get:
+      tags:
+        - Vehicles
+      summary: Vehicle alerts
+      operationId: getVehiclesBy_idAlerts
+      x-fleetos-stability: stable
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: active
+          in: query
+          required: false
+          schema:
+            type: boolean
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - page
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/VehicleAlert"
+                  page:
+                    $ref: "#/components/schemas/PageInfo"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /vehicles/{id}/charging-sessions:
+    get:
+      tags:
+        - Vehicles
+      summary: Charging sessions with energy and cost
+      operationId: getVehiclesBy_idChargingSessions
+      x-fleetos-stability: stable
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/From"
+        - $ref: "#/components/parameters/To"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - page
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ChargingSession"
+                  page:
+                    $ref: "#/components/schemas/PageInfo"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /vehicles/{id}/battery-health:
+    get:
+      tags:
+        - Vehicles
+      summary: Battery state of health history (Tesla specs)
+      operationId: getVehiclesBy_idBatteryHealth
+      x-fleetos-stability: stable
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BatteryHealth"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /vehicles/{id}/actions/pull-from-service:
+    post:
+      tags:
+        - Vehicles
+      summary: Manual Maintenance hold
+      operationId: postVehiclesBy_idActionsPullFromService
+      x-fleetos-stability: stable
+      x-fleetos-roles: owner, admin, ops
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReasonBody"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vehicle"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /vehicles/{id}/actions/return-to-service:
+    post:
+      tags:
+        - Vehicles
+      summary: Release holds / close blocking items; override needs owner/admin + reason
+      operationId: postVehiclesBy_idActionsReturnToService
+      x-fleetos-stability: stable
+      x-fleetos-roles: "owner, admin, ops (override: owner, admin)"
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReturnToServiceBody"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vehicle"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /vehicles/{id}/commands:
+    get:
+      tags:
+        - Vehicles
+      summary: Command log for the vehicle
+      operationId: getVehiclesBy_idCommands
+      x-fleetos-stability: stable
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - page
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Command"
+                  page:
+                    $ref: "#/components/schemas/PageInfo"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+    post:
+      tags:
+        - Vehicles
+      summary: Send a vehicle command (Phase 7; disabled by default)
+      operationId: postVehiclesBy_idCommands
+      x-fleetos-stability: stable
+      x-fleetos-roles: owner, admin, ops (if enabled)
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CommandRequest"
+      responses:
+        "202":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Command"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /vehicles/{id}/earnings:
+    get:
+      tags:
+        - Vehicles (preview)
+      summary: Live platform earnings for a vehicle
+      operationId: getVehiclesBy_idEarnings
+      x-fleetos-stability: preview
+      x-fleetos-capability: earnings
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/Period"
+        - $ref: "#/components/parameters/From"
+        - $ref: "#/components/parameters/To"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Earnings"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "501":
+          $ref: "#/components/responses/CapabilityUnavailable"
+  /vehicles/{id}/cabin-events:
+    get:
+      tags:
+        - Vehicles (preview)
+      summary: Cabin cleanliness events
+      operationId: getVehiclesBy_idCabinEvents
+      x-fleetos-stability: preview
+      x-fleetos-capability: cabin_events
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/From"
+        - $ref: "#/components/parameters/To"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - page
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CabinEvent"
+                  page:
+                    $ref: "#/components/schemas/PageInfo"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "501":
+          $ref: "#/components/responses/CapabilityUnavailable"
+  /vehicles/{id}/autonomy-events:
+    get:
+      tags:
+        - Vehicles (preview)
+      summary: Disengagements, remote assist, incidents
+      operationId: getVehiclesBy_idAutonomyEvents
+      x-fleetos-stability: preview
+      x-fleetos-capability: autonomy_events
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/From"
+        - $ref: "#/components/parameters/To"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - page
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AutonomyEvent"
+                  page:
+                    $ref: "#/components/schemas/PageInfo"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "501":
+          $ref: "#/components/responses/CapabilityUnavailable"
+  /rides:
+    get:
+      tags:
+        - Rides & dispatch (preview)
+      summary: Trips across the fleet
+      operationId: getRides
+      x-fleetos-stability: preview
+      x-fleetos-capability: rides
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: vehicle_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/From"
+        - $ref: "#/components/parameters/To"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - page
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Ride"
+                  page:
+                    $ref: "#/components/schemas/PageInfo"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "501":
+          $ref: "#/components/responses/CapabilityUnavailable"
+  /rides/{id}:
+    get:
+      tags:
+        - Rides & dispatch (preview)
+      summary: Trip detail
+      operationId: getRidesBy_id
+      x-fleetos-stability: preview
+      x-fleetos-capability: rides
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ride"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "501":
+          $ref: "#/components/responses/CapabilityUnavailable"
+  /dispatch/availability:
+    get:
+      tags:
+        - Rides & dispatch (preview)
+      summary: Network availability per vehicle
+      operationId: getDispatchAvailability
+      x-fleetos-stability: preview
+      x-fleetos-capability: dispatch
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DispatchAvailability"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "501":
+          $ref: "#/components/responses/CapabilityUnavailable"
+    post:
+      tags:
+        - Rides & dispatch (preview)
+      summary: Put vehicles on/off the robotaxi network
+      operationId: postDispatchAvailability
+      x-fleetos-stability: preview
+      x-fleetos-capability: dispatch
+      x-fleetos-roles: owner, admin, ops
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DispatchChange"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DispatchAvailability"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "501":
+          $ref: "#/components/responses/CapabilityUnavailable"
+  /hubs:
+    get:
+      tags:
+        - Hubs
+      summary: List hubs with live occupancy summary
+      operationId: getHubs
+      x-fleetos-stability: stable
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Hub"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+    post:
+      tags:
+        - Hubs
+      summary: Create hub
+      operationId: postHubs
+      x-fleetos-stability: stable
+      x-fleetos-roles: owner, admin, ops
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HubCreate"
+      responses:
+        "201":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Hub"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /hubs/{id}:
+    get:
+      tags:
+        - Hubs
+      summary: Hub detail
+      operationId: getHubsBy_id
+      x-fleetos-stability: stable
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Hub"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+    patch:
+      tags:
+        - Hubs
+      summary: Update hub (geofence, chargers, bays, tariff, hours)
+      operationId: patchHubsBy_id
+      x-fleetos-stability: stable
+      x-fleetos-roles: owner, admin, ops
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HubCreate"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Hub"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /hubs/{id}/occupancy:
+    get:
+      tags:
+        - Hubs
+      summary: Present vehicles, chargers occupied (inferred until OCPP)
+      operationId: getHubsBy_idOccupancy
+      x-fleetos-stability: stable
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HubOccupancy"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /hubs/{id}/forecast:
+    get:
+      tags:
+        - Hubs
+      summary: Hourly utilisation forecast for today
+      operationId: getHubsBy_idForecast
+      x-fleetos-stability: stable
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HubForecast"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /hubs/{id}/recommendations:
+    get:
+      tags:
+        - Hubs
+      summary: Ranked mitigation actions
+      operationId: getHubsBy_idRecommendations
+      x-fleetos-stability: stable
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Recommendation"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /hubs/{id}/recommendations/{rid}/apply:
+    post:
+      tags:
+        - Hubs
+      summary: Apply a recommendation (creates tasks/commands; logged)
+      operationId: postHubsBy_idRecommendationsBy_ridApply
+      x-fleetos-stability: stable
+      x-fleetos-roles: owner, admin, ops
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: rid
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Recommendation"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /hubs/{id}/chargers/live:
+    get:
+      tags:
+        - Hubs (preview)
+      summary: Charger status from OCPP
+      operationId: getHubsBy_idChargersLive
+      x-fleetos-stability: preview
+      x-fleetos-capability: charger_telemetry
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ChargerLive"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "501":
+          $ref: "#/components/responses/CapabilityUnavailable"
+  /energy/tariffs/live:
+    get:
+      tags:
+        - Hubs (preview)
+      summary: Live time-of-use prices per hub
+      operationId: getEnergyTariffsLive
+      x-fleetos-stability: preview
+      x-fleetos-capability: live_tariffs
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: hub_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TariffLive"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "501":
+          $ref: "#/components/responses/CapabilityUnavailable"
+  /exceptions:
+    get:
+      tags:
+        - Exceptions
+      summary: Exception queue (sorted by revenue at risk)
+      operationId: getExceptions
+      x-fleetos-stability: stable
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/ExceptionStatus"
+        - name: severity
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/Severity"
+        - name: vehicle_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/Sort"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - type: object
+                    required:
+                      - data
+                      - page
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Exception"
+                      page:
+                        $ref: "#/components/schemas/PageInfo"
+                  - type: object
+                    properties:
+                      summary:
+                        $ref: "#/components/schemas/ExceptionSummary"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+    post:
+      tags:
+        - Exceptions
+      summary: Create exception manually
+      operationId: postExceptions
+      x-fleetos-stability: stable
+      x-fleetos-roles: owner, admin, ops
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExceptionCreate"
+      responses:
+        "201":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Exception"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /exceptions/{id}:
+    get:
+      tags:
+        - Exceptions
+      summary: Exception detail
+      operationId: getExceptionsBy_id
+      x-fleetos-stability: stable
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Exception"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+    patch:
+      tags:
+        - Exceptions
+      summary: Assign, change status, dismiss
+      operationId: patchExceptionsBy_id
+      x-fleetos-stability: stable
+      x-fleetos-roles: owner, admin, ops
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExceptionUpdate"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Exception"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /exceptions/{id}/actions/create-ticket:
+    post:
+      tags:
+        - Exceptions
+      summary: Create ticket (optionally dispatch vendor) from exception
+      operationId: postExceptionsBy_idActionsCreateTicket
+      x-fleetos-stability: stable
+      x-fleetos-roles: owner, admin, ops
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTicketFromException"
+      responses:
+        "201":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ticket"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /exception-rules:
+    get:
+      tags:
+        - Exceptions
+      summary: List rules
+      operationId: getExceptionRules
+      x-fleetos-stability: stable
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ExceptionRule"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+    post:
+      tags:
+        - Exceptions
+      summary: Create rule
+      operationId: postExceptionRules
+      x-fleetos-stability: stable
+      x-fleetos-roles: owner, admin
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExceptionRuleWrite"
+      responses:
+        "201":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExceptionRule"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /exception-rules/{id}:
+    patch:
+      tags:
+        - Exceptions
+      summary: Update rule
+      operationId: patchExceptionRulesBy_id
+      x-fleetos-stability: stable
+      x-fleetos-roles: owner, admin
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExceptionRuleWrite"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExceptionRule"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+    delete:
+      tags:
+        - Exceptions
+      summary: Delete rule (system rules can only be disabled)
+      operationId: deleteExceptionRulesBy_id
+      x-fleetos-stability: stable
+      x-fleetos-roles: owner, admin
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: No content
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /attention:
+    get:
+      tags:
+        - Exceptions
+      summary: Overview "Needs attention" groups ranked by revenue at risk
+      operationId: getAttention
+      x-fleetos-stability: stable
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AttentionGroup"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /tickets:
+    get:
+      tags:
+        - Service
+      summary: List tickets
+      operationId: getTickets
+      x-fleetos-stability: stable
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/TicketStatus"
+        - name: vehicle_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: vendor_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/Sort"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - type: object
+                    required:
+                      - data
+                      - page
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Ticket"
+                      page:
+                        $ref: "#/components/schemas/PageInfo"
+                  - type: object
+                    properties:
+                      summary:
+                        $ref: "#/components/schemas/ServiceSummary"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+    post:
+      tags:
+        - Service
+      summary: Create ticket
+      operationId: postTickets
+      x-fleetos-stability: stable
+      x-fleetos-roles: owner, admin, ops
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TicketCreate"
+      responses:
+        "201":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ticket"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /tickets/{id}:
+    get:
+      tags:
+        - Service
+      summary: Ticket detail with SLA state
+      operationId: getTicketsBy_id
+      x-fleetos-stability: stable
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ticket"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+    patch:
+      tags:
+        - Service
+      summary: Edit description, estimates
+      operationId: patchTicketsBy_id
+      x-fleetos-stability: stable
+      x-fleetos-roles: owner, admin, ops
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TicketUpdate"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ticket"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /tickets/{id}/events:
+    get:
+      tags:
+        - Service
+      summary: Activity log
+      operationId: getTicketsBy_idEvents
+      x-fleetos-stability: stable
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TicketEvent"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /tickets/{id}/attachments:
+    get:
+      tags:
+        - Service
+      summary: Attachments (signed URLs)
+      operationId: getTicketsBy_idAttachments
+      x-fleetos-stability: stable
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Attachment"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+    post:
+      tags:
+        - Service
+      summary: Upload attachment (multipart, ≤ 20 MB, allow-listed types)
+      operationId: postTicketsBy_idAttachments
+      x-fleetos-stability: stable
+      x-fleetos-roles: owner, admin, ops
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "201":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Attachment"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /tickets/{id}/actions/{action}:
+    post:
+      tags:
+        - Service
+      summary: Lifecycle action
+      operationId: postTicketsBy_idActionsBy_action
+      x-fleetos-stability: stable
+      x-fleetos-roles: owner, admin, ops
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: action
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - assign-vendor
+              - escalate
+              - mark-arrived
+              - complete
+              - return-to-service
+              - cancel
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TicketAction"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ticket"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /vendors:
+    get:
+      tags:
+        - Vendors
+      summary: Vendor directory with computed metrics
+      operationId: getVendors
+      x-fleetos-stability: stable
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Vendor"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+    post:
+      tags:
+        - Vendors
+      summary: Add vendor
+      operationId: postVendors
+      x-fleetos-stability: stable
+      x-fleetos-roles: owner, admin, ops
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VendorWrite"
+      responses:
+        "201":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vendor"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /vendors/{id}:
+    get:
+      tags:
+        - Vendors
+      summary: Vendor detail + trends
+      operationId: getVendorsBy_id
+      x-fleetos-stability: stable
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vendor"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+    patch:
+      tags:
+        - Vendors
+      summary: Update vendor
+      operationId: patchVendorsBy_id
+      x-fleetos-stability: stable
+      x-fleetos-roles: owner, admin, ops
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VendorWrite"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vendor"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /vendors/{id}/jobs:
+    get:
+      tags:
+        - Vendors
+      summary: Job history
+      operationId: getVendorsBy_idJobs
+      x-fleetos-stability: stable
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - page
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/VendorJob"
+                  page:
+                    $ref: "#/components/schemas/PageInfo"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /vendors/rank:
+    get:
+      tags:
+        - Vendors
+      summary: Rank vendors for a dispatch (ETA × cost × SLA)
+      operationId: getVendorsRank
+      x-fleetos-stability: stable
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: vehicle_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VendorRanking"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /vendor-jobs/{id}/tracking:
+    get:
+      tags:
+        - Vendors (preview)
+      summary: Vendor-reported tracking
+      operationId: getVendorJobsBy_idTracking
+      x-fleetos-stability: preview
+      x-fleetos-capability: vendor_tracking
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VendorTracking"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "501":
+          $ref: "#/components/responses/CapabilityUnavailable"
+    post:
+      tags:
+        - Vendors (preview)
+      summary: Vendor tracking webhook
+      operationId: postVendorJobsBy_idTracking
+      x-fleetos-stability: preview
+      x-fleetos-capability: vendor_tracking
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VendorTracking"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VendorTracking"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "501":
+          $ref: "#/components/responses/CapabilityUnavailable"
+  /revenue/imports:
+    get:
+      tags:
+        - Money
+      summary: List CSV imports
+      operationId: getRevenueImports
+      x-fleetos-stability: stable
+      x-fleetos-roles: owner, admin, finance
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RevenueImport"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+    post:
+      tags:
+        - Money
+      summary: Upload payout CSV (validates, does not commit)
+      operationId: postRevenueImports
+      x-fleetos-stability: stable
+      x-fleetos-roles: owner, admin, finance
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "201":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RevenueImport"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /revenue/imports/{id}:
+    get:
+      tags:
+        - Money
+      summary: Import status + validation report
+      operationId: getRevenueImportsBy_id
+      x-fleetos-stability: stable
+      x-fleetos-roles: owner, admin, finance
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RevenueImport"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /revenue/imports/{id}/commit:
+    post:
+      tags:
+        - Money
+      summary: Commit a validated import to the ledger (idempotent)
+      operationId: postRevenueImportsBy_idCommit
+      x-fleetos-stability: stable
+      x-fleetos-roles: owner, admin, finance
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImportMapping"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RevenueImport"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /revenue-lines:
+    get:
+      tags:
+        - Money
+      summary: Revenue ledger lines
+      operationId: getRevenueLines
+      x-fleetos-stability: stable
+      x-fleetos-roles: owner, admin, finance
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: vehicle_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/From"
+        - $ref: "#/components/parameters/To"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - page
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/LedgerEntry"
+                  page:
+                    $ref: "#/components/schemas/PageInfo"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+    post:
+      tags:
+        - Money
+      summary: Manual revenue line
+      operationId: postRevenueLines
+      x-fleetos-stability: stable
+      x-fleetos-roles: owner, admin, finance
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LedgerEntryWrite"
+      responses:
+        "201":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LedgerEntry"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /cost-lines:
+    get:
+      tags:
+        - Money
+      summary: Cost ledger lines
+      operationId: getCostLines
+      x-fleetos-stability: stable
+      x-fleetos-roles: owner, admin, finance
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: vehicle_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/LedgerCategory"
+        - $ref: "#/components/parameters/From"
+        - $ref: "#/components/parameters/To"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - page
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/LedgerEntry"
+                  page:
+                    $ref: "#/components/schemas/PageInfo"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+    post:
+      tags:
+        - Money
+      summary: Manual cost line
+      operationId: postCostLines
+      x-fleetos-stability: stable
+      x-fleetos-roles: owner, admin, finance
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LedgerEntryWrite"
+      responses:
+        "201":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LedgerEntry"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /kpis/fleet:
+    get:
+      tags:
+        - KPIs
+      summary: Fleet KPIs for a period (kpis.md)
+      operationId: getKpisFleet
+      x-fleetos-stability: stable
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - $ref: "#/components/parameters/Period"
+        - $ref: "#/components/parameters/From"
+        - $ref: "#/components/parameters/To"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FleetKpis"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /kpis/hubs:
+    get:
+      tags:
+        - KPIs
+      summary: KPIs per hub
+      operationId: getKpisHubs
+      x-fleetos-stability: stable
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - $ref: "#/components/parameters/Period"
+        - $ref: "#/components/parameters/From"
+        - $ref: "#/components/parameters/To"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/HubKpis"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /kpis/vehicles/{id}:
+    get:
+      tags:
+        - KPIs
+      summary: Vehicle KPIs vs fleet average
+      operationId: getKpisVehiclesBy_id
+      x-fleetos-stability: stable
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/Period"
+        - $ref: "#/components/parameters/From"
+        - $ref: "#/components/parameters/To"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VehicleKpis"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /financials/pnl:
+    get:
+      tags:
+        - KPIs
+      summary: P&L statement
+      operationId: getFinancialsPnl
+      x-fleetos-stability: stable
+      x-fleetos-roles: owner, admin, finance
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: scope
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - fleet
+              - hub
+              - vehicle
+        - name: scope_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/Period"
+        - $ref: "#/components/parameters/From"
+        - $ref: "#/components/parameters/To"
+        - name: view
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - accounting
+              - economic
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pnl"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /financials/insights:
+    get:
+      tags:
+        - KPIs
+      summary: Anomaly insights (cohort z-scores)
+      operationId: getFinancialsInsights
+      x-fleetos-stability: stable
+      x-fleetos-roles: owner, admin, finance
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - $ref: "#/components/parameters/Period"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Insight"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /reports:
+    get:
+      tags:
+        - Reports
+      summary: List monthly report snapshots
+      operationId: getReports
+      x-fleetos-stability: stable
+      x-fleetos-roles: owner, admin, finance
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReportSummary"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+    post:
+      tags:
+        - Reports
+      summary: Generate a report for a closed month (async)
+      operationId: postReports
+      x-fleetos-stability: stable
+      x-fleetos-roles: owner, admin, finance
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - month
+              properties:
+                month:
+                  type: string
+                  pattern: ^\d{4}-\d{2}$
+      responses:
+        "202":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportSummary"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /reports/{id}:
+    get:
+      tags:
+        - Reports
+      summary: Report snapshot
+      operationId: getReportsBy_id
+      x-fleetos-stability: stable
+      x-fleetos-roles: owner, admin, finance
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Report"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /reports/{id}/pdf:
+    get:
+      tags:
+        - Reports
+      summary: Redirect to a signed PDF URL
+      operationId: getReportsBy_idPdf
+      x-fleetos-stability: stable
+      x-fleetos-roles: owner, admin, finance
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "302":
+          description: Redirect
+          headers:
+            Location:
+              schema:
+                type: string
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /reports/{id}/shares:
+    post:
+      tags:
+        - Reports
+      summary: Create expiring share link
+      operationId: postReportsBy_idShares
+      x-fleetos-stability: stable
+      x-fleetos-roles: owner, admin, finance
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShareCreate"
+      responses:
+        "201":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Share"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /reports/{id}/shares/{sid}:
+    delete:
+      tags:
+        - Reports
+      summary: Revoke share link
+      operationId: deleteReportsBy_idSharesBy_sid
+      x-fleetos-stability: stable
+      x-fleetos-roles: owner, admin, finance
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: sid
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: No content
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /covenants:
+    get:
+      tags:
+        - Reports
+      summary: Covenant definitions
+      operationId: getCovenants
+      x-fleetos-stability: stable
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Covenant"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+    put:
+      tags:
+        - Reports
+      summary: Replace covenant definitions
+      operationId: putCovenants
+      x-fleetos-stability: stable
+      x-fleetos-roles: owner, admin
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/Covenant"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Covenant"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /share/{token}:
+    get:
+      tags:
+        - Public
+      summary: Public read-only report view (no auth; token-scoped)
+      operationId: getShareBy_token
+      x-fleetos-stability: stable
+      security: []
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Report"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /members:
+    get:
+      tags:
+        - Settings
+      summary: Members and roles
+      operationId: getMembers
+      x-fleetos-stability: stable
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Member"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /members/{user_id}:
+    patch:
+      tags:
+        - Settings
+      summary: Change role
+      operationId: patchMembersBy_user_id
+      x-fleetos-stability: stable
+      x-fleetos-roles: owner, admin
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - role
+              properties:
+                role:
+                  $ref: "#/components/schemas/Role"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Member"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+    delete:
+      tags:
+        - Settings
+      summary: Remove member (last owner protected)
+      operationId: deleteMembersBy_user_id
+      x-fleetos-stability: stable
+      x-fleetos-roles: owner, admin
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: No content
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /invitations:
+    get:
+      tags:
+        - Settings
+      summary: Pending invitations
+      operationId: getInvitations
+      x-fleetos-stability: stable
+      x-fleetos-roles: owner, admin
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Invitation"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+    post:
+      tags:
+        - Settings
+      summary: Invite a user
+      operationId: postInvitations
+      x-fleetos-stability: stable
+      x-fleetos-roles: owner, admin
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - role
+              properties:
+                email:
+                  type: string
+                  format: email
+                role:
+                  $ref: "#/components/schemas/Role"
+      responses:
+        "201":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invitation"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /policies:
+    get:
+      tags:
+        - Settings
+      summary: Fleet policies
+      operationId: getPolicies
+      x-fleetos-stability: stable
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Policy"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+    put:
+      tags:
+        - Settings
+      summary: Replace fleet policies
+      operationId: putPolicies
+      x-fleetos-stability: stable
+      x-fleetos-roles: owner, admin
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/Policy"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Policy"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /notifications:
+    get:
+      tags:
+        - Settings
+      summary: Notifications for the current user
+      operationId: getNotifications
+      x-fleetos-stability: stable
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: unread
+          in: query
+          required: false
+          schema:
+            type: boolean
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - page
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Notification"
+                  page:
+                    $ref: "#/components/schemas/PageInfo"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /notifications/read:
+    post:
+      tags:
+        - Settings
+      summary: Mark notifications read
+      operationId: postNotificationsRead
+      x-fleetos-stability: stable
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                all:
+                  type: boolean
+      responses:
+        "204":
+          description: No content
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /notifications/settings:
+    get:
+      tags:
+        - Settings
+      summary: Channel settings per severity
+      operationId: getNotificationsSettings
+      x-fleetos-stability: stable
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationSettings"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+    put:
+      tags:
+        - Settings
+      summary: Update channel settings
+      operationId: putNotificationsSettings
+      x-fleetos-stability: stable
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NotificationSettings"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationSettings"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /integrations/tesla:
+    get:
+      tags:
+        - Integrations
+      summary: Tesla connection status, scopes, telemetry health
+      operationId: getIntegrationsTesla
+      x-fleetos-stability: stable
+      x-fleetos-roles: owner, admin
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeslaIntegration"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /integrations/tesla/connect:
+    post:
+      tags:
+        - Integrations
+      summary: Start business consent or OAuth; returns redirect URL
+      operationId: postIntegrationsTeslaConnect
+      x-fleetos-stability: stable
+      x-fleetos-roles: owner, admin
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - region
+                - token_type
+              properties:
+                region:
+                  type: string
+                  enum:
+                    - na
+                    - eu
+                    - cn
+                token_type:
+                  type: string
+                  enum:
+                    - business
+                    - user
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  redirect_url:
+                    type: string
+                    format: uri
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /integrations/tesla/callback:
+    get:
+      tags:
+        - Integrations
+      summary: OAuth callback (server exchanges code; tokens to Vault)
+      operationId: getIntegrationsTeslaCallback
+      x-fleetos-stability: stable
+      x-fleetos-roles: owner, admin
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: code
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: state
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "302":
+          description: Redirect
+          headers:
+            Location:
+              schema:
+                type: string
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /integrations/tesla/disconnect:
+    post:
+      tags:
+        - Integrations
+      summary: Revoke and delete tokens
+      operationId: postIntegrationsTeslaDisconnect
+      x-fleetos-stability: stable
+      x-fleetos-roles: owner, admin
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+      responses:
+        "204":
+          description: No content
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /integrations/tesla/vehicles:
+    get:
+      tags:
+        - Integrations
+      summary: Per-vehicle key pairing and telemetry sync status
+      operationId: getIntegrationsTeslaVehicles
+      x-fleetos-stability: stable
+      x-fleetos-roles: owner, admin
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TeslaVehicleStatus"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /copilot/chat:
+    post:
+      tags:
+        - Copilot
+      summary: Ask Copilot (server-sent events stream)
+      operationId: postCopilotChat
+      x-fleetos-stability: stable
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CopilotRequest"
+      responses:
+        "200":
+          description: "Server-sent events: `token`, `tool_call`, `citation`, `proposal`, `done`"
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+components:
+  securitySchemes:
+    SupabaseSession:
+      type: apiKey
+      in: cookie
+      name: sb-access-token
+      description: Supabase session cookie (browser)
+    BearerJWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Supabase user JWT
+  parameters:
+    OrgHeader:
+      name: X-FleetOS-Org
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Active org id; checked against memberships (never trusted alone). Foreign org → 404.
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 25
+    Cursor:
+      name: cursor
+      in: query
+      schema:
+        type: string
+    Sort:
+      name: sort
+      in: query
+      schema:
+        type: string
+      description: "`field` ascending, `-field` descending"
+    Period:
+      name: period
+      in: query
+      schema:
+        type: string
+        examples:
+          - today
+          - mtd
+          - last_30d
+          - month:2026-08
+    From:
+      name: from
+      in: query
+      schema:
+        type: string
+        format: date-time
+    To:
+      name: to
+      in: query
+      schema:
+        type: string
+        format: date-time
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: false
+      schema:
+        type: string
+        maxLength: 128
+  headers:
+    Stability:
+      schema:
+        type: string
+        enum:
+          - stable
+          - preview
+    DataSource:
+      schema:
+        type: string
+        enum:
+          - live
+          - simulated
+          - csv
+          - inferred
+          - static
+          - manual
+          - mixed
+      description: Present when the response is built from substitute data
+  responses:
+    Unauthenticated:
+      description: Not signed in
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Forbidden:
+      description: Role not allowed
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotFound:
+      description: Not found (also for resources in other orgs)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    ValidationFailed:
+      description: Validation failed
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    RateLimited:
+      description: Rate limited; see RateLimit-* headers
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    CapabilityUnavailable:
+      description: Preview capability has no source for this org
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CapabilityUnavailable"
+  schemas:
+    Error:
+      type: object
+      required:
+        - error
+        - message
+        - request_id
+      properties:
+        error:
+          type: string
+          enum:
+            - invalid_request
+            - unauthenticated
+            - forbidden
+            - not_found
+            - conflict
+            - validation_failed
+            - rate_limited
+            - capability_unavailable
+            - upstream_unavailable
+            - internal
+        message:
+          type: string
+        details:
+          type: array
+          items:
+            type: object
+        request_id:
+          type: string
+    CapabilityUnavailable:
+      type: object
+      required:
+        - error
+        - capability
+        - message
+      properties:
+        error:
+          type: string
+          const: capability_unavailable
+        capability:
+          $ref: "#/components/schemas/CapabilityName"
+        message:
+          type: string
+        docs:
+          type: string
+          format: uri
+        request_id:
+          type: string
+    PageInfo:
+      type: object
+      required:
+        - next_cursor
+      properties:
+        next_cursor:
+          oneOf:
+            - type: string
+            - type: "null"
+        total:
+          type: integer
+        total_is_estimate:
+          type: boolean
+    GeoPoint:
+      type: object
+      required:
+        - lat
+        - lng
+      properties:
+        lat:
+          type: number
+        lng:
+          type: number
+    CapabilityName:
+      type: string
+      enum:
+        - tesla
+        - rides
+        - earnings
+        - cabin_events
+        - autonomy_events
+        - dispatch
+        - charger_telemetry
+        - live_tariffs
+        - vendor_tracking
+    Capabilities:
+      type: object
+      required:
+        - org_id
+        - capabilities
+      properties:
+        org_id:
+          type: string
+          format: uuid
+        capabilities:
+          type: array
+          items:
+            type: object
+            required:
+              - name
+              - state
+            properties:
+              name:
+                $ref: "#/components/schemas/CapabilityName"
+              state:
+                type: string
+                enum:
+                  - live
+                  - simulated
+                  - unavailable
+              source:
+                oneOf:
+                  - type: string
+                  - type: "null"
+              fallback:
+                oneOf:
+                  - type: string
+                  - type: "null"
+    Role:
+      type: string
+      enum:
+        - owner
+        - admin
+        - ops
+        - finance
+        - viewer
+    Org:
+      type: object
+      required:
+        - id
+        - name
+        - timezone
+        - currency
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        timezone:
+          type: string
+        currency:
+          type: string
+        region:
+          type: string
+          enum:
+            - na
+            - eu
+            - cn
+        is_demo:
+          type: boolean
+        availability_target:
+          type: number
+          minimum: 0
+          maximum: 1
+        low_soc_threshold:
+          type: number
+          minimum: 0
+          maximum: 1
+        service_start:
+          type: string
+        service_end:
+          type: string
+    OrgUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        timezone:
+          type: string
+        availability_target:
+          type: number
+          minimum: 0
+          maximum: 1
+        low_soc_threshold:
+          type: number
+          minimum: 0
+          maximum: 1
+        service_start:
+          type: string
+        service_end:
+          type: string
+    Me:
+      type: object
+      required:
+        - user_id
+        - memberships
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        full_name:
+          oneOf:
+            - type: string
+            - type: "null"
+        active_org_id:
+          type: string
+          format: uuid
+        memberships:
+          type: array
+          items:
+            type: object
+            properties:
+              org:
+                $ref: "#/components/schemas/Org"
+              role:
+                $ref: "#/components/schemas/Role"
+        mfa_enabled:
+          type: boolean
+    VehicleStatus:
+      type: string
+      enum:
+        - in_service
+        - ready
+        - charging
+        - cleaning
+        - maintenance
+        - incident
+        - offline
+    VehicleState:
+      type: object
+      required:
+        - status
+        - connectivity
+        - fresh
+      properties:
+        status:
+          $ref: "#/components/schemas/VehicleStatus"
+        status_since:
+          type: string
+          format: date-time
+        soc:
+          oneOf:
+            - type: number
+              minimum: 0
+              maximum: 1
+            - type: "null"
+        range_m:
+          oneOf:
+            - type: number
+            - type: "null"
+        charge_state:
+          oneOf:
+            - type: string
+            - type: "null"
+        charge_power_kw:
+          oneOf:
+            - type: number
+            - type: "null"
+        location:
+          oneOf:
+            - $ref: "#/components/schemas/GeoPoint"
+            - type: "null"
+        location_name:
+          oneOf:
+            - type: string
+            - type: "null"
+        heading:
+          oneOf:
+            - type: number
+            - type: "null"
+        speed_mps:
+          oneOf:
+            - type: number
+            - type: "null"
+        odometer_m:
+          oneOf:
+            - type: number
+            - type: "null"
+        locked:
+          oneOf:
+            - type: boolean
+            - type: "null"
+        tpms:
+          oneOf:
+            - type: object
+              properties:
+                fl:
+                  type: number
+                fr:
+                  type: number
+                rl:
+                  type: number
+                rr:
+                  type: number
+            - type: "null"
+        connectivity:
+          type: string
+          enum:
+            - online
+            - asleep
+            - offline
+        current_hub_id:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: "null"
+        last_telemetry_at:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: "null"
+        fresh:
+          type: boolean
+    VehicleListItem:
+      type: object
+      required:
+        - id
+        - number
+        - vin
+        - state
+      properties:
+        id:
+          type: string
+          format: uuid
+        number:
+          type: string
+        vin:
+          type: string
+        home_hub:
+          oneOf:
+            - type: object
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                name:
+                  type: string
+            - type: "null"
+        state:
+          $ref: "#/components/schemas/VehicleState"
+        today:
+          type: object
+          properties:
+            revenue_cents:
+              oneOf:
+                - type: integer
+                  description: Minor units (cents) in the org currency
+                - type: "null"
+            contribution_cents:
+              oneOf:
+                - type: integer
+                  description: Minor units (cents) in the org currency
+                - type: "null"
+            revenue_per_available_hour_cents:
+              oneOf:
+                - type: integer
+                  description: Minor units (cents) in the org currency
+                - type: "null"
+            downtime_min:
+              type: integer
+        open_issue:
+          oneOf:
+            - type: object
+              properties:
+                exception_id:
+                  type: string
+                  format: uuid
+                type:
+                  type: string
+                severity:
+                  $ref: "#/components/schemas/Severity"
+            - type: "null"
+        next_action:
+          oneOf:
+            - type: string
+            - type: "null"
+    Vehicle:
+      allOf:
+        - $ref: "#/components/schemas/VehicleListItem"
+        - type: object
+          properties:
+            model:
+              oneOf:
+                - type: string
+                - type: "null"
+            lifecycle:
+              type: string
+              enum:
+                - pending
+                - commissioned
+                - retired
+            provider:
+              type: string
+              enum:
+                - simulator
+                - tesla
+            commissioned_at:
+              oneOf:
+                - type: string
+                  format: date-time
+                - type: "null"
+            insurance_monthly_cents:
+              oneOf:
+                - type: integer
+                  description: Minor units (cents) in the org currency
+                - type: "null"
+            financing_monthly_cents:
+              oneOf:
+                - type: integer
+                  description: Minor units (cents) in the org currency
+                - type: "null"
+            virtual_key_paired:
+              oneOf:
+                - type: boolean
+                - type: "null"
+            telemetry_synced:
+              oneOf:
+                - type: boolean
+                - type: "null"
+            holds:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  reason:
+                    type: string
+                  created_at:
+                    type: string
+                    format: date-time
+    VehicleCreate:
+      type: object
+      required:
+        - vin
+        - number
+      properties:
+        vin:
+          type: string
+          pattern: ^[A-HJ-NPR-Z0-9]{17}$
+        number:
+          type: string
+        home_hub_id:
+          type: string
+          format: uuid
+        insurance_monthly_cents:
+          type: integer
+          description: Minor units (cents) in the org currency
+        financing_monthly_cents:
+          type: integer
+          description: Minor units (cents) in the org currency
+    VehicleUpdate:
+      type: object
+      properties:
+        number:
+          type: string
+        home_hub_id:
+          type: string
+          format: uuid
+        lifecycle:
+          type: string
+          enum:
+            - pending
+            - commissioned
+            - retired
+        insurance_monthly_cents:
+          type: integer
+          description: Minor units (cents) in the org currency
+        financing_monthly_cents:
+          type: integer
+          description: Minor units (cents) in the org currency
+    TelemetrySeries:
+      type: object
+      required:
+        - vehicle_id
+        - series
+      properties:
+        vehicle_id:
+          type: string
+          format: uuid
+        interval:
+          type: string
+        series:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              points:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    t:
+                      type: string
+                      format: date-time
+                    v: {}
+                    min:
+                      type: number
+                    max:
+                      type: number
+    StatusEvent:
+      type: object
+      required:
+        - id
+        - to_status
+        - at
+        - cause_type
+      properties:
+        id:
+          type: string
+          format: uuid
+        vehicle_id:
+          type: string
+          format: uuid
+        from_status:
+          oneOf:
+            - $ref: "#/components/schemas/VehicleStatus"
+            - type: "null"
+        to_status:
+          $ref: "#/components/schemas/VehicleStatus"
+        at:
+          type: string
+          format: date-time
+        cause_type:
+          type: string
+          enum:
+            - telemetry
+            - ticket
+            - exception
+            - policy
+            - manual
+            - platform
+        cause_id:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: "null"
+        detail:
+          oneOf:
+            - type: string
+            - type: "null"
+    VehicleAlert:
+      type: object
+      required:
+        - id
+        - name
+        - started_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        audiences:
+          type: array
+          items:
+            type: string
+        started_at:
+          type: string
+          format: date-time
+        ended_at:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: "null"
+        source:
+          type: string
+    ChargingSession:
+      type: object
+      required:
+        - id
+        - started_at
+        - source
+      properties:
+        id:
+          type: string
+          format: uuid
+        hub_id:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: "null"
+        started_at:
+          type: string
+          format: date-time
+        ended_at:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: "null"
+        energy_kwh:
+          type: number
+        cost_cents:
+          type: integer
+          description: Minor units (cents) in the org currency
+        source:
+          type: string
+          enum:
+            - tesla_supercharger
+            - depot_inferred
+            - ocpp
+            - simulator
+    BatteryHealth:
+      type: object
+      required:
+        - taken_at
+        - soh_pct
+      properties:
+        taken_at:
+          type: string
+          format: date-time
+        soh_pct:
+          type: number
+        capacity_kwh:
+          type: number
+        source:
+          type: string
+    ReasonBody:
+      type: object
+      required:
+        - reason
+      properties:
+        reason:
+          type: string
+          minLength: 3
+    ReturnToServiceBody:
+      type: object
+      properties:
+        override:
+          type: boolean
+          default: false
+        reason:
+          type: string
+    CommandRequest:
+      type: object
+      required:
+        - command
+        - confirm
+      properties:
+        command:
+          type: string
+          enum:
+            - charge_start
+            - charge_stop
+            - set_charge_limit
+            - navigate_to
+            - door_lock
+            - door_unlock
+            - flash_lights
+            - honk_horn
+        params:
+          type: object
+        confirm:
+          type: boolean
+          const: true
+    Command:
+      type: object
+      required:
+        - id
+        - command
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        command:
+          type: string
+        status:
+          type: string
+          enum:
+            - pending_approval
+            - sent
+            - succeeded
+            - failed
+            - rejected
+        requested_by:
+          type: string
+          format: uuid
+        approved_by:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: "null"
+        created_at:
+          type: string
+          format: date-time
+        error:
+          oneOf:
+            - type: string
+            - type: "null"
+    Earnings:
+      type: object
+      required:
+        - vehicle_id
+        - gross_cents
+      properties:
+        vehicle_id:
+          type: string
+          format: uuid
+        gross_cents:
+          type: integer
+          description: Minor units (cents) in the org currency
+        platform_fee_cents:
+          type: integer
+          description: Minor units (cents) in the org currency
+        net_cents:
+          type: integer
+          description: Minor units (cents) in the org currency
+        trips:
+          type: integer
+        period:
+          type: object
+          properties:
+            from:
+              type: string
+              format: date-time
+            to:
+              type: string
+              format: date-time
+    CabinEvent:
+      type: object
+      required:
+        - id
+        - vehicle_id
+        - at
+        - kind
+      properties:
+        id:
+          type: string
+          format: uuid
+        vehicle_id:
+          type: string
+          format: uuid
+        at:
+          type: string
+          format: date-time
+        kind:
+          type: string
+          enum:
+            - spill
+            - debris
+            - lost_item
+            - odor
+            - damage
+            - other
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+        ride_id:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: "null"
+        image_url:
+          oneOf:
+            - type: string
+            - type: "null"
+    AutonomyEvent:
+      type: object
+      required:
+        - id
+        - vehicle_id
+        - at
+        - kind
+      properties:
+        id:
+          type: string
+          format: uuid
+        vehicle_id:
+          type: string
+          format: uuid
+        at:
+          type: string
+          format: date-time
+        kind:
+          type: string
+          enum:
+            - disengagement
+            - remote_assist
+            - incident
+            - stuck
+        location:
+          oneOf:
+            - $ref: "#/components/schemas/GeoPoint"
+            - type: "null"
+        severity:
+          oneOf:
+            - $ref: "#/components/schemas/Severity"
+            - type: "null"
+        detail:
+          oneOf:
+            - type: string
+            - type: "null"
+    Ride:
+      type: object
+      required:
+        - id
+        - vehicle_id
+        - started_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        vehicle_id:
+          type: string
+          format: uuid
+        started_at:
+          type: string
+          format: date-time
+        ended_at:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: "null"
+        distance_m:
+          type: number
+        revenue_distance_m:
+          type: number
+        fare_cents:
+          type: integer
+          description: Minor units (cents) in the org currency
+        platform_fee_cents:
+          type: integer
+          description: Minor units (cents) in the org currency
+        pickup:
+          oneOf:
+            - $ref: "#/components/schemas/GeoPoint"
+            - type: "null"
+        dropoff:
+          oneOf:
+            - $ref: "#/components/schemas/GeoPoint"
+            - type: "null"
+    DispatchAvailability:
+      type: object
+      required:
+        - vehicle_id
+        - on_network
+      properties:
+        vehicle_id:
+          type: string
+          format: uuid
+        on_network:
+          type: boolean
+        zone:
+          oneOf:
+            - type: string
+            - type: "null"
+        updated_at:
+          type: string
+          format: date-time
+    DispatchChange:
+      type: object
+      required:
+        - vehicle_ids
+        - on_network
+      properties:
+        vehicle_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        on_network:
+          type: boolean
+        reason:
+          type: string
+    Hub:
+      type: object
+      required:
+        - id
+        - name
+        - location
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        address:
+          oneOf:
+            - type: string
+            - type: "null"
+        location:
+          $ref: "#/components/schemas/GeoPoint"
+        chargers_total:
+          type: integer
+        bays:
+          type: object
+          properties:
+            cleaning:
+              type: integer
+            maintenance:
+              type: integer
+            parking:
+              type: integer
+        vehicles_assigned:
+          type: integer
+        vehicles_present:
+          type: integer
+        chargers_occupied:
+          type: integer
+        chargers_occupied_source:
+          type: string
+          enum:
+            - inferred
+            - ocpp
+        electricity_price_cents_per_kwh:
+          oneOf:
+            - type: number
+            - type: "null"
+        tariff_source:
+          type: string
+          enum:
+            - manual
+            - urdb
+            - arcadia
+        peak_forecast_utilization:
+          oneOf:
+            - type: number
+            - type: "null"
+    HubCreate:
+      type: object
+      required:
+        - name
+        - location
+      properties:
+        name:
+          type: string
+        address:
+          type: string
+        location:
+          $ref: "#/components/schemas/GeoPoint"
+        geofence:
+          type: object
+          description: GeoJSON Polygon
+        chargers:
+          type: array
+          items:
+            type: object
+            properties:
+              label:
+                type: string
+              max_kw:
+                type: number
+        bays:
+          type: array
+          items:
+            type: object
+            properties:
+              kind:
+                type: string
+                enum:
+                  - cleaning
+                  - maintenance
+                  - parking
+              label:
+                type: string
+        tariff_id:
+          type: string
+          format: uuid
+        operating_hours:
+          type: object
+    HubOccupancy:
+      type: object
+      required:
+        - hub_id
+        - chargers_total
+        - chargers_occupied
+        - source
+      properties:
+        hub_id:
+          type: string
+          format: uuid
+        vehicles_present:
+          type: array
+          items:
+            type: object
+            properties:
+              vehicle_id:
+                type: string
+                format: uuid
+              number:
+                type: string
+              status:
+                $ref: "#/components/schemas/VehicleStatus"
+              soc:
+                oneOf:
+                  - type: number
+                    minimum: 0
+                    maximum: 1
+                  - type: "null"
+        chargers_total:
+          type: integer
+        chargers_occupied:
+          type: integer
+        source:
+          type: string
+          enum:
+            - inferred
+            - ocpp
+    HubForecast:
+      type: object
+      required:
+        - hub_id
+        - hours
+      properties:
+        hub_id:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date
+        capacity:
+          type: integer
+        hours:
+          type: array
+          items:
+            type: object
+            properties:
+              hour:
+                type: string
+                format: date-time
+              demand:
+                type: number
+              utilization:
+                type: number
+    Recommendation:
+      type: object
+      required:
+        - id
+        - title
+        - status
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        detail:
+          type: string
+        impact_cents:
+          type: integer
+          description: Minor units (cents) in the org currency
+        impact_note:
+          oneOf:
+            - type: string
+            - type: "null"
+        status:
+          type: string
+          enum:
+            - proposed
+            - applied
+            - dismissed
+        actions:
+          type: array
+          items:
+            type: object
+    ChargerLive:
+      type: object
+      required:
+        - charger_id
+        - status
+      properties:
+        charger_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+            - available
+            - preparing
+            - charging
+            - finishing
+            - faulted
+            - unavailable
+        power_kw:
+          oneOf:
+            - type: number
+            - type: "null"
+        vehicle_id:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: "null"
+        at:
+          type: string
+          format: date-time
+    TariffLive:
+      type: object
+      required:
+        - hub_id
+        - price_cents_per_kwh
+      properties:
+        hub_id:
+          type: string
+          format: uuid
+        price_cents_per_kwh:
+          type: number
+        period:
+          type: string
+        valid_until:
+          type: string
+          format: date-time
+    Severity:
+      type: string
+      enum:
+        - critical
+        - high
+        - medium
+        - low
+    ExceptionStatus:
+      type: string
+      enum:
+        - open
+        - assigned
+        - in_progress
+        - resolved
+        - dismissed
+    Exception:
+      type: object
+      required:
+        - id
+        - type
+        - severity
+        - status
+        - detected_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        vehicle:
+          oneOf:
+            - type: object
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                number:
+                  type: string
+            - type: "null"
+        hub_id:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: "null"
+        type:
+          type: string
+        class:
+          type: string
+          enum:
+            - incident
+            - maintenance
+            - cleaning
+            - charging
+            - other
+        severity:
+          $ref: "#/components/schemas/Severity"
+        status:
+          $ref: "#/components/schemas/ExceptionStatus"
+        detected_at:
+          type: string
+          format: date-time
+        location_name:
+          oneOf:
+            - type: string
+            - type: "null"
+        blocks_service:
+          type: boolean
+        expected_downtime_min:
+          oneOf:
+            - type: integer
+            - type: "null"
+        revenue_at_risk_cents:
+          oneOf:
+            - type: integer
+              description: Minor units (cents) in the org currency
+            - type: "null"
+        recommended_action:
+          oneOf:
+            - type: object
+              properties:
+                label:
+                  type: string
+                vendor_id:
+                  oneOf:
+                    - type: string
+                      format: uuid
+                    - type: "null"
+                eta_min:
+                  oneOf:
+                    - type: integer
+                    - type: "null"
+                cost_cents:
+                  oneOf:
+                    - type: integer
+                      description: Minor units (cents) in the org currency
+                    - type: "null"
+            - type: "null"
+        owner:
+          oneOf:
+            - type: object
+              properties:
+                user_id:
+                  type: string
+                  format: uuid
+                name:
+                  type: string
+            - type: "null"
+        ticket_id:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: "null"
+        rule_id:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: "null"
+        resolved_at:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: "null"
+    ExceptionSummary:
+      type: object
+      required:
+        - active
+      properties:
+        active:
+          type: integer
+        by_severity:
+          type: object
+          properties:
+            critical:
+              type: integer
+            high:
+              type: integer
+            medium:
+              type: integer
+            low:
+              type: integer
+        resolved_today:
+          type: integer
+        revenue_at_risk_cents:
+          type: integer
+          description: Minor units (cents) in the org currency
+    ExceptionCreate:
+      type: object
+      required:
+        - type
+        - severity
+      properties:
+        vehicle_id:
+          type: string
+          format: uuid
+        type:
+          type: string
+        class:
+          type: string
+        severity:
+          $ref: "#/components/schemas/Severity"
+        description:
+          type: string
+        blocks_service:
+          type: boolean
+    ExceptionUpdate:
+      type: object
+      properties:
+        status:
+          $ref: "#/components/schemas/ExceptionStatus"
+        owner_user_id:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: "null"
+        note:
+          type: string
+    CreateTicketFromException:
+      type: object
+      properties:
+        vendor_id:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: "null"
+        dispatch:
+          type: boolean
+          default: false
+        description:
+          type: string
+    ExceptionRule:
+      type: object
+      required:
+        - id
+        - key
+        - name
+        - enabled
+      properties:
+        id:
+          type: string
+          format: uuid
+        key:
+          type: string
+        name:
+          type: string
+        condition:
+          type: object
+        class:
+          type: string
+        severity:
+          $ref: "#/components/schemas/Severity"
+        blocks_service:
+          type: boolean
+        recommended_action:
+          type: object
+        auto_actions:
+          type: object
+        enabled:
+          type: boolean
+        is_system:
+          type: boolean
+    ExceptionRuleWrite:
+      type: object
+      properties:
+        key:
+          type: string
+        name:
+          type: string
+        condition:
+          type: object
+        class:
+          type: string
+        severity:
+          $ref: "#/components/schemas/Severity"
+        blocks_service:
+          type: boolean
+        recommended_action:
+          type: object
+        auto_actions:
+          type: object
+        enabled:
+          type: boolean
+    AttentionGroup:
+      type: object
+      required:
+        - key
+        - title
+        - revenue_at_risk_cents
+      properties:
+        key:
+          type: string
+        severity:
+          $ref: "#/components/schemas/Severity"
+        title:
+          type: string
+        subtitle:
+          type: string
+        affected_count:
+          type: integer
+        affected_label:
+          type: string
+        revenue_at_risk_cents:
+          type: integer
+          description: Minor units (cents) in the org currency
+        recommended_action:
+          type: string
+        action:
+          type: object
+          properties:
+            kind:
+              type: string
+            target:
+              type: string
+        exception_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+    TicketStatus:
+      type: string
+      enum:
+        - open
+        - dispatched
+        - en_route
+        - arrived
+        - in_progress
+        - completed
+        - returned
+        - cancelled
+    Ticket:
+      type: object
+      required:
+        - id
+        - number
+        - type
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        number:
+          type: string
+        vehicle:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            number:
+              type: string
+        exception_id:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: "null"
+        type:
+          type: string
+          enum:
+            - cleaning
+            - maintenance
+            - roadside
+            - charging
+            - other
+        status:
+          $ref: "#/components/schemas/TicketStatus"
+        blocks_service:
+          type: boolean
+        detection_source:
+          oneOf:
+            - type: string
+            - type: "null"
+        created_at:
+          type: string
+          format: date-time
+        sla_due_at:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: "null"
+        sla_state:
+          type: string
+          enum:
+            - on_track
+            - at_risk
+            - breached
+            - met
+            - n/a
+        vendor:
+          oneOf:
+            - type: object
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                name:
+                  type: string
+            - type: "null"
+        eta_at:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: "null"
+        arrived_at:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: "null"
+        estimated_cost_cents:
+          oneOf:
+            - type: integer
+              description: Minor units (cents) in the org currency
+            - type: "null"
+        actual_cost_cents:
+          oneOf:
+            - type: integer
+              description: Minor units (cents) in the org currency
+            - type: "null"
+        downtime_min:
+          oneOf:
+            - type: integer
+            - type: "null"
+        lost_revenue_cents:
+          oneOf:
+            - type: integer
+              description: Minor units (cents) in the org currency
+            - type: "null"
+        description:
+          oneOf:
+            - type: string
+            - type: "null"
+        policy_ref:
+          oneOf:
+            - type: string
+            - type: "null"
+    ServiceSummary:
+      type: object
+      properties:
+        active:
+          type: integer
+        awaiting_dispatch:
+          type: integer
+        median_response_min:
+          oneOf:
+            - type: number
+            - type: "null"
+        sla_compliance_30d:
+          oneOf:
+            - type: number
+              minimum: 0
+              maximum: 1
+            - type: "null"
+        cost_today_cents:
+          type: integer
+          description: Minor units (cents) in the org currency
+        revenue_protected_today_cents:
+          type: integer
+          description: Minor units (cents) in the org currency
+    TicketCreate:
+      type: object
+      required:
+        - vehicle_id
+        - type
+      properties:
+        vehicle_id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum:
+            - cleaning
+            - maintenance
+            - roadside
+            - charging
+            - other
+        blocks_service:
+          type: boolean
+        description:
+          type: string
+        vendor_id:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: "null"
+    TicketUpdate:
+      type: object
+      properties:
+        description:
+          type: string
+        estimated_cost_cents:
+          type: integer
+          description: Minor units (cents) in the org currency
+    TicketAction:
+      type: object
+      properties:
+        vendor_id:
+          type: string
+          format: uuid
+        eta_at:
+          type: string
+          format: date-time
+        actual_cost_cents:
+          type: integer
+          description: Minor units (cents) in the org currency
+        note:
+          type: string
+        override:
+          type: boolean
+        reason:
+          type: string
+    TicketEvent:
+      type: object
+      required:
+        - id
+        - type
+        - at
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+        actor_type:
+          type: string
+          enum:
+            - user
+            - system
+            - vendor
+        actor_name:
+          oneOf:
+            - type: string
+            - type: "null"
+        at:
+          type: string
+          format: date-time
+        detail:
+          type: object
+    Attachment:
+      type: object
+      required:
+        - id
+        - url
+      properties:
+        id:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        content_type:
+          type: string
+        size_bytes:
+          type: integer
+        url:
+          type: string
+          format: uri
+          description: Short-lived signed URL
+        uploaded_at:
+          type: string
+          format: date-time
+    Vendor:
+      type: object
+      required:
+        - id
+        - name
+        - categories
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        categories:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum:
+            - active
+            - limited
+            - inactive
+        service_radius_m:
+          oneOf:
+            - type: number
+            - type: "null"
+        metrics:
+          type: object
+          properties:
+            avg_response_min:
+              oneOf:
+                - type: number
+                - type: "null"
+            avg_job_cost_cents:
+              oneOf:
+                - type: integer
+                  description: Minor units (cents) in the org currency
+                - type: "null"
+            sla_compliance:
+              oneOf:
+                - type: number
+                  minimum: 0
+                  maximum: 1
+                - type: "null"
+            rating:
+              oneOf:
+                - type: number
+                - type: "null"
+            jobs_completed:
+              type: integer
+        capacity_note:
+          oneOf:
+            - type: string
+            - type: "null"
+    VendorWrite:
+      type: object
+      properties:
+        name:
+          type: string
+        categories:
+          type: array
+          items:
+            type: string
+        contact:
+          type: object
+        service_area:
+          type: object
+          description: GeoJSON Polygon
+        service_radius_m:
+          type: number
+        pricing:
+          type: object
+        status:
+          type: string
+          enum:
+            - active
+            - limited
+            - inactive
+    VendorJob:
+      type: object
+      required:
+        - id
+        - ticket_id
+        - dispatched_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        ticket_id:
+          type: string
+          format: uuid
+        dispatched_at:
+          type: string
+          format: date-time
+        eta_at:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: "null"
+        arrived_at:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: "null"
+        completed_at:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: "null"
+        cost_cents:
+          oneOf:
+            - type: integer
+              description: Minor units (cents) in the org currency
+            - type: "null"
+        rating:
+          oneOf:
+            - type: number
+            - type: "null"
+        sla_met:
+          oneOf:
+            - type: boolean
+            - type: "null"
+        tracking_source:
+          type: string
+          enum:
+            - manual
+            - geofence
+            - integration
+    VendorRanking:
+      type: object
+      required:
+        - vendor
+        - score
+      properties:
+        vendor:
+          $ref: "#/components/schemas/Vendor"
+        expected_eta_min:
+          oneOf:
+            - type: number
+            - type: "null"
+        expected_cost_cents:
+          oneOf:
+            - type: integer
+              description: Minor units (cents) in the org currency
+            - type: "null"
+        sla_compliance:
+          oneOf:
+            - type: number
+              minimum: 0
+              maximum: 1
+            - type: "null"
+        score:
+          type: number
+    VendorTracking:
+      type: object
+      required:
+        - job_id
+        - status
+        - at
+      properties:
+        job_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+            - accepted
+            - en_route
+            - on_scene
+            - completed
+            - cancelled
+        eta_at:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: "null"
+        location:
+          oneOf:
+            - $ref: "#/components/schemas/GeoPoint"
+            - type: "null"
+        at:
+          type: string
+          format: date-time
+        evidence_urls:
+          type: array
+          items:
+            type: string
+    LedgerCategory:
+      type: string
+      enum:
+        - gross_ride_revenue
+        - platform_fee
+        - electricity
+        - cleaning
+        - maintenance
+        - roadside
+        - other_variable
+        - insurance
+        - financing
+    LedgerEntry:
+      type: object
+      required:
+        - id
+        - occurred_on
+        - category
+        - amount_cents
+        - source
+      properties:
+        id:
+          type: string
+          format: uuid
+        vehicle_id:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: "null"
+        hub_id:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: "null"
+        occurred_on:
+          type: string
+          format: date
+        category:
+          $ref: "#/components/schemas/LedgerCategory"
+        amount_cents:
+          type: integer
+          description: Minor units (cents) in the org currency
+        source:
+          type: string
+          enum:
+            - csv
+            - simulator
+            - earnings_api
+            - tesla_charging
+            - depot_inferred
+            - ocpp
+            - ticket
+            - allocation
+            - manual
+        source_ref:
+          oneOf:
+            - type: string
+            - type: "null"
+    LedgerEntryWrite:
+      type: object
+      required:
+        - occurred_on
+        - category
+        - amount_cents
+      properties:
+        vehicle_id:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: "null"
+        hub_id:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: "null"
+        occurred_on:
+          type: string
+          format: date
+        category:
+          $ref: "#/components/schemas/LedgerCategory"
+        amount_cents:
+          type: integer
+          description: Minor units (cents) in the org currency
+        note:
+          type: string
+    RevenueImport:
+      type: object
+      required:
+        - id
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        layout:
+          type: string
+          enum:
+            - uber_fleet_portal
+            - custom
+        status:
+          type: string
+          enum:
+            - validating
+            - ready
+            - imported
+            - failed
+        rows_total:
+          type: integer
+        rows_imported:
+          type: integer
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              row:
+                type: integer
+              column:
+                type: string
+              message:
+                type: string
+        created_at:
+          type: string
+          format: date-time
+    ImportMapping:
+      type: object
+      properties:
+        layout:
+          type: string
+          enum:
+            - uber_fleet_portal
+            - custom
+        mapping:
+          type: object
+          additionalProperties:
+            type: string
+    FleetKpis:
+      type: object
+      required:
+        - total_vehicles
+        - available_now
+      properties:
+        period:
+          type: object
+          properties:
+            from:
+              type: string
+              format: date-time
+            to:
+              type: string
+              format: date-time
+        total_vehicles:
+          type: integer
+        available_now:
+          type: integer
+        earning_now:
+          type: integer
+        status_counts:
+          type: object
+          additionalProperties:
+            type: integer
+        availability:
+          oneOf:
+            - type: number
+              minimum: 0
+              maximum: 1
+            - type: "null"
+        availability_target:
+          type: number
+          minimum: 0
+          maximum: 1
+        uptime:
+          oneOf:
+            - type: number
+              minimum: 0
+              maximum: 1
+            - type: "null"
+        utilization:
+          oneOf:
+            - type: object
+              properties:
+                value:
+                  type: number
+                  minimum: 0
+                  maximum: 1
+                estimated:
+                  type: boolean
+            - type: "null"
+        downtime_hours_by_cause:
+          type: object
+          additionalProperties:
+            type: number
+        avg_soc:
+          oneOf:
+            - type: number
+              minimum: 0
+              maximum: 1
+            - type: "null"
+        low_soc_count:
+          type: integer
+        gross_revenue_cents:
+          oneOf:
+            - type: integer
+              description: Minor units (cents) in the org currency
+            - type: "null"
+        contribution_cents:
+          oneOf:
+            - type: integer
+              description: Minor units (cents) in the org currency
+            - type: "null"
+        contribution_margin:
+          oneOf:
+            - type: number
+            - type: "null"
+        downtime_cost_cents:
+          oneOf:
+            - type: integer
+              description: Minor units (cents) in the org currency
+            - type: "null"
+        revenue_per_available_hour_cents:
+          oneOf:
+            - type: integer
+              description: Minor units (cents) in the org currency
+            - type: "null"
+        health:
+          type: object
+          properties:
+            cleanliness:
+              oneOf:
+                - type: number
+                  minimum: 0
+                  maximum: 1
+                - type: "null"
+            charging_readiness:
+              oneOf:
+                - type: number
+                  minimum: 0
+                  maximum: 1
+                - type: "null"
+            maintenance_readiness:
+              oneOf:
+                - type: number
+                  minimum: 0
+                  maximum: 1
+                - type: "null"
+            vendor_sla:
+              oneOf:
+                - type: number
+                  minimum: 0
+                  maximum: 1
+                - type: "null"
+            incident_free_rides:
+              oneOf:
+                - type: number
+                  minimum: 0
+                  maximum: 1
+                - type: "null"
+        data_sources:
+          type: object
+          additionalProperties:
+            type: string
+          description: Per-metric data source, e.g. {"gross_revenue_cents":"csv"}
+    HubKpis:
+      type: object
+      required:
+        - hub_id
+      properties:
+        hub_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        revenue_cents:
+          oneOf:
+            - type: integer
+              description: Minor units (cents) in the org currency
+            - type: "null"
+        contribution_cents:
+          oneOf:
+            - type: integer
+              description: Minor units (cents) in the org currency
+            - type: "null"
+        contribution_margin:
+          oneOf:
+            - type: number
+            - type: "null"
+        avg_turnaround_min:
+          oneOf:
+            - type: number
+            - type: "null"
+        peak_forecast_utilization:
+          oneOf:
+            - type: number
+            - type: "null"
+    VehicleKpis:
+      type: object
+      required:
+        - vehicle_id
+        - metrics
+      properties:
+        vehicle_id:
+          type: string
+          format: uuid
+        metrics:
+          type: array
+          items:
+            type: object
+            properties:
+              key:
+                type: string
+              value:
+                oneOf:
+                  - type: number
+                  - type: "null"
+              fleet_avg:
+                oneOf:
+                  - type: number
+                  - type: "null"
+              unit:
+                type: string
+              flag:
+                oneOf:
+                  - type: string
+                    enum:
+                      - good
+                      - warn
+                      - bad
+                  - type: "null"
+              data_source:
+                oneOf:
+                  - type: string
+                  - type: "null"
+        performance_label:
+          type: string
+          enum:
+            - strong
+            - monitor
+            - review
+    Pnl:
+      type: object
+      required:
+        - scope
+        - lines
+        - contribution_cents
+      properties:
+        scope:
+          type: string
+        scope_id:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: "null"
+        period:
+          type: object
+          properties:
+            from:
+              type: string
+              format: date-time
+            to:
+              type: string
+              format: date-time
+        view:
+          type: string
+          enum:
+            - accounting
+            - economic
+        lines:
+          type: array
+          items:
+            type: object
+            properties:
+              category:
+                $ref: "#/components/schemas/LedgerCategory"
+              amount_cents:
+                type: integer
+                description: Minor units (cents) in the org currency
+              vs_fleet_avg_pct:
+                oneOf:
+                  - type: number
+                  - type: "null"
+              flagged:
+                type: boolean
+        gross_revenue_cents:
+          type: integer
+          description: Minor units (cents) in the org currency
+        contribution_cents:
+          type: integer
+          description: Minor units (cents) in the org currency
+        contribution_margin:
+          oneOf:
+            - type: number
+            - type: "null"
+        fixed_allocations_cents:
+          type: integer
+          description: Minor units (cents) in the org currency
+        net_contribution_cents:
+          type: integer
+          description: Minor units (cents) in the org currency
+        downtime_cost_cents:
+          type: integer
+          description: Minor units (cents) in the org currency
+        economic_net_cents:
+          oneOf:
+            - type: integer
+              description: Minor units (cents) in the org currency
+            - type: "null"
+    Insight:
+      type: object
+      required:
+        - id
+        - title
+      properties:
+        id:
+          type: string
+        scope:
+          type: string
+          enum:
+            - vehicle
+            - hub
+        scope_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        detail:
+          type: string
+        impact_cents:
+          oneOf:
+            - type: integer
+              description: Minor units (cents) in the org currency
+            - type: "null"
+        drivers:
+          type: array
+          items:
+            type: object
+            properties:
+              category:
+                type: string
+              share:
+                type: number
+                minimum: 0
+                maximum: 1
+    ReportSummary:
+      type: object
+      required:
+        - id
+        - month
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        month:
+          type: string
+        version:
+          type: integer
+        status:
+          type: string
+          enum:
+            - generating
+            - ready
+            - failed
+        grade:
+          oneOf:
+            - type: string
+            - type: "null"
+        generated_at:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: "null"
+    Report:
+      allOf:
+        - $ref: "#/components/schemas/ReportSummary"
+        - type: object
+          properties:
+            sections:
+              type: object
+              description: Executive summary, availability, revenue, contribution, vehicles, maintenance, incidents, vendors, hubs, risk
+            covenants:
+              type: array
+              items:
+                type: object
+                properties:
+                  label:
+                    type: string
+                  value:
+                    oneOf:
+                      - type: number
+                      - type: "null"
+                  threshold:
+                    type: number
+                  status:
+                    type: string
+                    enum:
+                      - pass
+                      - at_risk
+                      - breach
+                      - not_tracked
+    ShareCreate:
+      type: object
+      required:
+        - recipient
+      properties:
+        recipient:
+          type: string
+        expires_in_days:
+          type: integer
+          default: 30
+          maximum: 365
+    Share:
+      type: object
+      required:
+        - id
+        - url
+        - expires_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        url:
+          type: string
+          format: uri
+        recipient:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+    Covenant:
+      type: object
+      required:
+        - metric
+        - operator
+        - threshold
+      properties:
+        id:
+          type: string
+          format: uuid
+        metric:
+          type: string
+        operator:
+          type: string
+          enum:
+            - ">"
+            - ">="
+            - <
+            - <=
+        threshold:
+          type: number
+        label:
+          type: string
+    Member:
+      type: object
+      required:
+        - user_id
+        - role
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        full_name:
+          oneOf:
+            - type: string
+            - type: "null"
+        role:
+          $ref: "#/components/schemas/Role"
+        joined_at:
+          type: string
+          format: date-time
+    Invitation:
+      type: object
+      required:
+        - id
+        - email
+        - role
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        role:
+          $ref: "#/components/schemas/Role"
+        expires_at:
+          type: string
+          format: date-time
+    Policy:
+      type: object
+      required:
+        - key
+        - enabled
+      properties:
+        key:
+          type: string
+        name:
+          type: string
+        kind:
+          type: string
+        config:
+          type: object
+        enabled:
+          type: boolean
+    Notification:
+      type: object
+      required:
+        - id
+        - kind
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        kind:
+          type: string
+        payload:
+          type: object
+        created_at:
+          type: string
+          format: date-time
+        read_at:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: "null"
+    NotificationSettings:
+      type: object
+      properties:
+        by_severity:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              in_app:
+                type: boolean
+              email:
+                type: boolean
+              slack:
+                type: boolean
+        slack_webhook_configured:
+          type: boolean
+    TeslaIntegration:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum:
+            - not_connected
+            - pending
+            - connected
+            - error
+            - revoked
+        region:
+          oneOf:
+            - type: string
+            - type: "null"
+        token_type:
+          oneOf:
+            - type: string
+              enum:
+                - business
+                - user
+            - type: "null"
+        scopes:
+          type: array
+          items:
+            type: string
+        connected_at:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: "null"
+        vehicles:
+          type: integer
+        telemetry_errors_24h:
+          type: integer
+        last_error:
+          oneOf:
+            - type: string
+            - type: "null"
+        month_to_date_cost_cents:
+          oneOf:
+            - type: integer
+              description: Minor units (cents) in the org currency
+            - type: "null"
+    TeslaVehicleStatus:
+      type: object
+      required:
+        - vin
+        - virtual_key_paired
+        - telemetry_synced
+      properties:
+        vin:
+          type: string
+        vehicle_id:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: "null"
+        virtual_key_paired:
+          type: boolean
+        pairing_url:
+          oneOf:
+            - type: string
+              format: uri
+            - type: "null"
+        telemetry_synced:
+          type: boolean
+        firmware:
+          oneOf:
+            - type: string
+            - type: "null"
+        last_error:
+          oneOf:
+            - type: string
+            - type: "null"
+    CopilotRequest:
+      type: object
+      required:
+        - message
+      properties:
+        conversation_id:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: "null"
+        message:
+          type: string
+          minLength: 1
+          maxLength: 4000

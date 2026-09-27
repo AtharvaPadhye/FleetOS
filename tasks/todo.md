@@ -25,7 +25,7 @@ Progress also logged in Obsidian: `claude_memory/projects/FleetOS/progress-log.m
 ## Phase 1 — Design
 - [x] 1.1 Architecture + ADRs (`docs/architecture/README.md`, ADR-0001…0013)
 - [x] 1.2 Domain model / ERD (`docs/architecture/erd.md`)
-- [ ] 1.3 API contract (single v1, stable/preview tags) + VehicleProvider interface
+- [x] 1.3 API contract (single v1, stable/preview tags) + VehicleProvider interface (`docs/architecture/api.md`, `openapi.yaml`: 99 ops, 11 preview, lint-clean)
 - [ ] 1.4 Design system (tokens + components)
 - [ ] 1.5 UX flows & states
 - [ ] Phase 1 review → checkpoint
