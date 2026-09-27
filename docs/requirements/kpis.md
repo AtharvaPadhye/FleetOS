@@ -166,6 +166,8 @@ An **economic view** toggle on the Vehicle P&L may show "Net contribution after 
 | 6 | Availability 90.5% (Overview) vs uptime 97.2% (Reports) look contradictory | Two defined metrics: availability counts planned charging/cleaning as down; uptime doesn't. |
 | 7 | Report "contribution / available hour $18.41" at 54.1% margin implies ~$34 revenue / available hour, but Financials shows ~$23 | MVP figures are illustrative; the simulator seed will produce mutually consistent values. |
 | 8 | Fault "P0A7F" is a generic OBD-II code | Faults use Tesla alert names from `recent_alerts` / telemetry. |
+| 9 | MVP VINs (e.g. `7G2CEHED8RA004047`) fail the ISO 3779 check digit (should be `…ED9RA…`) | VINs are validated including the check digit (`packages/domain/src/vin.ts`); the simulator mints valid VINs in the same style. |
+| 10 | Revenue per available hour ($23.12) × ~21 available hours implies ~$480 per car per day, but the MVP's daily revenue is $18,420 / 84 ≈ $219 per car | The simulator is calibrated to revenue per available hour (~$20/h, the rate used in the worked examples); a 24 h fleet then earns ~$460 per car per day. Pilot data decides the real figure. |
 
 *(Correction to the roadmap inventory: "76 available / 68 earning" is consistent: 68 In Service + 8 Ready = 76; 84 − 76 = 8 = 4 Charging + 2 Cleaning + 1 Maintenance + 1 Offline.)*
 

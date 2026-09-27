@@ -4,3 +4,4 @@ export * from "./time";
 export * from "./money";
 export * from "./service";
 export * from "./scores";
+export * from "./vin";
