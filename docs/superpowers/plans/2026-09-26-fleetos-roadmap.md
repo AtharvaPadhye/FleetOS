@@ -26,6 +26,7 @@ detect issue → rank by **revenue at risk** → dispatch vendor → track **SLA
 | Copilot LLM | Claude (default `claude-sonnet-5`) with tool-use over RLS-scoped read APIs; verify via `claude-api` skill at build time | — |
 | API versioning | **Single `/api/v1` with per-endpoint stability tags.** `stable` = backed by a source we have today (Tesla Fleet API fields, native records, CSV imports). `preview` = placeholder for a source we don't have yet (platform rides/earnings, cabin & autonomy events, dispatch, charger/vendor/tariff feeds): simulated in demo orgs, `501 capability_unavailable` elsewhere, shape may change until it goes stable. `/api/v2` is reserved for real breaking changes. See §3a | `/v1` = available + `/v2` = future: misuses versions to mean source availability, so a real breaking change to v1 would have to jump to v3 (decided 2026-09-26, then reversed the same day) |
 | Requirements defaults | Recommended answers to the open questions in `prd.md` §9, `kpis.md` §7 and `vehicle-states.md` §9 accepted by Akshat on 2026-09-26 (contribution = revenue − variable costs, proposed grade weights, 24 h service window, 40% low-SOC, Incident outranks Offline, …) | — |
+| Substitute data | Every stand-in for a real source (simulator, CSV, manual, inferred, static, fixture) carries a `SUBSTITUTE(<capability>, <kind>)` comment with the real source and replacement step; inventoried by `pnpm substitutes`. Rule lives in `CLAUDE.md` | Tracking substitutes only in docs (drifts from code) |
 | Charts | Recharts (or ECharts for dense time-series), validated with the `dataviz` skill | — |
 
 ## 1. What the MVP implements (inventory)
@@ -166,8 +167,8 @@ Exit: ERD, API contract, provider interface, design tokens reviewed.
 
 ### Phase 2 — Foundation
 Exit: on a Vercel preview URL you can sign in, create/switch org, and navigate the empty shell; RLS isolation tests pass in CI; Pages still serves the prototype.
-- **2.1 Monorepo + prototype move** — move MVP to `prototype/`, pnpm workspaces + Turborepo, update `deploy-pages.yml` to build `prototype/` **in the same commit** (every push to `main` deploys Pages). Verify: `pnpm --filter prototype build` produces identical `dist/`.
-- **2.2 Next.js app** — `apps/web` (App Router, TS strict, Tailwind, shadcn/ui), tokens in `packages/ui`; ESLint, Prettier, Vitest, Playwright; GitHub Actions CI (lint, typecheck, test).
+- **2.1 Monorepo + prototype move** — move MVP to `prototype/`, pnpm workspaces + Turborepo, update `deploy-pages.yml` to build `prototype/` **in the same commit** (every push to `main` deploys Pages), and add a `paths:` filter (`prototype/**`, the workflow file) so only prototype changes redeploy Pages; keep `workflow_dispatch`. Verify: live site byte-identical after deploy; a docs-only push triggers no Pages run. Verify: `pnpm --filter prototype build` produces identical `dist/`.
+- **2.2 Next.js app** — `apps/web` (App Router, TS strict, Tailwind, shadcn/ui), tokens in `packages/ui`; ESLint, Prettier, Vitest, Playwright; GitHub Actions CI (lint, typecheck, test); `pnpm substitutes` script that inventories `SUBSTITUTE(...)` markers (file:line, capability, kind) and fails CI on malformed ones (see `CLAUDE.md`).
 - **2.3 Supabase baseline** — local CLI stack, migrations for orgs/memberships/profiles, `auth.org_ids()` helper, RLS policies, pgTAP isolation tests.
 - **2.4 Auth + orgs + roles** — magic link + Google; roles owner/admin/ops/finance/viewer; middleware route protection; org switcher.
 - **2.5 App shell** — sidebar, header, 9 routes, ⌘K palette stub, mobile nav, ported from MVP look.

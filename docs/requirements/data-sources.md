@@ -1,6 +1,7 @@
 # FleetOS — Data Sources & Tesla Fleet API (verified)
 
 > Roadmap task 0.4 · Status: **accepted** · Research date **2026-09-26**
+> Raw research with every source URL: `docs/research/2026-09-26-tesla-and-data-sources.md`. In code, every substitute (simulated, CSV, manual, inferred, static, fixture) is marked with a `SUBSTITUTE(...)` comment; see `CLAUDE.md`.
 > Every field FleetOS shows → where it comes from → whether it's **stable** (source available now) or **preview** (placeholder capability, see roadmap §3a). Tesla facts were verified against developer.tesla.com and `teslamotors` GitHub repos on the research date; items still marked *unverified* must be confirmed in Phase 4 against a real vehicle. Re-verify before relying on prices or limits: Tesla changes them.
 
 ## 1. Headline findings

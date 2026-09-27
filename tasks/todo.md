@@ -11,6 +11,7 @@ Progress also logged in Obsidian: `claude_memory/projects/FleetOS/progress-log.m
 - [x] Roadmap written + committed
 - [x] Git workflow: commit + push `tasks/todo.md` with every task, directly to `main`
 - [x] Open questions from 0.1–0.3 resolved with recommended defaults
+- [x] Research archive + `SUBSTITUTE(...)` code-marker convention (`CLAUDE.md`)
 - [x] API versioning: single `/api/v1`; `stable` vs `preview` (placeholder) tags; `/api/v2` reserved for breaking changes
 
 ## Phase 0 — Requirements & discovery
@@ -30,8 +31,8 @@ Progress also logged in Obsidian: `claude_memory/projects/FleetOS/progress-log.m
 - [ ] Phase 1 review → checkpoint
 
 ## Phase 2 — Foundation
-- [ ] 2.1 Monorepo + move MVP to prototype/ (Pages still works)
-- [ ] 2.2 Next.js app + CI
+- [ ] 2.1 Monorepo + move MVP to prototype/ + Pages path filter (Pages still works)
+- [ ] 2.2 Next.js app + CI + `pnpm substitutes` marker inventory
 - [ ] 2.3 Supabase baseline + RLS tests
 - [ ] 2.4 Auth, orgs, roles
 - [ ] 2.5 App shell
