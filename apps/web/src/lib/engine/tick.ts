@@ -98,6 +98,7 @@ export async function tickOrg(db: SupabaseClient, orgId: string, now = new Date(
   let minutes = 0;
   const totals = { events: 0, statusChanges: 0, samples: 0, alerts: 0 };
   const startLive = previous;
+  const replayFrom = provider.now(); // simulated time this tick starts replaying from
   const statusEvents: StatusEventOut[] = [];
   while (provider.now().getTime() + 10_000 <= now.getTime()) {
     const from = provider.now();
@@ -132,8 +133,12 @@ export async function tickOrg(db: SupabaseClient, orgId: string, now = new Date(
     for (const k of Object.keys(totals) as (keyof typeof totals)[]) totals[k] += r.counts[k];
   }
 
-  // KPI rollup: hours per status per vehicle-day (task 3.8c), finishing yesterday and catching up if paused.
-  const { error: hErr2 } = await db.rpc("engine_refresh_day_hours", { p_org: orgId });
+  // KPI rollup: hours per status per vehicle-day (task 3.8c), from the earliest day this tick replayed
+  // (a catch-up across midnight changes yesterday too) or the last refreshed day, through today.
+  const { error: hErr2 } = await db.rpc("engine_refresh_day_hours", {
+    p_org: orgId,
+    p_since: replayFrom.toISOString(),
+  });
   if (hErr2) throw new Error(hErr2.message);
 
   // Realtime (task 3.8d): changed fields per vehicle and each status change, on private org channels.
