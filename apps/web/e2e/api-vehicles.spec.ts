@@ -80,6 +80,33 @@ test.beforeAll(async () => {
       },
     ]),
   );
+  // Hours and money today, so revenue per available hour is computed (a fraction of a cent before rounding).
+  const today = new Date().toISOString().slice(0, 10);
+  ok(
+    await db.from("vehicle_day_hours").insert({
+      org_id: ORG,
+      vehicle_id: CAR.a,
+      day: today,
+      in_service_h: 2.7,
+      ready_h: 0.3,
+      charging_h: 0,
+      cleaning_h: 0,
+      maintenance_h: 0,
+      incident_h: 0,
+      offline_h: 0,
+    }),
+  );
+  ok(
+    await db.from("ledger_entries").insert({
+      org_id: ORG,
+      vehicle_id: CAR.a,
+      occurred_on: today,
+      category: "gross_ride_revenue",
+      amount_cents: 10_000,
+      source: "manual",
+      source_ref: "rph-1",
+    }),
+  );
   ok(
     await db.from("vehicle_status_events").insert(
       ["2026-09-01T10:00:00Z", "2026-09-01T11:00:00Z", "2026-09-01T12:00:00Z"].map((at, i) => ({
@@ -122,6 +149,7 @@ test("lists the fleet with live state, sorted by number, in pages", async ({ req
     state: { status: "charging", soc: 0.25, connectivity: "online", fresh: true },
   });
   expect(p1.data[1].state).toMatchObject({ fresh: false }); // asleep and silent since January
+  expect(p1.data[0].today).toMatchObject({ revenue_cents: 10_000, revenue_per_available_hour_cents: 3_333 }); // $100 / 3 h
   const p2 = await (await get(request, owner, `/vehicles?limit=2&cursor=${p1.page.next_cursor}`)).json();
   expect(p2.data.map((v: { number: string }) => v.number)).toEqual(["003"]);
   expect(p2.data[0].state).toMatchObject({ status: "offline", connectivity: "offline", fresh: false }); // never seen

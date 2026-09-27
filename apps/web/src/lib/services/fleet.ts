@@ -68,6 +68,7 @@ export interface FleetResult {
 }
 
 const PAGE = 1000;
+const roundOrNull = (x: number | null) => (x === null ? null : Math.round(x));
 const PROFIT_ORDER: Record<PerformanceLabel, number> = { review: 0, monitor: 1, strong: 2 };
 
 async function allRows<T>(
@@ -181,7 +182,7 @@ export async function listFleet(
       today: {
         revenue_cents: p ? p.grossRevenueCents : null,
         contribution_cents: p ? p.contributionCents : null,
-        revenue_per_available_hour_cents: p && t ? (perHour(p.grossRevenueCents, t.available) ?? null) : null,
+        revenue_per_available_hour_cents: p && t ? roundOrNull(perHour(p.grossRevenueCents, t.available)) : null,
         downtime_min: t ? Math.round((t.plannedDowntime + t.unplannedDowntime) * 60) : 0,
       },
       profitability,

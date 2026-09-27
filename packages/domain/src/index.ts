@@ -7,3 +7,4 @@ export * from "./scores";
 export * from "./vin";
 export * from "./payouts";
 export * from "./costs";
+export * from "./vendors";

@@ -79,7 +79,7 @@ Progress also logged in Obsidian: `claude_memory/projects/FleetOS/progress-log.m
 - [ ] 5.4 Exceptions engine
 - [ ] 5.5 Service tickets
 - [ ] 5.6a (optional) Airtable inputs: vendor job forms + vendor directory (ADR-0015)
-- [ ] 5.6 Vendors
+- [x] 5.6 Vendors (`vendors` with categories, availability, contact, base + service radius or polygon, per-category prices, SLA terms; `vendors_covering` (PostGIS) + documented ranking in `packages/domain` (0.5 ETA + 0.3 price + 0.2 SLA, limited × 0.8, 90% SLA prior under 5 jobs) with the breakdown shown; `/vendors` directory with category chips and a "best vendor for a car" panel, add/edit dialog, `/vendors/[slug]` with the service area on the map; API `GET,POST /vendors`, `GET,PATCH /vendors/{id}`, `GET /vendors/rank`; demo orgs seeded with the MVP's Phoenix vendors (+ a maintenance shop); job metrics fill in with 5.5; fixed a 5.1 bug where revenue per available hour wasn't whole cents and broke the list API)
 - [ ] 5.7 Hubs
 - [ ] 5.8 Financials
 - [ ] 5.9 Reports

@@ -111,3 +111,82 @@ export function phoenixTouSchedule(hub: Pick<HubSpec, "centsPerKwh">): TariffPer
     { label: "Off-peak", days: EVERY_DAY, from: "00:00", to: "24:00", cents_per_kwh: off },
   ];
 }
+
+// SUBSTITUTE(vendor_tracking, simulated): the demo's vendor network (names, prices and radii from the MVP's Vendors screen).
+//   Real source: the org's own vendor directory, entered in FleetOS or imported from Airtable (task 5.6a).
+//   Replace by: nothing to replace in real orgs (they add their own vendors); this only seeds demo orgs.
+//   Docs: docs/requirements/data-sources.md §5
+export const PHOENIX_VENDORS = [
+  {
+    name: "RapidClean Mobile",
+    slug: "rapidclean-mobile",
+    categories: ["cleaning"],
+    status: "active",
+    base: { lat: 33.4655, lng: -112.068 },
+    radiusMi: 25,
+    pricing: { cleaning: 1_900 },
+    slaResponseMin: 30,
+    slaResolutionMin: 60,
+    capacity: "3 crews",
+  },
+  {
+    name: "Phoenix Fleet Detail",
+    slug: "phoenix-fleet-detail",
+    categories: ["detailing", "cleaning"],
+    status: "active",
+    base: { lat: 33.4942, lng: -112.0101 },
+    radiusMi: 18,
+    pricing: { detailing: 6_400, cleaning: 3_200 },
+    slaResponseMin: 60,
+    slaResolutionMin: 120,
+    capacity: "Available",
+  },
+  {
+    name: "Desert Tire Response",
+    slug: "desert-tire-response",
+    categories: ["tyres"],
+    status: "active",
+    base: { lat: 33.4152, lng: -111.9403 },
+    radiusMi: 40,
+    pricing: { tyres: 14_200 },
+    slaResponseMin: 45,
+    slaResolutionMin: 90,
+    capacity: "2 trucks",
+  },
+  {
+    name: "Metro Tow & Recovery",
+    slug: "metro-tow-recovery",
+    categories: ["towing"],
+    status: "limited",
+    base: { lat: 33.4373, lng: -112.1215 },
+    radiusMi: 50,
+    pricing: { towing: 18_600 },
+    slaResponseMin: 40,
+    slaResolutionMin: 120,
+    capacity: "1 truck",
+  },
+  {
+    name: "Valley EV Service",
+    slug: "valley-ev-service",
+    categories: ["maintenance"],
+    status: "active",
+    base: { lat: 33.4484, lng: -112.074 },
+    radiusMi: 30,
+    pricing: { maintenance: 33_800 },
+    slaResponseMin: 120,
+    slaResolutionMin: 480,
+    capacity: "4 bays",
+  },
+  {
+    name: "ChargeOps Services",
+    slug: "chargeops-services",
+    categories: ["charging"],
+    status: "active",
+    base: { lat: 33.5092, lng: -111.8985 },
+    radiusMi: 30,
+    pricing: { charging: 9_800 },
+    slaResponseMin: 60,
+    slaResolutionMin: 180,
+    capacity: "Available",
+  },
+] as const;

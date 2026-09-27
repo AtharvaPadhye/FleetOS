@@ -31,11 +31,14 @@ export function VehicleMap({
   glyph,
   hub,
   label,
+  areaLabel,
 }: {
   vehicle: MapPoint | null;
   glyph: string;
   hub: (MapPoint & { name: string; radiusM: number }) | null;
   label: string;
+  /** Text on the area's marker (default "<name> hub"). */
+  areaLabel?: string;
 }) {
   const el = useRef<HTMLDivElement>(null);
   const [failed, setFailed] = useState(false);
@@ -90,7 +93,7 @@ export function VehicleMap({
           }
           if (hub) {
             const h = document.createElement("div");
-            h.textContent = `${hub.name} hub`;
+            h.textContent = areaLabel ?? `${hub.name} hub`;
             h.setAttribute("aria-hidden", "true");
             h.className =
               "rounded-sm border border-[var(--fo-border-control)] bg-[var(--fo-bg-overlay)] px-1.5 py-0.5 text-[12px] text-[var(--fo-fg-muted)]";
@@ -117,7 +120,7 @@ export function VehicleMap({
       map?.remove();
     };
     // Re-create only when the car or hub moves; the glyph is part of the marker.
-  }, [vehicle, hub, glyph]);
+  }, [vehicle, hub, glyph, areaLabel]);
 
   if (!vehicle && !hub)
     return (

@@ -8,7 +8,14 @@ import {
   type LedgerCategory,
   type TariffPeriod,
 } from "@fleetos/domain";
-import { PHOENIX, phoenixTouSchedule, type ChargeRecord, type HubKey, type OpsRecord } from "@fleetos/providers";
+import {
+  PHOENIX,
+  PHOENIX_VENDORS,
+  phoenixTouSchedule,
+  type ChargeRecord,
+  type HubKey,
+  type OpsRecord,
+} from "@fleetos/providers";
 
 /**
  * Cost ledger writers (task 3.7, kpis.md §3.2): charging sessions priced by hub tariff → electricity;
@@ -240,4 +247,28 @@ export async function allocateFixedCosts(db: SupabaseClient, now = new Date(), o
     booked += lines.length - (count ?? 0);
   }
   return booked;
+}
+
+/** Demo orgs get the Phoenix vendor network once (task 5.6); orgs created before it get it on their next tick. */
+export async function ensureDemoVendors(db: SupabaseClient, orgId: string) {
+  const { count, error } = await db.from("vendors").select("id", { count: "exact", head: true }).eq("org_id", orgId);
+  if (error) throw new Error(error.message);
+  if (count) return;
+  const { error: iErr } = await db.from("vendors").insert(
+    PHOENIX_VENDORS.map((v) => ({
+      org_id: orgId,
+      name: v.name,
+      slug: v.slug,
+      categories: [...v.categories],
+      status: v.status,
+      contact: {},
+      base_location: `SRID=4326;POINT(${v.base.lng} ${v.base.lat})`,
+      service_radius_m: Math.round(v.radiusMi * 1609.344),
+      pricing: v.pricing,
+      sla_response_min: v.slaResponseMin,
+      sla_resolution_min: v.slaResolutionMin,
+      capacity_note: v.capacity,
+    })),
+  );
+  if (iErr) throw new Error(iErr.message);
 }

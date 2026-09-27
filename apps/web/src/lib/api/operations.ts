@@ -13,6 +13,12 @@ import {
   TariffLive,
   TariffLiveQuery,
   VendorTracking,
+  Vendor,
+  VendorCreate,
+  VendorListQuery,
+  VendorPatch,
+  VendorRankQuery,
+  VendorRanking,
   VendorTrackingUpdate,
   ChargingSession,
   FleetKpis,
@@ -198,6 +204,61 @@ export const getPnl = op({
   response: Pnl,
 });
 
+// Vendors (task 5.6)
+export const getVendors = op({
+  operationId: "getVendors",
+  method: "GET",
+  path: "/vendors",
+  stability: "stable",
+  org: "required",
+  query: VendorListQuery,
+  response: z.array(Vendor),
+});
+
+export const postVendor = op({
+  operationId: "postVendors",
+  method: "POST",
+  path: "/vendors",
+  stability: "stable",
+  org: "required",
+  roles: ["owner", "admin", "ops"],
+  query: NoQuery,
+  body: VendorCreate,
+  response: Vendor,
+});
+
+export const getVendor = op({
+  operationId: "getVendorsBy_id",
+  method: "GET",
+  path: "/vendors/{id}",
+  stability: "stable",
+  org: "required",
+  query: NoQuery,
+  response: Vendor,
+});
+
+export const patchVendor = op({
+  operationId: "patchVendorsBy_id",
+  method: "PATCH",
+  path: "/vendors/{id}",
+  stability: "stable",
+  org: "required",
+  roles: ["owner", "admin", "ops"],
+  query: NoQuery,
+  body: VendorPatch,
+  response: Vendor,
+});
+
+export const getVendorRank = op({
+  operationId: "getVendorsRank",
+  method: "GET",
+  path: "/vendors/rank",
+  stability: "stable",
+  org: "required",
+  query: VendorRankQuery,
+  response: z.array(VendorRanking),
+});
+
 // Preview operations (task 3.9): simulated in demo orgs, 501 capability_unavailable elsewhere (ADR-0006).
 const preview = { stability: "preview", org: "required" } as const;
 
@@ -328,6 +389,11 @@ export const OPERATIONS: Operation[] = [
   getFleetKpis,
   getVehicleKpis,
   getPnl,
+  getVendors,
+  postVendor,
+  getVendor,
+  patchVendor,
+  getVendorRank,
   getVehicleEarnings,
   getVehicleCabinEvents,
   getVehicleAutonomyEvents,

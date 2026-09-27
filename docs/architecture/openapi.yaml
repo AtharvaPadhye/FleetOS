@@ -2274,7 +2274,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/VendorWrite"
+              $ref: "#/components/schemas/VendorCreate"
       responses:
         "201":
           description: OK
@@ -5760,6 +5760,48 @@ components:
           oneOf:
             - type: string
             - type: "null"
+        slug:
+          type: string
+        contact:
+          type: object
+          properties:
+            name:
+              oneOf:
+                - type: string
+                - type: "null"
+            phone:
+              oneOf:
+                - type: string
+                - type: "null"
+            email:
+              oneOf:
+                - type: string
+                - type: "null"
+        base_location:
+          oneOf:
+            - $ref: "#/components/schemas/GeoPoint"
+            - type: "null"
+        pricing:
+          type: object
+          description: Typical job price per category, in cents (e.g. {"cleaning":1900})
+          additionalProperties:
+            type: integer
+        sla_response_min:
+          oneOf:
+            - type: integer
+            - type: "null"
+        sla_resolution_min:
+          oneOf:
+            - type: integer
+            - type: "null"
+    VendorCreate:
+      description: A new vendor needs a name and at least one category.
+      allOf:
+        - $ref: "#/components/schemas/VendorWrite"
+        - type: object
+          required:
+            - name
+            - categories
     VendorWrite:
       type: object
       properties:
@@ -5784,6 +5826,14 @@ components:
             - active
             - limited
             - inactive
+        base_location:
+          $ref: "#/components/schemas/GeoPoint"
+        sla_response_min:
+          type: integer
+        sla_resolution_min:
+          type: integer
+        capacity_note:
+          type: string
     VendorJob:
       type: object
       required:
@@ -5859,6 +5909,22 @@ components:
             - type: "null"
         score:
           type: number
+        distance_m:
+          oneOf:
+            - type: number
+            - type: "null"
+        breakdown:
+          type: object
+          description: Score components, each 0-1, and their weights (VN-4)
+          properties:
+            eta:
+              type: number
+            cost:
+              type: number
+            sla:
+              type: number
+            limited_penalty:
+              type: boolean
     VendorTracking:
       type: object
       required:

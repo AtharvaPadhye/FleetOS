@@ -412,3 +412,72 @@ export const AlertQuery = z.strictObject({
   limit: Limit,
   cursor: Cursor,
 });
+
+// Vendors (task 5.6)
+export const VendorCategory = z.enum(["cleaning", "detailing", "tyres", "towing", "maintenance", "charging"]);
+export const Vendor = z.object({
+  id: z.uuid(),
+  name: z.string(),
+  slug: z.string(),
+  categories: z.array(VendorCategory),
+  status: z.enum(["active", "limited", "inactive"]),
+  contact: z.object({ name: z.string().nullable(), phone: z.string().nullable(), email: z.string().nullable() }),
+  base_location: GeoPoint.nullable(),
+  service_radius_m: z.number().nullable(),
+  pricing: z.record(z.string(), z.number().int()),
+  sla_response_min: z.number().int().nullable(),
+  sla_resolution_min: z.number().int().nullable(),
+  capacity_note: z.string().nullable(),
+  metrics: z.object({
+    avg_response_min: z.number().nullable(),
+    avg_job_cost_cents: cents.nullable(),
+    sla_compliance: z.number().nullable(),
+    rating: z.number().nullable(),
+    jobs_completed: z.number().int(),
+  }),
+});
+const VendorFields = {
+  name: z.string().trim().min(1).max(80),
+  categories: z.array(VendorCategory).min(1),
+  contact: z.strictObject({
+    name: z.string().trim().max(80).optional(),
+    phone: z.string().trim().max(40).optional(),
+    email: z.email().optional(),
+  }),
+  service_area: z.strictObject({
+    type: z.literal("Polygon"),
+    coordinates: z.array(z.array(z.array(z.number()).length(2)).min(4)).length(1),
+  }),
+  service_radius_m: z.number().min(100).max(300_000),
+  pricing: z.record(z.string(), z.number().int().min(0)),
+  status: z.enum(["active", "limited", "inactive"]),
+  base_location: z.strictObject({ lat: z.number().min(-90).max(90), lng: z.number().min(-180).max(180) }),
+  sla_response_min: z.number().int().min(1).max(1440),
+  sla_resolution_min: z.number().int().min(1).max(10080),
+  capacity_note: z.string().trim().max(200),
+};
+/** POST /vendors: name and at least one category; everything else optional. */
+export const VendorCreate = z.strictObject({
+  ...Object.fromEntries(Object.entries(VendorFields).map(([k, v]) => [k, v.optional()])),
+  name: VendorFields.name,
+  categories: VendorFields.categories,
+}) as z.ZodType<
+  import("@/lib/services/vendors").VendorInput & { name: string; categories: z.infer<typeof VendorCategory>[] }
+>;
+/** PATCH /vendors/{id}: any subset. */
+export const VendorPatch = z
+  .strictObject(Object.fromEntries(Object.entries(VendorFields).map(([k, v]) => [k, v.optional()])))
+  .refine((o) => Object.keys(o).length > 0, "Send at least one field to change.") as unknown as z.ZodType<
+  import("@/lib/services/vendors").VendorInput
+>;
+export const VendorRanking = z.object({
+  vendor: Vendor,
+  expected_eta_min: z.number().nullable(),
+  expected_cost_cents: cents.nullable(),
+  sla_compliance: z.number().nullable(),
+  score: z.number(),
+  distance_m: z.number().nullable(),
+  breakdown: z.object({ eta: z.number(), cost: z.number(), sla: z.number(), limited_penalty: z.boolean() }),
+});
+export const VendorListQuery = z.strictObject({ category: VendorCategory.optional() });
+export const VendorRankQuery = z.strictObject({ category: VendorCategory, vehicle_id: z.uuid() });

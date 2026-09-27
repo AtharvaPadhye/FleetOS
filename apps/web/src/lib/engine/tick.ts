@@ -10,7 +10,7 @@ import {
   type ProviderSnapshot,
   type RideRecord,
 } from "@fleetos/providers";
-import { demoHubPricing, writeCharging, writeOps } from "./costs";
+import { demoHubPricing, ensureDemoVendors, writeCharging, writeOps } from "./costs";
 import { statePatches, statusMessages } from "./broadcast";
 import { writeAutonomyEvents, writeCabinEvents, type CabinEventRecord } from "./preview";
 import type { StatusEventOut } from "@fleetos/engine";
@@ -95,6 +95,7 @@ export async function tickOrg(db: SupabaseClient, orgId: string, now = new Date(
   const localDay = new Intl.DateTimeFormat("en-CA", { timeZone });
   const day = (d: Date) => localDay.format(d);
   const pricing = await demoHubPricing(db, orgId);
+  await ensureDemoVendors(db, orgId);
   let minutes = 0;
   const totals = { events: 0, statusChanges: 0, samples: 0, alerts: 0 };
   const startLive = previous;
