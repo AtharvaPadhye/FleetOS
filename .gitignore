@@ -20,3 +20,14 @@ pnpm-debug.log*
 # local Supabase
 supabase/.temp/
 supabase/.branches/
+
+# Next.js / Vercel / Playwright
+next-env.d.ts
+.vercel/
+playwright-report/
+test-results/
+*.tsbuildinfo
+
+# keys (Tesla virtual-key private key lives in Supabase Vault, never in git)
+*.pem
+!**/public/.well-known/**/*.pem

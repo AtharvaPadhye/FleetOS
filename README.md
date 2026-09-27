@@ -12,8 +12,9 @@ This repo holds both the original **interactive prototype** (static, live on Git
 
 ```
 prototype/     Frozen MVP (static HTML/JS/CSS) deployed to GitHub Pages
-apps/          Production apps (web, later worker) — from task 2.2
-packages/      Shared code: domain logic, providers, UI — from task 2.2/3.1
+apps/web/      Next.js 16 app (App Router, Tailwind 4, TypeScript)
+packages/ui/   Design tokens + shared components (docs/design/design-system.md)
+scripts/       Repo tooling (SUBSTITUTE marker checker)
 supabase/      Database migrations, policies, seed — from task 2.3
 docs/          Requirements, architecture (ADRs, ERD, API), design, research
 tasks/         Progress checklist and lessons
@@ -37,7 +38,19 @@ pnpm prototype:build     # outputs prototype/dist
 
 ### Run the production app
 
-Arrives with task 2.2 (Next.js app in `apps/web`).
+```bash
+pnpm dev                 # apps/web on http://localhost:3000 (Next.js 16, Turbopack)
+pnpm build               # build everything (Turborepo)
+```
+
+### Checks (same as CI)
+
+```bash
+pnpm format:check && pnpm substitutes && pnpm test:scripts
+pnpm lint && pnpm typecheck && pnpm test && pnpm build
+pnpm --filter @fleetos/web exec playwright install chromium   # once
+pnpm --filter @fleetos/web e2e                                 # end-to-end + WCAG 2.2 AA scan
+```
 
 ## Documentation
 

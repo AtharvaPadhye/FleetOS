@@ -1,0 +1,10 @@
+prototype/
+docs/
+tasks/
+pnpm-lock.yaml
+**/.next/
+**/.turbo/
+**/dist/
+**/playwright-report/
+**/test-results/
+*.md

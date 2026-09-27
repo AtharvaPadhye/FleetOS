@@ -14,9 +14,16 @@
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "prototype:dev": "pnpm --filter @fleetos/prototype dev",
-    "prototype:build": "pnpm --filter @fleetos/prototype build"
+    "prototype:build": "pnpm --filter @fleetos/prototype build",
+    "substitutes": "node scripts/substitutes.mjs",
+    "test:scripts": "node --test \"scripts/*.test.mjs\"",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "e2e": "turbo run e2e"
   },
   "devDependencies": {
-    "turbo": "2.11.4"
+    "turbo": "2.11.4",
+    "prettier": "3.9.9",
+    "prettier-plugin-tailwindcss": "0.8.1"
   }
 }

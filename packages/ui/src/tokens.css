@@ -1,0 +1,196 @@
+/*
+ * FleetOS design tokens — docs/design/design-system.md (task 1.4).
+ * Layers: primitives (--fo-*) → semantic tokens (--fo-bg-*, --fo-fg-*, …) → Tailwind theme (@theme inline)
+ * and shadcn/ui variables. Components use Tailwind classes or semantic variables, never primitives or hex.
+ * Contrast of every text/UI pair was checked for WCAG 2.2 AA in both themes (see the design doc).
+ */
+
+:root,
+[data-theme="night"] {
+  color-scheme: dark;
+
+  /* ---- primitives: neutral ramp (Night Depot) ---- */
+  --fo-neutral-950: #0b0f14;
+  --fo-neutral-900: #11161d;
+  --fo-neutral-850: #171d26;
+  --fo-neutral-800: #1e2530;
+  --fo-neutral-750: #252d39;
+  --fo-neutral-700: #33404f;
+  --fo-neutral-600: #627085;
+  --fo-neutral-500: #7b8796;
+  --fo-neutral-400: #8d98a6;
+  --fo-neutral-300: #a1acba;
+  --fo-neutral-200: #c9d1db;
+  --fo-neutral-100: #e6ebf2;
+
+  /* ---- primitives: signal hues ---- */
+  --fo-green: #3dd68c;
+  --fo-blue: #6aa6ff;
+  --fo-violet: #b39dff;
+  --fo-amber: #f2b24c;
+  --fo-red: #ff6b6b;
+  --fo-ember: #ff8a52;
+
+  /* ---- semantic ---- */
+  --fo-bg-canvas: var(--fo-neutral-950);
+  --fo-bg-surface: var(--fo-neutral-900);
+  --fo-bg-raised: var(--fo-neutral-850);
+  --fo-bg-overlay: var(--fo-neutral-800);
+  --fo-border-divider: var(--fo-neutral-750);
+  --fo-border-strong: var(--fo-neutral-700);
+  --fo-border-control: var(--fo-neutral-600);
+  --fo-fg: var(--fo-neutral-100);
+  --fo-fg-muted: var(--fo-neutral-300);
+  --fo-fg-subtle: var(--fo-neutral-500);
+  --fo-fg-secondary: var(--fo-neutral-200);
+  --fo-chalk: var(--fo-neutral-100);
+  --fo-chalk-fg: var(--fo-neutral-950);
+  --fo-focus: var(--fo-neutral-100);
+  --fo-scrim: rgb(5 8 12 / 0.6);
+  --fo-shadow-overlay: 0 12px 32px rgb(0 0 0 / 0.45);
+
+  --fo-status-available: var(--fo-green);
+  --fo-status-charging: var(--fo-blue);
+  --fo-status-planned: var(--fo-violet);
+  --fo-status-maintenance: var(--fo-amber);
+  --fo-status-incident: var(--fo-red);
+  --fo-status-offline: var(--fo-neutral-400);
+  --fo-severity-critical: var(--fo-red);
+  --fo-severity-high: var(--fo-amber);
+  --fo-severity-medium: var(--fo-neutral-200);
+  --fo-severity-low: var(--fo-neutral-500);
+  --fo-money-loss: var(--fo-ember);
+  --fo-money-gain: var(--fo-green);
+  --fo-data-simulated: var(--fo-violet);
+}
+
+[data-theme="paper"] {
+  color-scheme: light;
+
+  --fo-bg-canvas: #f7f6f2;
+  --fo-bg-surface: #ffffff;
+  --fo-bg-raised: #fbfaf7;
+  --fo-bg-overlay: #ffffff;
+  --fo-border-divider: #e3e1da;
+  --fo-border-strong: #cfccc3;
+  --fo-border-control: #7a8490;
+  --fo-fg: #16202b;
+  --fo-fg-muted: #56616e;
+  --fo-fg-subtle: #5f6874;
+  --fo-fg-secondary: #3a4552;
+  --fo-chalk: #16202b;
+  --fo-chalk-fg: #ffffff;
+  --fo-focus: #16202b;
+  --fo-scrim: rgb(22 32 43 / 0.45);
+  --fo-shadow-overlay: 0 12px 32px rgb(22 32 43 / 0.16);
+
+  --fo-status-available: #12804f;
+  --fo-status-charging: #1f5fd1;
+  --fo-status-planned: #6a4fd1;
+  --fo-status-maintenance: #8a5a00;
+  --fo-status-incident: #c23434;
+  --fo-status-offline: #5f6874;
+  --fo-severity-critical: #c23434;
+  --fo-severity-high: #8a5a00;
+  --fo-severity-medium: #3a4552;
+  --fo-severity-low: #5f6874;
+  --fo-money-loss: #b8461a;
+  --fo-money-gain: #12804f;
+  --fo-data-simulated: #6a4fd1;
+}
+
+/* ---- shadcn/ui variables mapped onto semantic tokens (generated components inherit the theme) ---- */
+:root,
+[data-theme="night"],
+[data-theme="paper"] {
+  --background: var(--fo-bg-canvas);
+  --foreground: var(--fo-fg);
+  --card: var(--fo-bg-surface);
+  --card-foreground: var(--fo-fg);
+  --popover: var(--fo-bg-overlay);
+  --popover-foreground: var(--fo-fg);
+  --primary: var(--fo-chalk);
+  --primary-foreground: var(--fo-chalk-fg);
+  --secondary: var(--fo-bg-raised);
+  --secondary-foreground: var(--fo-fg);
+  --muted: var(--fo-bg-raised);
+  --muted-foreground: var(--fo-fg-muted);
+  --accent: var(--fo-bg-raised);
+  --accent-foreground: var(--fo-fg);
+  --destructive: var(--fo-severity-critical);
+  --border: var(--fo-border-divider);
+  --input: var(--fo-border-control);
+  --ring: var(--fo-focus);
+  --radius: 10px;
+}
+
+/* ---- Tailwind v4 theme ---- */
+@theme inline {
+  --color-canvas: var(--fo-bg-canvas);
+  --color-surface: var(--fo-bg-surface);
+  --color-raised: var(--fo-bg-raised);
+  --color-overlay: var(--fo-bg-overlay);
+  --color-divider: var(--fo-border-divider);
+  --color-border-strong: var(--fo-border-strong);
+  --color-border-control: var(--fo-border-control);
+  --color-fg: var(--fo-fg);
+  --color-fg-muted: var(--fo-fg-muted);
+  --color-fg-subtle: var(--fo-fg-subtle);
+  --color-fg-secondary: var(--fo-fg-secondary);
+  --color-chalk: var(--fo-chalk);
+  --color-chalk-fg: var(--fo-chalk-fg);
+  --color-focus: var(--fo-focus);
+  --color-status-available: var(--fo-status-available);
+  --color-status-charging: var(--fo-status-charging);
+  --color-status-planned: var(--fo-status-planned);
+  --color-status-maintenance: var(--fo-status-maintenance);
+  --color-status-incident: var(--fo-status-incident);
+  --color-status-offline: var(--fo-status-offline);
+  --color-severity-critical: var(--fo-severity-critical);
+  --color-severity-high: var(--fo-severity-high);
+  --color-severity-medium: var(--fo-severity-medium);
+  --color-severity-low: var(--fo-severity-low);
+  --color-money-loss: var(--fo-money-loss);
+  --color-money-gain: var(--fo-money-gain);
+  --color-simulated: var(--fo-data-simulated);
+
+  /* shadcn names */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-destructive: var(--destructive);
+
+  /* type: families come from next/font variables set in the app layout */
+  --font-display: var(--fo-font-display), "Archivo", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--fo-font-sans), "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--fo-font-mono), "IBM Plex Mono", ui-monospace, monospace;
+
+  /* type scale (min 12px) */
+  --text-label: 0.75rem;
+  --text-label--line-height: 1rem;
+  --text-mono: 0.8125rem;
+  --text-mono--line-height: 1.125rem;
+  --text-body: 0.875rem;
+  --text-body--line-height: 1.3125rem;
+  --text-title: 1.125rem;
+  --text-title--line-height: 1.625rem;
+  --text-display-l: 1.5rem;
+  --text-display-l--line-height: 1.875rem;
+  --text-display-xl: 2rem;
+  --text-display-xl--line-height: 2.25rem;
+
+  /* radii */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+
+  /* motion */
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --shadow-overlay: var(--fo-shadow-overlay);
+}

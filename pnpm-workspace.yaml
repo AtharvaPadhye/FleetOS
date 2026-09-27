@@ -2,3 +2,7 @@ packages:
   - prototype
   - apps/*
   - packages/*
+
+# Packages allowed to run install scripts (pnpm blocks others by default).
+onlyBuiltDependencies:
+  - unrs-resolver

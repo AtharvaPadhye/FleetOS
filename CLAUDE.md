@@ -6,6 +6,9 @@ Operations control tower for autonomous (Tesla Cybercab) fleet owners. Plan: `do
 - **One task = one commit** that includes its ticked box in `tasks/todo.md`, **pushed straight to `main`** (trunk-based; Atharva follows progress there). No feature branches.
 - The prototype in `prototype/` deploys to GitHub Pages only when files under `prototype/` (or the Pages workflow) change. Don't edit it unless the task is about the prototype; if you do, `pnpm prototype:build` must pass and the live site must be checked after deploy.
 - Tooling: pnpm workspaces + Turborepo (`pnpm build|dev|lint|typecheck|test`); pnpm version is pinned in `package.json` (`corepack enable pnpm`).
+- Before committing code, run the CI sequence (README → Checks). After any visual change, screenshot desktop + phone and look at them; stop dev servers by port (`kill $(lsof -tiTCP:3000 -sTCP:LISTEN)`).
+- `apps/web` uses **Next.js 16**: read `apps/web/AGENTS.md` and the bundled docs in `node_modules/next/dist/docs/` before writing Next code (Turbopack default, `proxy` not `middleware`, async params, no `next lint`).
+- Toolchain pins and why: TypeScript 6.0 (typescript-eslint needs < 6.1), ESLint 9 (Next's plugins don't support 10), pnpm 10 (corepack 0.34 can't run 12). See `tasks/lessons.md`.
 - After each task, append an entry to the Obsidian progress log (`claude_memory/projects/FleetOS/fleetos-progress-log.md`, via the `obsidian` CLI when the app is running).
 - Record corrections in `tasks/lessons.md`.
 

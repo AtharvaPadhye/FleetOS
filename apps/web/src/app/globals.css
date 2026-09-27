@@ -1,0 +1,34 @@
+@import "tailwindcss";
+@import "@fleetos/ui/tokens.css";
+
+/* Tailwind must scan the shared component package for class names. */
+@source "../../../../packages/ui/src";
+
+@layer base {
+  html {
+    background: var(--fo-bg-canvas);
+    color: var(--fo-fg);
+  }
+
+  body {
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    font-variant-numeric: tabular-nums;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--fo-focus);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      transition-duration: 0.01ms !important;
+      animation-duration: 0.01ms !important;
+    }
+  }
+}
