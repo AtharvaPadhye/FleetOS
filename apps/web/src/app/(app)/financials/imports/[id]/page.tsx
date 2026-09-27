@@ -94,6 +94,11 @@ export default async function ImportReportPage({ params }: PageProps<"/financial
             </dd>
           </div>
         </dl>
+        {errors.some((e) => e.row === 0) ? (
+          <p role="alert" className="rounded-sm border border-severity-high px-3 py-2 text-body">
+            {errors.find((e) => e.row === 0)?.message}
+          </p>
+        ) : null}
         {committed ? (
           <p role="status" className="text-body">
             <strong>{imp.rows_imported}</strong> new ledger lines booked; <strong>{imp.rows_already_imported}</strong>{" "}

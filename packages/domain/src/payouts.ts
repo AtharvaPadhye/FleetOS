@@ -151,6 +151,9 @@ export interface PayoutRow {
   onlineHours: number | null;
 }
 
+export const NO_VEHICLES_MESSAGE =
+  "This organization has no vehicles yet, so no row can be matched. Add vehicles (or connect Tesla) first, or try the file in a demo organization.";
+
 export interface PayoutValidation {
   rowsTotal: number;
   valid: PayoutRow[];
@@ -173,6 +176,14 @@ export function validatePayoutRows(
     if (col[f] < 0) errors.push({ row: 0, column: f, message: `Map a column to "${f}".` });
   }
   if (errors.length) return { rowsTotal: parsed.rows.length, valid: [], errors };
+  if (vehicles.length === 0) {
+    // One clear message instead of a "no vehicle matches" error on every row.
+    return {
+      rowsTotal: parsed.rows.length,
+      valid: [],
+      errors: [{ row: 0, column: mapping.vehicle as string, message: NO_VEHICLES_MESSAGE }],
+    };
+  }
 
   const byKey = new Map<string, VehicleRef>();
   for (const v of vehicles) {

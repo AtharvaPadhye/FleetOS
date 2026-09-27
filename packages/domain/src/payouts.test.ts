@@ -1,4 +1,5 @@
 import {
+  NO_VEHICLES_MESSAGE,
   detectMapping,
   parseCsv,
   parseDate,
@@ -94,6 +95,11 @@ describe("validatePayoutRows", () => {
         expect.objectContaining({ row: 6, column: "Trips" }),
       ]),
     );
+  });
+  it("explains once when the organization has no vehicles, instead of failing every row", () => {
+    const r = validatePayoutRows(parsed, mapping, []);
+    expect(r.valid).toHaveLength(0);
+    expect(r.errors).toEqual([{ row: 0, column: "Vehicle plate number", message: NO_VEHICLES_MESSAGE }]);
   });
   it("refuses to validate without the required columns mapped", () => {
     const r = validatePayoutRows(parsed, { date: "Date" }, VEHICLES);

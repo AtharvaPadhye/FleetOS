@@ -53,6 +53,17 @@ test.describe("payout CSV import", () => {
   });
 });
 
+test("an org with no vehicles gets one clear explanation, not an error per row", async ({ page, isMobile }) => {
+  test.skip(isMobile, "Desktop run covers the flow.");
+  // The setup user's "E2E Fleet" has no vehicles, like an org created without the demo fleet.
+  await page.goto("/financials/imports");
+  await page.getByLabel(/Payout statement/).setInputFiles("e2e/fixtures/uber-fleet-portal-sample.csv");
+  await page.getByRole("button", { name: "Upload and check" }).click();
+  await expect(page.getByRole("alert").filter({ hasText: "has no vehicles yet" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Problems", exact: true }).getByRole("row")).toHaveCount(2); // header + one message
+  await expect(page.getByRole("button", { name: /Commit 0 valid rows/ })).toBeDisabled();
+});
+
 test("people without finance access are told why", async ({ page }) => {
   // The setup user owns "E2E Fleet", so check the message copy via a viewer is covered by RLS tests;
   // here we only assert the page loads for an owner and offers the upload.
