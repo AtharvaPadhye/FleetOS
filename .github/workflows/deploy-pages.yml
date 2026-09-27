@@ -1,8 +1,13 @@
-name: Deploy FleetOS to GitHub Pages
+name: Deploy FleetOS prototype to GitHub Pages
 
+# Deploys only the frozen MVP in prototype/ (ADR-0003). Product code under
+# apps/, packages/ and docs/ never triggers a Pages deploy.
 on:
   push:
     branches: [main]
+    paths:
+      - 'prototype/**'
+      - '.github/workflows/deploy-pages.yml'
   workflow_dispatch:
 
 permissions:
@@ -23,21 +28,23 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+      - name: Set up pnpm (version from package.json packageManager)
+        uses: pnpm/action-setup@v4
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-      - name: Install dependencies
-        run: npm ci
-      - name: Build site
-        run: npm run build
+          cache: pnpm
+      - name: Install prototype dependencies
+        run: pnpm install --frozen-lockfile --filter @fleetos/prototype...
+      - name: Build prototype
+        run: pnpm --filter @fleetos/prototype build
       - name: Configure Pages
         uses: actions/configure-pages@v5
       - name: Upload site artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: prototype/dist
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

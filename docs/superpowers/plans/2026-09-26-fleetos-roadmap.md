@@ -2,7 +2,7 @@
 
 > **Status:** Planning complete, Phase 0 not started. Created 2026-09-26.
 > **Fresh session?** Read "Handoff" + "Decision log", then open `tasks/todo.md` and resume at the first unchecked task.
-> **Rule:** one task = one commit that ticks `tasks/todo.md`, **pushed immediately to `origin/main`** (no feature branches while the product is early stage) so Atharva can follow progress. Every push to `main` triggers the GitHub Pages deploy of the prototype, so never push a commit that breaks `npm run build` / the Pages workflow.
+> **Rule:** one task = one commit that ticks `tasks/todo.md`, **pushed immediately to `origin/main`** (no feature branches while the product is early stage) so Atharva can follow progress. Since task 2.1, GitHub Pages redeploys only when `prototype/` or its workflow changes.
 
 ## Handoff
 

@@ -1,0 +1,4 @@
+packages:
+  - prototype
+  - apps/*
+  - packages/*

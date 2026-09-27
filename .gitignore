@@ -1,4 +1,22 @@
-dist/
+# dependencies
 node_modules/
-.DS_Store
+
+# build output
+dist/
+.next/
+out/
+.turbo/
+
+# env & secrets (never commit; see CLAUDE.md and NFR SEC-4)
+.env
+.env.*
+!.env.example
+
+# logs & OS
 npm-debug.log*
+pnpm-debug.log*
+.DS_Store
+
+# local Supabase
+supabase/.temp/
+supabase/.branches/

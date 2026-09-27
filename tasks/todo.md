@@ -2,7 +2,7 @@
 
 Spec: `docs/superpowers/plans/2026-09-26-fleetos-roadmap.md`
 
-**Workflow:** one task = one commit that includes the ticked checkbox here → pushed immediately to `origin/main` (trunk-based, so Atharva can follow along). Pushes to `main` deploy the prototype to Pages, so keep the build green. Phase exits are review checkpoints.
+**Workflow:** one task = one commit that includes the ticked checkbox here → pushed immediately to `origin/main` (trunk-based, so Atharva can follow along). Pages redeploys only when `prototype/` changes. Phase exits are review checkpoints.
 Progress also logged in Obsidian: `claude_memory/projects/FleetOS/progress-log.md`.
 
 ## Phase −1 — Planning
@@ -32,7 +32,7 @@ Progress also logged in Obsidian: `claude_memory/projects/FleetOS/progress-log.m
 - [ ] Phase 1 review → checkpoint
 
 ## Phase 2 — Foundation
-- [ ] 2.1 Monorepo + move MVP to prototype/ + Pages path filter (Pages still works)
+- [x] 2.1 Monorepo + move MVP to prototype/ + Pages path filter (pnpm 10.34.5 + Turborepo; prototype build byte-identical)
 - [ ] 2.2 Next.js app + CI + `pnpm substitutes` marker inventory
 - [ ] 2.3 Supabase baseline + RLS tests
 - [ ] 2.4 Auth, orgs, roles

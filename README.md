@@ -1,37 +1,51 @@
 # FleetOS
 
-A polished operations control tower for autonomous vehicle fleet owners and operators. This interactive prototype includes fleet health, exception management, service workflows, hub capacity, vendor SLAs, vehicle-level economics, institutional reporting, and FleetOS Copilot.
+An operations control tower for owners of autonomous vehicle fleets: fleet health, exception management, service workflows, hub capacity, vendor SLAs, vehicle-level economics, lender reporting and FleetOS Copilot.
 
-## Live site
+This repo holds both the original **interactive prototype** (static, live on GitHub Pages) and the **production app** being built from it. Plan and progress: [`docs/superpowers/plans/2026-09-26-fleetos-roadmap.md`](docs/superpowers/plans/2026-09-26-fleetos-roadmap.md) · [`tasks/todo.md`](tasks/todo.md).
 
-FleetOS is deployed at [https://atharvapadhye.github.io/FleetOS/](https://atharvapadhye.github.io/FleetOS/).
+## Live prototype
 
-## Run locally
+[https://atharvapadhye.github.io/FleetOS/](https://atharvapadhye.github.io/FleetOS/). It deploys automatically from `prototype/` whenever files there change; product work elsewhere in the repo doesn't touch it.
 
-```bash
-npm install
-npm run dev
+## Repository layout
+
+```
+prototype/     Frozen MVP (static HTML/JS/CSS) deployed to GitHub Pages
+apps/          Production apps (web, later worker) — from task 2.2
+packages/      Shared code: domain logic, providers, UI — from task 2.2/3.1
+supabase/      Database migrations, policies, seed — from task 2.3
+docs/          Requirements, architecture (ADRs, ERD, API), design, research
+tasks/         Progress checklist and lessons
 ```
 
-Then open `http://localhost:4173`.
+## Getting started
 
-## Production build
+Requires Node 22+ and pnpm (pinned in `package.json`; corepack installs the right version).
 
 ```bash
-npm run build
-npm run preview
+corepack enable pnpm     # once per machine
+pnpm install
 ```
 
-## Tesla Fleet API integration
+### Run the prototype
 
-The Settings → Integrations screen includes a guided Tesla Fleet API connection flow. The UI intentionally stops before authorization until server-side credentials are configured.
+```bash
+pnpm prototype:dev       # http://localhost:4173
+pnpm prototype:build     # outputs prototype/dist
+```
 
-A production connection requires a backend service to:
+### Run the production app
 
-1. Register FleetOS as a Tesla Fleet API partner application and host the required public-key file.
-2. Complete OAuth 2.0 authorization and store access/refresh tokens in a secret manager (never browser storage).
-3. Pair the application's virtual key before enabling vehicle commands.
-4. Proxy Fleet API requests through the correct regional Tesla base URL and handle rate limits.
-5. Configure Fleet Telemetry for streaming signals, using polling only where appropriate.
+Arrives with task 2.2 (Next.js app in `apps/web`).
 
-Start with read-only vehicle information and location permissions. Enable command permissions separately after auditing roles, confirmation flows, and command logs. See the [official Tesla Fleet API documentation](https://developer.tesla.com/docs/fleet-api) for current registration, scopes, regional endpoints, and vehicle-command requirements.
+## Documentation
+
+- Requirements: [`docs/requirements/`](docs/requirements/) — PRD, KPI dictionary, vehicle states, data sources (verified Tesla Fleet API reference), non-functional requirements
+- Architecture: [`docs/architecture/`](docs/architecture/) — overview, ADRs, ERD, API contract (`openapi.yaml`)
+- Design: [`docs/design/`](docs/design/) — design system, UX flows
+- Project rules for contributors and Claude: [`CLAUDE.md`](CLAUDE.md)
+
+## Tesla Fleet API
+
+The integration plan (business-token auth, Fleet Telemetry streaming, virtual keys, costs) is in [`docs/requirements/data-sources.md`](docs/requirements/data-sources.md). Until a Tesla account is connected, FleetOS runs on a built-in simulator; every stand-in for real data is marked in code with a `SUBSTITUTE(...)` comment.

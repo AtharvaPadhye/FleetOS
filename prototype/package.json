@@ -1,0 +1,11 @@
+{
+  "name": "@fleetos/prototype",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Frozen FleetOS MVP (static HTML/JS), deployed to GitHub Pages as the visual reference.",
+  "scripts": {
+    "dev": "python3 -m http.server 4173",
+    "build": "node scripts/build.mjs",
+    "preview": "python3 -m http.server 4173 --directory dist"
+  }
+}
