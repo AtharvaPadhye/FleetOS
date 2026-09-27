@@ -46,3 +46,12 @@ const MI = 1609.344;
 export const formatMiles = (m: number | null, digits = 0) =>
   m === null ? "—" : `${(m / MI).toLocaleString("en-US", { maximumFractionDigits: digits })} mi`;
 export const formatMph = (mps: number | null) => (mps === null ? "—" : `${Math.round(mps * 2.236936)} mph`);
+
+/** A moment in the org's time zone: "Sep 27, 2026, 4:00 PM" (`time` → "4:00 PM"). */
+export function formatWhen(iso: string | null, timeZone: string, style: "datetime" | "time" = "datetime"): string {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleString(
+    "en-US",
+    style === "time" ? { timeZone, timeStyle: "short" } : { timeZone, dateStyle: "medium", timeStyle: "short" },
+  );
+}

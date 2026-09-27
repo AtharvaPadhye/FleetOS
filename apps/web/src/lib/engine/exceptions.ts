@@ -1,7 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ExceptionClass, ExceptionRuleDef, ExceptionStatus, VendorCategory } from "@fleetos/domain";
-import { isActiveException } from "@fleetos/domain";
+import { isActiveException, TICKET_BLOCKS_AS, type TicketType } from "@fleetos/domain";
 import type { ExceptionCleared, ExceptionOpened, ExceptionState, KnownException } from "@fleetos/engine";
 import { rankForVehicle } from "@/lib/services/vendors";
 
@@ -11,35 +11,58 @@ import { rankForVehicle } from "@/lib/services/vendors";
  * writes back what opened (with the best vendor for the job) and what cleared.
  */
 export async function loadExceptionState(db: SupabaseClient, orgId: string, isDemo: boolean): Promise<ExceptionState> {
-  const [rules, known] = await Promise.all([
+  const [rules, known, tickets, holds] = await Promise.all([
     db.from("exception_rules").select("*").eq("org_id", orgId).eq("enabled", true),
     db
       .from("exceptions")
       .select("dedupe_key, vehicle_id, class, blocks_service, status, cleared_at")
       .eq("org_id", orgId)
       .or("status.in.(open,assigned,in_progress),and(dedupe_key.not.is.null,cleared_at.is.null)"),
+    // Blocking tickets keep the car out until it's returned (vehicle-states.md §3 precedence 3–4; task 5.5).
+    db
+      .from("tickets")
+      .select("vehicle_id, type")
+      .eq("org_id", orgId)
+      .eq("blocks_service", true)
+      .not("status", "in", "(returned,cancelled)"),
+    db.from("vehicle_holds").select("vehicle_id").eq("org_id", orgId).is("released_at", null),
   ]);
-  if (rules.error || known.error) throw new Error((rules.error ?? known.error)!.message);
+  const err = rules.error ?? known.error ?? tickets.error ?? holds.error;
+  if (err) throw new Error(err.message);
+  const blocker = (vehicleId: string, cls: ExceptionClass): KnownException => ({
+    dedupeKey: null,
+    vehicleId,
+    class: cls,
+    blocksService: true,
+    active: true,
+  });
   return {
     // Rules that need a preview capability run only where it's live or simulated (PRD EX-2); only demo orgs
     // have simulated preview data until those feeds exist.
     rules: (rules.data as (ExceptionRuleDef & { capability: string | null })[]).filter((r) => !r.capability || isDemo),
-    known: (
-      known.data as {
-        dedupe_key: string | null;
-        vehicle_id: string | null;
-        class: ExceptionClass;
-        blocks_service: boolean;
-        status: ExceptionStatus;
-        cleared_at: string | null;
-      }[]
-    ).map((k): KnownException => ({
-      dedupeKey: k.cleared_at ? null : k.dedupe_key,
-      vehicleId: k.vehicle_id,
-      class: k.class,
-      blocksService: k.blocks_service,
-      active: isActiveException(k.status),
-    })),
+    known: [
+      ...(
+        known.data as {
+          dedupe_key: string | null;
+          vehicle_id: string | null;
+          class: ExceptionClass;
+          blocks_service: boolean;
+          status: ExceptionStatus;
+          cleared_at: string | null;
+        }[]
+      ).map((k): KnownException => ({
+        dedupeKey: k.cleared_at ? null : k.dedupe_key,
+        vehicleId: k.vehicle_id,
+        class: k.class,
+        blocksService: k.blocks_service,
+        active: isActiveException(k.status),
+      })),
+      ...(tickets.data as { vehicle_id: string; type: TicketType }[]).map((t) =>
+        blocker(t.vehicle_id, TICKET_BLOCKS_AS[t.type]),
+      ),
+      // A manual "pull from service" hold is Maintenance.
+      ...(holds.data as { vehicle_id: string }[]).map((h) => blocker(h.vehicle_id, "maintenance")),
+    ],
   };
 }
 

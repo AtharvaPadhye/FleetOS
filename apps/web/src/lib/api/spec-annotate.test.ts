@@ -20,8 +20,8 @@ describe("annotateSpec", () => {
   it("marks exactly the registered operations as implemented", () => {
     expect(out.info["x-fleetos-coverage"]).toMatchObject({ implemented: OPERATIONS.length });
     expect(out.paths["/vehicles"]!.get!["x-fleetos-implemented"]).toBe(true);
-    expect(out.paths["/tickets"]!.get!["x-fleetos-implemented"]).toBe(false);
-    expect(out.paths["/tickets"]!.get!.summary).toMatch(/\(planned\)$/);
+    expect(out.paths["/vehicles/{id}/commands"]!.get!["x-fleetos-implemented"]).toBe(false);
+    expect(out.paths["/vehicles/{id}/commands"]!.get!.summary).toMatch(/\(planned\)$/);
   });
   it("doesn't modify the source spec", () => {
     expect(spec.servers[0].url).not.toContain("localhost");

@@ -7,6 +7,8 @@ import {
   LEDGER_CATEGORIES,
   RULE_FIELDS,
   SEVERITIES,
+  TICKET_STATUSES,
+  TICKET_TYPES,
   VEHICLE_STATUSES,
   validPattern,
   type RuleField,
@@ -643,4 +645,108 @@ export const ExceptionRuleWrite = z.strictObject({
   auto_actions: z.record(z.string(), z.unknown()).optional(),
   auto_resolve: z.boolean().optional(),
   enabled: z.boolean().optional(),
+});
+
+// Service tickets (task 5.5)
+export const TicketType = z.enum(TICKET_TYPES);
+export const TicketStatus = z.enum(TICKET_STATUSES);
+export const Ticket = z.object({
+  id: z.uuid(),
+  number: z.string(),
+  vehicle: z.object({ id: z.uuid(), number: z.string() }),
+  exception_id: z.uuid().nullable(),
+  type: TicketType,
+  status: TicketStatus,
+  blocks_service: z.boolean(),
+  detection_source: z.string().nullable(),
+  created_at: isoDateTime,
+  sla_due_at: isoDateTime.nullable(),
+  sla_state: z.enum(["on_track", "at_risk", "breached", "met", "n/a"]),
+  vendor: z.object({ id: z.uuid(), name: z.string() }).nullable(),
+  eta_at: isoDateTime.nullable(),
+  arrived_at: isoDateTime.nullable(),
+  completed_at: isoDateTime.nullable(),
+  returned_at: isoDateTime.nullable(),
+  estimated_cost_cents: cents.nullable(),
+  actual_cost_cents: cents.nullable(),
+  downtime_min: z.number().int().nullable(),
+  lost_revenue_cents: cents.nullable(),
+  description: z.string().nullable(),
+  policy_ref: z.string().nullable(),
+});
+export const ServiceSummary = z.object({
+  active: z.number().int(),
+  awaiting_dispatch: z.number().int(),
+  median_response_min: z.number().nullable(),
+  sla_compliance_30d: z.number().min(0).max(1).nullable(),
+  cost_today_cents: cents,
+  revenue_protected_today_cents: cents,
+});
+export const TicketPage = page(Ticket).extend({ summary: ServiceSummary });
+export const TICKET_SORTS = ["created_at", "sla_due_at"] as const;
+export const TicketListQuery = z.strictObject({
+  status: listOf(TicketStatus),
+  vehicle_id: z.uuid().optional(),
+  vendor_id: z.uuid().optional(),
+  sort: z.enum([...TICKET_SORTS, ...TICKET_SORTS.map((s) => `-${s}` as const)]).default("-created_at"),
+  limit: Limit,
+  cursor: Cursor,
+});
+export const TicketCreate = z.strictObject({
+  vehicle_id: z.uuid(),
+  type: TicketType,
+  blocks_service: z.boolean().optional(),
+  description: z.string().trim().max(2000).optional(),
+  vendor_id: z.uuid().nullable().optional(),
+});
+export const TicketUpdate = z.strictObject({
+  description: z.string().trim().max(2000).optional(),
+  estimated_cost_cents: cents.min(0).optional(),
+});
+export const TicketActionBody = z.strictObject({
+  vendor_id: z.uuid().optional(),
+  eta_at: isoDateTime.optional(),
+  actual_cost_cents: cents.min(0).optional(),
+  note: z.string().trim().max(2000).optional(),
+  override: z.boolean().optional(),
+  reason: z.string().trim().max(500).optional(),
+});
+export const TicketEvent = z.object({
+  id: z.uuid(),
+  type: z.string(),
+  actor_type: z.enum(["user", "system", "vendor"]),
+  actor_name: z.string().nullable(),
+  at: isoDateTime,
+  detail: z.record(z.string(), z.unknown()),
+});
+export const VendorJob = z.object({
+  id: z.uuid(),
+  ticket_id: z.uuid(),
+  dispatched_at: isoDateTime,
+  eta_at: isoDateTime.nullable(),
+  arrived_at: isoDateTime.nullable(),
+  completed_at: isoDateTime.nullable(),
+  cost_cents: cents.nullable(),
+  rating: z.number().nullable(),
+  sla_met: z.boolean().nullable(),
+  tracking_source: z.enum(["manual", "geofence", "integration"]),
+});
+export const PageQuery = z.strictObject({ limit: Limit, cursor: Cursor });
+export const CreateTicketFromException = z.strictObject({
+  vendor_id: z.uuid().nullable().optional(),
+  dispatch: z.boolean().default(false),
+  description: z.string().trim().max(2000).optional(),
+});
+export const ReasonBody = z.strictObject({ reason: z.string().trim().min(3).max(500) });
+export const ReturnToServiceBody = z.strictObject({
+  override: z.boolean().default(false),
+  reason: z.string().trim().max(500).optional(),
+});
+export const Attachment = z.object({
+  id: z.uuid(),
+  filename: z.string(),
+  content_type: z.string(),
+  size_bytes: z.number().int(),
+  url: z.url(),
+  uploaded_at: isoDateTime,
 });

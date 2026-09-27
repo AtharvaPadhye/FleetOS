@@ -5641,6 +5641,16 @@ components:
             - type: string
               format: date-time
             - type: "null"
+        completed_at:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: "null"
+        returned_at:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: "null"
         estimated_cost_cents:
           oneOf:
             - type: integer

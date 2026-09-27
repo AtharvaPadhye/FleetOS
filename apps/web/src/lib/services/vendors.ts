@@ -5,8 +5,8 @@ import { ApiProblem } from "@/lib/api/problem";
 import { slugify } from "@/lib/slug";
 
 /**
- * Vendor directory and dispatch ranking (task 5.6). Job metrics (response, cost, SLA, rating) come from
- * vendor jobs once service tickets dispatch them (task 5.5); until then they're null / 0, never invented.
+ * Vendor directory and dispatch ranking (task 5.6). Job metrics (response, cost, SLA, rating) come from the
+ * vendor jobs service tickets dispatch (task 5.5); a vendor without jobs shows null / 0, never invented values.
  */
 export interface VendorRow {
   id: string;
@@ -43,9 +43,35 @@ const NO_METRICS: VendorMetrics = {
   jobs_completed: 0,
 };
 
-/** Job metrics per vendor. Task 5.5 replaces this with the vendor_jobs rollup. */
-export async function vendorMetrics(): Promise<Map<string, VendorMetrics>> {
-  return new Map();
+/** Job metrics per vendor over 90 days, from the jobs service tickets dispatched (kpis.md §3.3; task 5.5). */
+export async function vendorMetrics(db: SupabaseClient, orgId: string): Promise<Map<string, VendorMetrics>> {
+  const { data, error } = await db.from("vendor_job_metrics").select("*").eq("org_id", orgId);
+  if (error) throw new ApiProblem("internal", error.message);
+  const n = (x: number | string | null) => (x === null ? null : Number(x));
+  const round1 = (x: number | null) => (x === null ? null : Math.round(x * 10) / 10);
+  return new Map(
+    (
+      (data ?? []) as {
+        vendor_id: string;
+        jobs_completed: number;
+        avg_response_min: number | string | null;
+        median_response_min: number | string | null;
+        avg_job_cost_cents: number | string | null;
+        sla_compliance: number | string | null;
+        rating: number | string | null;
+      }[]
+    ).map((m) => [
+      m.vendor_id,
+      {
+        avg_response_min: round1(n(m.avg_response_min)),
+        median_response_min: round1(n(m.median_response_min)),
+        avg_job_cost_cents: n(m.avg_job_cost_cents) === null ? null : Math.round(n(m.avg_job_cost_cents)!),
+        sla_compliance: n(m.sla_compliance),
+        rating: round1(n(m.rating)),
+        jobs_completed: m.jobs_completed,
+      },
+    ]),
+  );
 }
 
 export function toVendor(r: VendorRow, m: VendorMetrics = NO_METRICS) {
@@ -76,7 +102,7 @@ export type Vendor = ReturnType<typeof toVendor>;
 export async function listVendors(db: SupabaseClient, orgId: string, category?: VendorCategory) {
   const [{ data, error }, metrics] = await Promise.all([
     db.from("vendor_list").select(VENDOR_COLUMNS).eq("org_id", orgId).order("name").limit(1000),
-    vendorMetrics(),
+    vendorMetrics(db, orgId),
   ]);
   if (error) throw new ApiProblem("internal", error.message);
   const rows = (data ?? []) as VendorRow[];
@@ -95,7 +121,7 @@ export async function getVendor(db: SupabaseClient, orgId: string, by: { id: str
   const { data, error } = await q.maybeSingle<VendorRow>();
   if (error) throw new ApiProblem("internal", error.message);
   if (!data) throw new ApiProblem("not_found", "No such vendor.");
-  return toVendor(data, (await vendorMetrics()).get(data.id));
+  return toVendor(data, (await vendorMetrics(db, orgId)).get(data.id));
 }
 
 export interface VendorInput {
@@ -196,7 +222,7 @@ export async function rankForVehicle(db: SupabaseClient, orgId: string, vehicleI
     ((covering ?? []) as { vendor_id: string; distance_m: number | null }[]).map((c) => [c.vendor_id, c.distance_m]),
   );
   const byId = new Map(all.vendors.map((v) => [v.id, v]));
-  const metrics = await vendorMetrics();
+  const metrics = await vendorMetrics(db, orgId);
   const ranked = rankVendors(
     [...distance.keys()].map((id) => {
       const vendor = byId.get(id)!;

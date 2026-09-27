@@ -23,12 +23,14 @@ test.describe("demo fleet", () => {
     const chip = page.locator("[data-realtime]");
     await expect(chip).toHaveAttribute("data-realtime", "connected", { timeout: 15_000 });
     const before = await chip.getAttribute("data-last-update");
-    // Tick until a broadcast lands. Other tests also call the tick, and it skips an org ticked in the last
-    // 5 s, so one call isn't guaranteed to produce a new broadcast for this org.
+    const me = await (await page.request.get("/api/v1/me")).json();
+    const orgId = me.memberships[0].org.id as string;
+    // Tick this org until a broadcast lands. The tick skips an org ticked in the last 5 s (the cron may have
+    // just run), so one call isn't guaranteed to produce a new broadcast.
     await expect
       .poll(
         async () => {
-          await page.request.post("/api/internal/tick", {
+          await page.request.post(`/api/internal/tick?org=${orgId}`, {
             headers: { Authorization: `Bearer ${process.env.TICK_SECRET}` },
           });
           return chip.getAttribute("data-last-update");
@@ -53,9 +55,18 @@ test.describe("demo fleet", () => {
 test("the tick endpoint rejects callers without the secret and runs with it", async ({ request }) => {
   expect((await request.post("/api/internal/tick")).status()).toBe(401);
   expect((await request.post("/api/internal/tick", { headers: { Authorization: "Bearer wrong" } })).status()).toBe(401);
-  const ok = await request.post("/api/internal/tick", {
+  // One org, so the test doesn't depend on how many simulated orgs the database holds (the cron ticks them all).
+  const ok = await request.post(`/api/internal/tick?org=${crypto.randomUUID()}`, {
     headers: { Authorization: `Bearer ${process.env.TICK_SECRET}` },
   });
   expect(ok.status()).toBe(200);
-  expect(await ok.json()).toMatchObject({ ok: true, allocationLines: expect.any(Number) });
+  const bad = await request.post("/api/internal/tick?org=not-an-id", {
+    headers: { Authorization: `Bearer ${process.env.TICK_SECRET}` },
+  });
+  expect(bad.status()).toBe(400);
+  expect(await ok.json()).toMatchObject({
+    ok: true,
+    orgs: [{ skipped: "no simulator" }],
+    allocationLines: expect.any(Number),
+  });
 });

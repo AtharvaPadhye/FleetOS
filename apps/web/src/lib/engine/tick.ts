@@ -14,6 +14,7 @@ import { demoHubPricing, ensureDemoVendors, writeCharging, writeOps } from "./co
 import { statePatches, statusMessages } from "./broadcast";
 import { writeAutonomyEvents, writeCabinEvents, type CabinEventRecord } from "./preview";
 import { loadExceptionState, writeExceptions } from "./exceptions";
+import { runAutopilot } from "./autopilot";
 import type { StatusEventOut } from "@fleetos/engine";
 
 /**
@@ -126,10 +127,22 @@ export async function tickOrg(db: SupabaseClient, orgId: string, now = new Date(
     const r = runTick(cfg, engineVehicles, previous, events, { from, to: provider.now() }, roster, exceptions);
     await writeResult(db, orgId, r);
     await writeExceptions(db, orgId, exceptions.rules, r.exceptions.opened, r.exceptions.cleared);
-    exceptions = { rules: exceptions.rules, known: r.exceptions.known };
     await writeRides(db, orgId, rides, vehicleIdByVin, day);
     await writeCharging(db, orgId, charges, vehicleIdByVin, pricing, timeZone, day);
-    await writeOps(db, orgId, jobs, vehicleIdByVin, day);
+    // Demo orgs: the autopilot dispatches, and tickets book the service cost instead of the simulator (5.5).
+    const ticketed = org?.is_demo
+      ? await runAutopilot(db, orgId, { from, to: provider.now() }, jobs, vehicleIdByVin)
+      : new Set<OpsRecord>();
+    await writeOps(
+      db,
+      orgId,
+      jobs.filter((j) => !ticketed.has(j)),
+      vehicleIdByVin,
+      day,
+    );
+    // The database is now the truth for what blocks each car (exceptions, tickets the autopilot or people
+    // changed, holds), so the next chunk starts from it.
+    exceptions = await loadExceptionState(db, orgId, Boolean(org?.is_demo));
     await writeCabinEvents(db, orgId, cabin, vehicleIdByVin);
     await writeAutonomyEvents(db, orgId, jobs, vehicleIdByVin);
     previous = new Map(r.live.map((l) => [l.vehicleId, l]));
@@ -137,6 +150,10 @@ export async function tickOrg(db: SupabaseClient, orgId: string, now = new Date(
     minutes += (provider.now().getTime() - from.getTime()) / 60_000;
     for (const k of Object.keys(totals) as (keyof typeof totals)[]) totals[k] += r.counts[k];
   }
+
+  // SLA clocks (PRD SV-2): mark tickets that ran past their target; notifications follow in 5.11.
+  const { error: slaErr } = await db.rpc("engine_sla_sweep", { p_org: orgId, p_now: now.toISOString() });
+  if (slaErr) throw new Error(slaErr.message);
 
   // KPI rollup: hours per status per vehicle-day (task 3.8c), from the earliest day this tick replayed
   // (a catch-up across midnight changes yesterday too) or the last refreshed day, through today.

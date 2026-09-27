@@ -1,6 +1,19 @@
 import { z } from "zod";
 import type { Capability } from "@fleetos/domain";
 import {
+  Attachment,
+  CreateTicketFromException,
+  PageQuery,
+  ReasonBody,
+  ReturnToServiceBody,
+  Ticket,
+  TicketActionBody,
+  TicketCreate,
+  TicketEvent,
+  TicketListQuery,
+  TicketPage,
+  TicketUpdate,
+  VendorJob,
   ExceptionCreate,
   ExceptionDetail,
   ExceptionListQuery,
@@ -357,6 +370,131 @@ export const deleteExceptionRule = op({
   response: z.null(),
 });
 
+// Service tickets (task 5.5)
+const ops = ["owner", "admin", "ops"] as const;
+export const getTickets = op({
+  operationId: "getTickets",
+  method: "GET",
+  path: "/tickets",
+  stability: "stable",
+  org: "required",
+  query: TicketListQuery,
+  response: TicketPage,
+});
+export const postTicket = op({
+  operationId: "postTickets",
+  method: "POST",
+  path: "/tickets",
+  stability: "stable",
+  org: "required",
+  roles: ops,
+  query: NoQuery,
+  body: TicketCreate,
+  response: Ticket,
+});
+export const getTicketById = op({
+  operationId: "getTicketsBy_id",
+  method: "GET",
+  path: "/tickets/{id}",
+  stability: "stable",
+  org: "required",
+  query: NoQuery,
+  response: Ticket,
+});
+export const patchTicket = op({
+  operationId: "patchTicketsBy_id",
+  method: "PATCH",
+  path: "/tickets/{id}",
+  stability: "stable",
+  org: "required",
+  roles: ops,
+  query: NoQuery,
+  body: TicketUpdate,
+  response: Ticket,
+});
+export const getTicketEvents = op({
+  operationId: "getTicketsBy_idEvents",
+  method: "GET",
+  path: "/tickets/{id}/events",
+  stability: "stable",
+  org: "required",
+  query: NoQuery,
+  response: z.array(TicketEvent),
+});
+export const getTicketAttachments = op({
+  operationId: "getTicketsBy_idAttachments",
+  method: "GET",
+  path: "/tickets/{id}/attachments",
+  stability: "stable",
+  org: "required",
+  query: NoQuery,
+  response: z.array(Attachment),
+});
+/** multipart/form-data with a `file` field (read by the route, not the JSON body parser). */
+export const postTicketAttachment = op({
+  operationId: "postTicketsBy_idAttachments",
+  method: "POST",
+  path: "/tickets/{id}/attachments",
+  stability: "stable",
+  org: "required",
+  roles: ops,
+  query: NoQuery,
+  response: Attachment,
+});
+export const postTicketAction = op({
+  operationId: "postTicketsBy_idActionsBy_action",
+  method: "POST",
+  path: "/tickets/{id}/actions/{action}",
+  stability: "stable",
+  org: "required",
+  roles: ops,
+  query: NoQuery,
+  body: TicketActionBody,
+  response: Ticket,
+});
+export const postExceptionCreateTicket = op({
+  operationId: "postExceptionsBy_idActionsCreateTicket",
+  method: "POST",
+  path: "/exceptions/{id}/actions/create-ticket",
+  stability: "stable",
+  org: "required",
+  roles: ops,
+  query: NoQuery,
+  body: CreateTicketFromException,
+  response: Ticket,
+});
+export const getVendorJobs = op({
+  operationId: "getVendorsBy_idJobs",
+  method: "GET",
+  path: "/vendors/{id}/jobs",
+  stability: "stable",
+  org: "required",
+  query: PageQuery,
+  response: page(VendorJob),
+});
+export const postPullFromService = op({
+  operationId: "postVehiclesBy_idActionsPullFromService",
+  method: "POST",
+  path: "/vehicles/{id}/actions/pull-from-service",
+  stability: "stable",
+  org: "required",
+  roles: ops,
+  query: NoQuery,
+  body: ReasonBody,
+  response: Vehicle,
+});
+export const postReturnToService = op({
+  operationId: "postVehiclesBy_idActionsReturnToService",
+  method: "POST",
+  path: "/vehicles/{id}/actions/return-to-service",
+  stability: "stable",
+  org: "required",
+  roles: ops,
+  query: NoQuery,
+  body: ReturnToServiceBody,
+  response: Vehicle,
+});
+
 // Preview operations (task 3.9): simulated in demo orgs, 501 capability_unavailable elsewhere (ADR-0006).
 const preview = { stability: "preview", org: "required" } as const;
 
@@ -500,6 +638,18 @@ export const OPERATIONS: Operation[] = [
   postExceptionRule,
   patchExceptionRule,
   deleteExceptionRule,
+  getTickets,
+  postTicket,
+  getTicketById,
+  patchTicket,
+  getTicketEvents,
+  postTicketAction,
+  getTicketAttachments,
+  postTicketAttachment,
+  postExceptionCreateTicket,
+  getVendorJobs,
+  postPullFromService,
+  postReturnToService,
   getVehicleEarnings,
   getVehicleCabinEvents,
   getVehicleAutonomyEvents,

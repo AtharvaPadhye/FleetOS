@@ -11,7 +11,7 @@ test("the annotated spec marks implemented operations and prefills the active or
   const spec = await res.json();
   expect(spec.info["x-fleetos-coverage"].implemented).toBe(OPERATIONS.length);
   expect(spec.paths["/vehicles"].get["x-fleetos-implemented"]).toBe(true);
-  expect(spec.paths["/tickets"].get["x-fleetos-implemented"]).toBe(false);
+  expect(spec.paths["/vehicles/{id}/commands"].get["x-fleetos-implemented"]).toBe(false);
   expect(spec.servers[0].url).toMatch(/\/api\/v1$/);
   const me = await (await request.get("/api/v1/me")).json();
   expect(spec.components.parameters.OrgHeader.example).toBe(me.memberships[0].org.id);

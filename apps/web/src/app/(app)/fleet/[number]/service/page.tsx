@@ -1,4 +1,8 @@
-import type { Metadata } from "next";
+import type { Metadata, Route } from "next";
+import Link from "next/link";
+import { SlaCountdown } from "@/components/service/sla-countdown";
+import { TICKET_STATUS_LABEL, TICKET_TYPE_LABEL } from "@/lib/service-view";
+import { listTickets } from "@/lib/services/tickets";
 import { localDay } from "@/lib/api/period";
 import { formatCents } from "@/lib/format";
 import { MONEY_ROLES } from "@/lib/api/vehicles";
@@ -11,12 +15,15 @@ export async function generateMetadata({ params }: PageProps<"/fleet/[number]/se
 
 const CATEGORY: Record<string, string> = { cleaning: "Cleaning", maintenance: "Repair", roadside: "Roadside & towing" };
 
-/** Service history (PRD VD-6): vehicle alerts and what service cost, last 90 days. Tickets join in task 5.5. */
+/** Service history (PRD VD-6): tickets, vehicle alerts and what service cost, last 90 days. */
 export default async function VehicleService({ params }: PageProps<"/fleet/[number]/service">) {
   const { number } = await params;
   const { org, db, vehicle: v } = await loadVehiclePage(number);
   const since = new Date(Date.parse(v.as_of) - 90 * 86_400_000);
-  const { alerts, costs } = await vehicleServiceHistory(db, org.id, v.id, localDay(since, org.timezone));
+  const [{ alerts, costs }, tickets] = await Promise.all([
+    vehicleServiceHistory(db, org.id, v.id, localDay(since, org.timezone)),
+    listTickets(db, org, { vehicle_id: v.id, sort: "-created_at", limit: 25, offset: 0 }),
+  ]);
   const fmt = (iso: string) =>
     new Intl.DateTimeFormat("en-US", {
       timeZone: org.timezone,
@@ -29,6 +36,38 @@ export default async function VehicleService({ params }: PageProps<"/fleet/[numb
   const total = costs.reduce((s, c) => s + c.amount_cents, 0);
   return (
     <div className="grid gap-6 lg:grid-cols-2">
+      <section aria-labelledby="tickets" className="flex flex-col gap-3 lg:col-span-2">
+        <h2 id="tickets" className="text-title font-semibold">
+          Service tickets
+        </h2>
+        {tickets.items.length ? (
+          <ul className="divide-y divide-divider rounded-md border border-divider bg-surface">
+            {tickets.items.map((t) => (
+              <li key={t.id} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-4 py-2">
+                <span className="flex flex-wrap items-center gap-x-3">
+                  <Link
+                    href={`/service/${t.number}` as Route}
+                    className="font-mono text-mono underline underline-offset-4"
+                  >
+                    {t.number}
+                  </Link>
+                  <span>{TICKET_TYPE_LABEL[t.type]}</span>
+                  <span className="text-fg-muted">{t.vendor?.name ?? "No vendor yet"}</span>
+                </span>
+                <span className="flex items-center gap-3 text-label text-fg-muted">
+                  {TICKET_STATUS_LABEL[t.status]}
+                  <SlaCountdown ticket={t} asOf={tickets.asOf} />
+                  <span>{fmt(t.created_at)}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="rounded-md border border-dashed border-border-strong p-6 text-fg-muted">
+            No service tickets for this vehicle yet.
+          </p>
+        )}
+      </section>
       <section aria-labelledby="alerts" className="flex flex-col gap-3">
         <h2 id="alerts" className="text-title font-semibold">
           Alerts

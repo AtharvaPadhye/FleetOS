@@ -21,13 +21,14 @@ import {
   type SearchParams,
   type StatusTab,
 } from "@/lib/exceptions-view";
-import { formatAge, formatCents, formatMinutes } from "@/lib/format";
+import { formatAge, formatCents, formatMinutes, formatWhen } from "@/lib/format";
 import { navItem } from "@/lib/nav";
 import { getAppContext } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { getException, listExceptions, type ExceptionOut } from "@/lib/services/exceptions";
 import { ReportExceptionDialog } from "./report-exception-dialog";
 import { ExceptionActions } from "./exception-actions";
+import { ExceptionDispatch } from "./exception-dispatch";
 
 export const STATUS_LABEL: Record<ExceptionStatus, string> = {
   open: "Open",
@@ -235,6 +236,7 @@ export async function ExceptionsScreen({ sp, selectedId }: { sp: SearchParams; s
             canEdit={canEdit}
             userId={user.id}
             isDemo={activeOrg.isDemo}
+            timeZone={activeOrg.timezone}
             now={list.asOf}
           />
         ) : null}
@@ -289,9 +291,11 @@ function ExceptionPanel({
   canEdit,
   userId,
   isDemo,
+  timeZone,
   now,
 }: {
   e: Awaited<ReturnType<typeof getException>>;
+  timeZone: string;
   backHref: string;
   canEdit: boolean;
   userId: string;
@@ -311,7 +315,7 @@ function ExceptionPanel({
       ),
     ],
     ["Kind", CLASS_LABEL[e.class]],
-    ["Detected", `${new Date(e.detected_at).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}`],
+    ["Detected", formatWhen(e.detected_at, timeZone)],
     ["Where", e.location_name ?? "Unknown"],
     ["Takes car out of service", e.blocks_service ? "Yes" : "No"],
     ["Expected downtime", e.expected_downtime_min === null ? "—" : formatMinutes(e.expected_downtime_min)],
@@ -360,8 +364,25 @@ function ExceptionPanel({
                 .join(" · ")}
             </p>
           ) : null}
-          <p className="text-label text-fg-muted">Dispatching from here arrives with service tickets.</p>
         </div>
+      ) : null}
+      {e.ticket_id && e.ticket_number ? (
+        <p className="rounded-sm border border-divider p-3">
+          Handled by{" "}
+          <Link
+            href={`/service/${e.ticket_number}` as Route}
+            className="font-mono text-mono underline underline-offset-4"
+          >
+            {e.ticket_number}
+          </Link>
+        </p>
+      ) : canEdit && e.vehicle && (e.status === "open" || e.status === "assigned" || e.status === "in_progress") ? (
+        <ExceptionDispatch
+          exceptionId={e.id}
+          vendor={
+            a?.vendor_id && e.recommended_vendor_name ? { id: a.vendor_id, name: e.recommended_vendor_name } : null
+          }
+        />
       ) : null}
       {canEdit ? (
         <ExceptionActions

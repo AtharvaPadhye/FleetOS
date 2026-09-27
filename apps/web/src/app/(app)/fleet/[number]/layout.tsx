@@ -5,13 +5,14 @@ import { SeverityBadge } from "@fleetos/ui/components/severity-badge";
 import { StatusBadge } from "@fleetos/ui/components/status-badge";
 import { LiveRefresh } from "@/components/live/live-refresh";
 import { TabNav } from "@/components/vehicle/tab-nav";
+import { VehicleServiceControls } from "@/components/vehicle/vehicle-service-controls";
 import { formatAge, formatMiles, formatMph } from "@/lib/format";
 import { loadVehiclePage } from "@/lib/services/vehicle-page";
 
 /** Vehicle header (PRD VD-1) and tabs (VD-2), shared by every tab. */
 export default async function VehicleLayout({ params, children }: LayoutProps<"/fleet/[number]">) {
   const { number } = await params;
-  const { org, vehicle: v, issues } = await loadVehiclePage(number);
+  const { org, vehicle: v, issues, blockers } = await loadVehiclePage(number);
   const base = `/fleet/${encodeURIComponent(v.number)}`;
   const s = v.state;
   const facts: [string, string][] = [
@@ -73,13 +74,27 @@ export default async function VehicleLayout({ params, children }: LayoutProps<"/
                   <Link href={`/exceptions/${e.id}` as Route} className="underline underline-offset-4">
                     {e.title}
                   </Link>
-                  {e.recommended_action ? (
+                  {e.ticket_id ? (
+                    <span className="text-label text-fg-muted">Service ticket open</span>
+                  ) : e.recommended_action ? (
                     <span className="text-label text-fg-muted">{e.recommended_action.label}</span>
                   ) : null}
                 </li>
               ))}
             </ul>
           </section>
+        ) : null}
+        {["owner", "admin", "ops"].includes(org.role) ? (
+          <VehicleServiceControls
+            vehicleId={v.id}
+            vehicleNumber={v.number}
+            held={v.holds.length > 0}
+            blockers={[
+              ...blockers.tickets.map((t) => `${t.number} (${t.type})`),
+              ...blockers.exceptions.map((e) => e.title),
+            ]}
+            canOverride={["owner", "admin"].includes(org.role)}
+          />
         ) : null}
         {v.holds.length ? (
           <p role="status" className="rounded-sm border border-severity-high px-3 py-2 text-body">

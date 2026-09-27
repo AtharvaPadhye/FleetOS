@@ -207,7 +207,8 @@ export async function listFleet(
             class: issue.class,
           }
         : null,
-      next_action: issue?.recommended_action?.label ?? null,
+      // Once a ticket exists the next step lives on the ticket.
+      next_action: issue ? (issue.ticket_id ? "Service ticket open" : (issue.recommended_action?.label ?? null)) : null,
     };
   });
 

@@ -50,6 +50,7 @@ interface Row {
   recommended_action: {
     label?: string;
     vendor_id?: string | null;
+    vendor_name?: string | null;
     eta_min?: number | null;
     cost_cents?: number | null;
   } | null;
@@ -57,9 +58,11 @@ interface Row {
   owner_name: string | null;
   trigger: Record<string, unknown> | null;
   resolved_at: string | null;
+  ticket_id: string | null;
+  ticket_number: string | null;
 }
 const COLUMNS =
-  "id, vehicle_id, vehicle_number, hub_id, rule_id, type, class, severity, status, title, description, detected_at, location_name, blocks_service, expected_downtime_min, baseline_rate_cents_per_h, recommended_action, owner_user_id, owner_name, trigger, resolved_at";
+  "id, vehicle_id, vehicle_number, hub_id, rule_id, type, class, severity, status, title, description, detected_at, location_name, blocks_service, expected_downtime_min, baseline_rate_cents_per_h, recommended_action, owner_user_id, owner_name, trigger, resolved_at, ticket_id, ticket_number";
 
 /** Newest history kept in a listing; older exceptions stay reachable by id and in exports. */
 const HISTORY_CAP = 2000;
@@ -97,7 +100,7 @@ export function toException(r: Row, now: Date): ExceptionOut {
       ? { label: a.label, vendor_id: a.vendor_id ?? null, eta_min: int(a.eta_min), cost_cents: int(a.cost_cents) }
       : null,
     owner: r.owner_user_id ? { user_id: r.owner_user_id, name: personName(r.owner_name) } : null,
-    ticket_id: null, // tickets arrive in task 5.5
+    ticket_id: r.ticket_id,
     rule_id: r.rule_id,
     resolved_at: r.resolved_at ? iso(r.resolved_at) : null,
   };
@@ -225,7 +228,7 @@ export async function getException(
   org: Pick<OrgContext, "id">,
   id: string,
   now = new Date(),
-): Promise<z.infer<typeof ExceptionDetail>> {
+): Promise<z.infer<typeof ExceptionDetail> & { ticket_number: string | null; recommended_vendor_name: string | null }> {
   const [{ data, error }, events] = await Promise.all([
     db.from("exception_list").select(COLUMNS).eq("org_id", org.id).eq("id", id).maybeSingle(),
     db
@@ -260,6 +263,9 @@ export async function getException(
   const row = data as Row;
   return {
     ...toException(row, now),
+    /** For the screen's link; not part of the API (the schema strips it). */
+    ticket_number: row.ticket_number,
+    recommended_vendor_name: row.recommended_action?.vendor_name ?? null,
     trigger: row.trigger,
     events: ev.map((e) => ({
       at: iso(e.at),
