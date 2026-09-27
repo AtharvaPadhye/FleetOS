@@ -23,7 +23,7 @@ Progress also logged in Obsidian: `claude_memory/projects/FleetOS/progress-log.m
 - [ ] Phase 0 review with Akshat + Atharva → checkpoint
 
 ## Phase 1 — Design
-- [ ] 1.1 Architecture + ADRs
+- [x] 1.1 Architecture + ADRs (`docs/architecture/README.md`, ADR-0001…0013)
 - [ ] 1.2 Domain model / ERD
 - [ ] 1.3 API contract (single v1, stable/preview tags) + VehicleProvider interface
 - [ ] 1.4 Design system (tokens + components)

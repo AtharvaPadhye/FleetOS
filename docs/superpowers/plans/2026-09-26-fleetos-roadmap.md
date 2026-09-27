@@ -13,6 +13,8 @@ detect issue → rank by **revenue at risk** → dispatch vendor → track **SLA
 
 ## Decision log (don't relitigate without new information)
 
+Full reasoning for architecture decisions: `docs/architecture/adr/` (ADR-0001…0013, task 1.1). Newer decisions: pg-boss for timers (0010), Supabase Realtime Broadcast for telemetry (0011), Redis Pub/Sub telemetry dispatcher (0007).
+
 | Decision | Chosen | Rejected & why |
 |---|---|---|
 | Vehicle data source | **Simulator first** behind a `VehicleProvider` adapter; Tesla Fleet API swapped in when access exists | Blocking on Tesla access — no account yet, and Cybercab third-party access is unconfirmed |
