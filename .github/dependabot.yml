@@ -9,6 +9,14 @@ updates:
     groups:
       minor-and-patch:
         update-types: [minor, patch]
+    # Deliberate pins (CLAUDE.md, tasks/lessons.md): lift when the toolchain supports them.
+    ignore:
+      - dependency-name: typescript
+        versions: [">=6.1.0"] # typescript-eslint supports < 6.1
+      - dependency-name: eslint
+        versions: [">=10.0.0"] # eslint-config-next plugins don't support ESLint 10 yet
+      - dependency-name: "@eslint/js"
+        versions: [">=10.0.0"]
   - package-ecosystem: github-actions
     directory: /
     schedule:
