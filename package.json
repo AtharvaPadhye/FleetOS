@@ -19,11 +19,17 @@
     "test:scripts": "node --test \"scripts/*.test.mjs\"",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "e2e": "turbo run e2e"
+    "e2e": "turbo run e2e",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
+    "db:reset": "supabase db reset",
+    "db:test": "supabase test db",
+    "db:lint": "supabase db lint --level warning --fail-on error"
   },
   "devDependencies": {
-    "turbo": "2.11.4",
     "prettier": "3.9.9",
-    "prettier-plugin-tailwindcss": "0.8.1"
+    "prettier-plugin-tailwindcss": "0.8.1",
+    "supabase": "2.118.0",
+    "turbo": "2.11.4"
   }
 }

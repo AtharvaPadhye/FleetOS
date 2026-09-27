@@ -29,6 +29,26 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  database:
+    name: Database (migrations, RLS isolation tests, lint)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Start Postgres and apply migrations
+        run: pnpm exec supabase db start
+      - name: pgTAP tests (tenant isolation, roles, audit)
+        run: pnpm db:test
+      - name: Database lint
+        run: pnpm db:lint
+
   build:
     name: Lint, typecheck, test, build, e2e
     runs-on: ubuntu-latest

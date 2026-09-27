@@ -43,6 +43,15 @@ pnpm dev                 # apps/web on http://localhost:3000 (Next.js 16, Turbop
 pnpm build               # build everything (Turborepo)
 ```
 
+### Local database (Supabase in Docker)
+
+```bash
+pnpm db:start            # Postgres, Auth, Studio (http://localhost:54323), inbox (http://localhost:54324)
+pnpm db:reset            # re-apply supabase/migrations from scratch
+pnpm db:test             # pgTAP tests: tenant isolation, roles, audit
+pnpm db:stop
+```
+
 ### Checks (same as CI)
 
 ```bash
