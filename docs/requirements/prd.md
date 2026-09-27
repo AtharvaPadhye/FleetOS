@@ -55,6 +55,8 @@ detect → prioritise by revenue at risk → dispatch vendor → track SLA
 
 ## 5. User stories & acceptance criteria
 
+> Stories without inline criteria have their acceptance criteria in `docs/design/flows.md` §4 (task 1.5). Every story now has testable criteria.
+
 Each story is tagged with its data dependency:
 - **[S]** = only needs stable data (sources available now: Tesla-shaped vehicle data from the simulator, FleetOS-native records, CSV imports).
 - **[P:capability]** = needs a preview capability. Until that capability is live, the story must show simulated data (demo orgs) or a clear "Connect source" state. Never zero.

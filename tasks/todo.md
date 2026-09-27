@@ -27,7 +27,7 @@ Progress also logged in Obsidian: `claude_memory/projects/FleetOS/progress-log.m
 - [x] 1.2 Domain model / ERD (`docs/architecture/erd.md`)
 - [x] 1.3 API contract (single v1, stable/preview tags) + VehicleProvider interface (`docs/architecture/api.md`, `openapi.yaml`: 99 ops, 11 preview, lint-clean)
 - [x] 1.4 Design system (tokens + components) (`docs/design/design-system.md`: Night Depot + Paper themes, "colour is data", Bleed line signature)
-- [ ] 1.5 UX flows & states
+- [x] 1.5 UX flows & states (`docs/design/flows.md`: URL map, 8 flows, state matrix, criteria for the 45 remaining stories)
 - [ ] Phase 1 review → checkpoint
 
 ## Phase 2 — Foundation
@@ -90,6 +90,12 @@ Progress also logged in Obsidian: `claude_memory/projects/FleetOS/progress-log.m
 
 ## Review
 _(filled in at the end of each phase)_
+
+### Phase 1 — Design (tasks done 2026-09-26, awaiting checkpoint)
+- **Delivered:** `docs/architecture/` → `README.md` (context, components, flows, environments, NFR mapping), ADR-0001…0013, `erd.md` (~40 tables, RLS matrix), `api.md` + `openapi.yaml` (99 operations, 11 preview, Redocly-valid); `docs/design/` → `design-system.md` (Night Depot + Paper themes, Bleed line, WCAG-checked tokens), `flows.md` (URL map, 8 flows, state matrix).
+- **Exit criterion** "ERD, API contract, provider interface, design tokens reviewed": all written; review pending.
+- **New decisions:** pg-boss for timers, Supabase Realtime Broadcast for telemetry, one `ledger_entries` table, `X-FleetOS-Org` header, "colour is data" + chalk buttons, Archivo + IBM Plex, Bleed line signature.
+- **All 67 PRD stories now have testable acceptance criteria** (45 added in `flows.md` §4).
 
 ### Phase 0 — Requirements (tasks done 2026-09-26, awaiting Akshat + Atharva checkpoint)
 - **Delivered:** `docs/requirements/` → `prd.md` (67 stories), `kpis.md` (formulas + worked examples), `vehicle-states.md` (7-state machine), `data-sources.md` (verified Tesla reference + field matrix), `nfr.md` (tenancy, RBAC, security, performance, retention); research evidence in `docs/research/`.
