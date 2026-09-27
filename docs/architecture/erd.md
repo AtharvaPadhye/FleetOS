@@ -8,6 +8,8 @@
 |---|---|
 | Keys | `id uuid primary key default gen_random_uuid()` unless noted |
 | Tenancy | Every tenant table has `org_id uuid not null references orgs` + RLS (ADR-0004). Composite indexes lead with `org_id`. |
+| Cross-org safety | Child rows reference parents by **(org_id, id)** composite foreign keys (parents carry `unique (org_id, id)`), so the database rejects a charger, vehicle or state row that points at another org's hub or vehicle (task 3.2). |
+| Partitions | `telemetry_samples` daily partitions are created/dropped by `app.ensure_telemetry_partitions()` / `app.drop_old_telemetry_partitions()`, scheduled daily with `pg_cron`; every partition gets RLS. |
 | Time | `timestamptz` everywhere (UTC); "day" boundaries computed in the org's time zone |
 | Money | `bigint` cents (`*_cents`), currency on the org |
 | Units | Stored SI: metres (`*_m`), °C, kW, kWh; converted for display (NFR CMP-3) |
