@@ -1,7 +1,13 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { defaultConfig, runTick, type EngineHub, type VehicleLive } from "@fleetos/engine";
-import { SimulatorProvider, type GeoPoint, type ProviderEvent, type ProviderSnapshot } from "@fleetos/providers";
+import {
+  SimulatorProvider,
+  type GeoPoint,
+  type ProviderEvent,
+  type ProviderSnapshot,
+  type RideRecord,
+} from "@fleetos/providers";
 
 /**
  * Database adapter for the engine tick (task 3.5, ADR-0014). For each demo org: restore its simulator,
@@ -52,12 +58,17 @@ export async function tickOrg(db: SupabaseClient, orgId: string, now = new Date(
     provider = SimulatorProvider.restore(snap);
   }
 
-  const [{ data: vehicles, error: vErr }, { data: hubRows, error: hErr }, { data: liveRows, error: lErr }] =
-    await Promise.all([
-      db.from("vehicles").select("id, vin").eq("org_id", orgId),
-      db.rpc("engine_hubs", { p_org: orgId }),
-      db.rpc("engine_live_state", { p_org: orgId }),
-    ]);
+  const [
+    { data: org },
+    { data: vehicles, error: vErr },
+    { data: hubRows, error: hErr },
+    { data: liveRows, error: lErr },
+  ] = await Promise.all([
+    db.from("orgs").select("timezone").eq("id", orgId).single(),
+    db.from("vehicles").select("id, vin").eq("org_id", orgId),
+    db.rpc("engine_hubs", { p_org: orgId }),
+    db.rpc("engine_live_state", { p_org: orgId }),
+  ]);
   if (vErr || hErr || lErr) throw new Error((vErr ?? hErr ?? lErr)!.message);
 
   const hubs: EngineHub[] = (
@@ -73,19 +84,25 @@ export async function tickOrg(db: SupabaseClient, orgId: string, now = new Date(
   const cfg = defaultConfig(hubs);
   await db.rpc("engine_ensure_partitions");
 
+  const vehicleIdByVin = new Map(engineVehicles.map((v) => [v.ref, v.id]));
+  const localDay = new Intl.DateTimeFormat("en-CA", { timeZone: (org?.timezone as string | undefined) ?? "UTC" });
   let minutes = 0;
   const totals = { events: 0, statusChanges: 0, samples: 0, alerts: 0 };
   while (provider.now().getTime() + 10_000 <= now.getTime()) {
     const from = provider.now();
     const step = Math.min(CHUNK_MS, now.getTime() - from.getTime());
     const events: ProviderEvent[] = [];
+    const rides: RideRecord[] = [];
     const ac = new AbortController();
     await provider.subscribe((e) => events.push(e), ac.signal);
+    const stopRides = provider.world.observe({ onRide: (r) => rides.push(r) });
     await provider.advance(step);
+    stopRides();
     ac.abort();
     const roster = new Map((await provider.listVehicles()).map((v) => [v.vehicleRef, v.connectivity]));
     const r = runTick(cfg, engineVehicles, previous, events, { from, to: provider.now() }, roster);
     await writeResult(db, orgId, r);
+    await writeRides(db, orgId, rides, vehicleIdByVin, (d) => localDay.format(d));
     previous = new Map(r.live.map((l) => [l.vehicleId, l]));
     minutes += (provider.now().getTime() - from.getTime()) / 60_000;
     for (const k of Object.keys(totals) as (keyof typeof totals)[]) totals[k] += r.counts[k];
@@ -175,6 +192,52 @@ async function writeResult(db: SupabaseClient, orgId: string, r: ReturnType<type
       source: "simulator",
     })),
     (b) => db.from("vehicle_alerts").upsert(b, { onConflict: "vehicle_id,name,started_at" }),
+  );
+}
+
+// SUBSTITUTE(rides, simulated): simulator trips become rides and ledger revenue lines.
+//   Real source: none as of 2026-09-26; payout CSV imports (/financials/imports) book real revenue meanwhile.
+//   Replace by: a real trip/earnings feed writing the same rows with source 'platform' / 'earnings_api'.
+//   Docs: docs/requirements/data-sources.md §5
+async function writeRides(
+  db: SupabaseClient,
+  orgId: string,
+  rides: RideRecord[],
+  vehicleIdByVin: Map<string, string>,
+  day: (d: Date) => string,
+) {
+  const known = rides.filter((r) => vehicleIdByVin.has(r.vehicleRef));
+  await inBatches(
+    known.map((r) => ({
+      org_id: orgId,
+      vehicle_id: vehicleIdByVin.get(r.vehicleRef),
+      external_id: r.id,
+      started_at: r.startedAt.toISOString(),
+      ended_at: r.endedAt.toISOString(),
+      distance_m: Math.round(r.distanceM * 10) / 10,
+      fare_cents: r.fareCents,
+      platform_fee_cents: r.platformFeeCents,
+      pickup: wkt(r.pickup),
+      dropoff: wkt(r.dropoff),
+      source: "simulator",
+    })),
+    (b) => db.from("rides").upsert(b, { onConflict: "org_id,source,external_id", ignoreDuplicates: true }),
+  );
+  await inBatches(
+    known.flatMap((r) => {
+      const base = {
+        org_id: orgId,
+        vehicle_id: vehicleIdByVin.get(r.vehicleRef),
+        occurred_on: day(r.endedAt),
+        occurred_at: r.endedAt.toISOString(),
+        source: "simulator",
+      };
+      return [
+        { ...base, category: "gross_ride_revenue", amount_cents: r.fareCents, source_ref: `${r.id}|gross` },
+        { ...base, category: "platform_fee", amount_cents: r.platformFeeCents, source_ref: `${r.id}|fee` },
+      ];
+    }),
+    (b) => db.from("ledger_entries").upsert(b, { onConflict: "org_id,source,source_ref", ignoreDuplicates: true }),
   );
 }
 

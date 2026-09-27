@@ -60,6 +60,13 @@ pnpm db:stop
    `pg_cron` job in the local database that calls `/api/internal/tick` (`pnpm tick` triggers one by hand).
    Watch the tables fill in Supabase Studio (http://localhost:54323).
 
+### Revenue from payout statements
+
+Financials → **Import payouts** accepts a CSV with one row per vehicle per day (date, vehicle VIN/number/name,
+gross earnings; optional fee, tips, trips, online hours). Common headers are detected automatically; anything
+else can be mapped by hand. Nothing is booked until you commit, and re-importing the same statement adds
+nothing. Samples: `apps/web/e2e/fixtures/*.csv`.
+
 ### Simulated fleet
 
 ```bash

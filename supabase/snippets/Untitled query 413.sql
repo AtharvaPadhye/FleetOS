@@ -1,0 +1,1 @@
+select * from vehicle_state_current;
