@@ -52,6 +52,13 @@ pnpm db:test             # pgTAP tests: tenant isolation, roles, audit
 pnpm db:stop
 ```
 
+### Simulated fleet
+
+```bash
+pnpm sim:day             # one simulated Phoenix day (84 Cybercabs, 3 hubs), scored by the FleetOS rulebook
+pnpm sim:day 7 2026-10-01   # choose a seed and date; the same seed always gives the same day
+```
+
 ### Checks (same as CI)
 
 ```bash
