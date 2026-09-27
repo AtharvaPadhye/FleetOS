@@ -1,7 +1,7 @@
 # FleetOS — KPI Dictionary
 
 > Roadmap task 0.2 · Status: **accepted** (recommended defaults, Akshat, 2026-09-26) · 2026-09-26
-> Every number FleetOS shows is defined here. Implementations live in `packages/domain/kpis` (task 3.1) and are unit-tested against the worked examples in §6. If code and this file disagree, this file wins until it's amended.
+> Every number FleetOS shows is defined here. Implementations live in `packages/domain/src` (`time.ts`, `money.ts`, `service.ts`, `scores.ts`; task 3.1) (task 3.1) and are unit-tested against the worked examples in §6. If code and this file disagree, this file wins until it's amended.
 
 ## 1. Conventions
 
@@ -151,7 +151,7 @@ An **economic view** toggle on the Vehicle P&L may show "Net contribution after 
 | **Vehicle performance label** | **Strong**: margin ≥ fleet avg + 5 pts *and* availability ≥ target. **Review**: margin ≤ fleet avg − 10 pts *or* availability < target − 5 pts. Otherwise **Monitor**. |
 | **Line flag** (Vehicle P&L) | a cost line per ride (or per earning hour) ≥ 25% above the fleet average is flagged with "+N% above avg". |
 | **Anomaly insight** | vehicle or hub whose contribution margin z-score vs its cohort (same hub, same age band ±3 months) ≤ −1.5; the insight names the cost categories explaining ≥ 70% of the gap. |
-| **Asset health grade** | weighted score 0–100: uptime vs covenant 30%, contribution margin vs target 25%, reserve funded % 15%, incident rate 15% (redistributed if not tracked), vendor SLA 15%. Letters: A ≥ 90, A− ≥ 85, B+ ≥ 80, B ≥ 75, B− ≥ 70, C ≥ 60, else D. |
+| **Asset health grade** | weighted score 0–100: uptime vs covenant 30%, contribution margin vs target 25%, reserve funded % 15%, incident rate 15% (redistributed if not tracked), vendor SLA 15%. Component scores (linear, clamped 0–100; defined in task 3.1): **uptime** 0 at covenant − 2 pts → 100 at covenant + 3 pts · **margin** 0 at target − 20 pts → 100 at target · **reserve** funded % capped at 100 · **incidents** 100 at ≤ target → 0 at 3× target · **vendor SLA** 0 at 80% → 100 at 95%. Letters: A ≥ 90, A− ≥ 85, B+ ≥ 80, B ≥ 75, B− ≥ 70, C ≥ 60, else D. Example: the MVP's August figures (uptime 97.2% vs 94%, margin 54.1% vs 50% target, reserve 118%, 2.1 incidents/10k vs 2.5, vendor SLA 93%) score ≈ 98 → **A** (the MVP showed A−, illustrative). |
 | **Covenant status** | each configured covenant (metric, operator, threshold) → pass / at risk (within 1 pt / 5%) / breach. Default: uptime > 94%. |
 
 ## 4. MVP inconsistencies and how this dictionary resolves them

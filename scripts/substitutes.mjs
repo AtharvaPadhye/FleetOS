@@ -5,8 +5,8 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
-// Must match the capability registry (GET /api/v1/capabilities, docs/architecture/api.md §3).
-// Moves to packages/domain in task 3.1 and is imported from there.
+// Copy of the capability registry in packages/domain/src/capabilities.ts (source of truth);
+// packages/domain/src/capabilities.test.ts fails if the two drift. Kept here so this script needs no build step.
 export const CAPABILITIES = [
   "tesla",
   "rides",

@@ -180,14 +180,14 @@ Exit: on a Vercel preview URL you can sign in, create/switch org, and navigate t
 
 ### Phase 3 — Data platform & simulator (API implementation, part 1)
 Exit: simulator runs 24 h for 84 Cybercabs across 3 Phoenix hubs; state, rides, costs, status events land in Postgres; KPI views match hand-calculated fixtures.
-- **3.1 `packages/domain`** — types, status state machine, KPI calculators (unit tests from 0.2 worked examples).
+- **3.1 `packages/domain`** — types, status state machine, KPI calculators (unit tests from 0.2 worked examples). *(zod schemas + OpenAPI generation moved to 3.8, where the route handlers that use them are built.)*
 - **3.2 Vehicle/hub schema** — hubs, chargers, bays, vehicles, vehicle_state_current, telemetry_samples (partitioned), status_events + RLS.
 - **3.3 `VehicleProvider` interface** — `listVehicles`, `getSnapshot`, `streamTelemetry`, `sendCommand`; contract tests any provider must pass.
 - **3.4 Simulator provider** — seeded RNG; Phoenix geography; SOC drain/charge; trips with fares; events (cleanliness, tire pressure, fault, breakdown, offline); emits Tesla-shaped payloads.
 - **3.5 Engine + tick** — `packages/engine` (ingest → normalise → upsert current state, append samples, derive status events, rules, SLA sweep, rollups) run by a per-minute `pg_cron` → tick route (ADR-0014); Realtime via Postgres Changes. No Fly yet; `apps/worker` container comes in Phase 4.
 - **3.6 Rides & revenue + CSV import** — `rides`, `revenue_imports`, revenue categories in `ledger_entries`; payout CSV importer with column mapping + validation report; default layout modelled on the Uber Fleet Portal vehicle-earnings export.
 - **3.7 Cost ledger** — hub tariffs → energy cost; vendor job costs; per-vehicle allocations (insurance, financing, platform fees) → cost categories in `ledger_entries` (one ledger, see `docs/architecture/erd.md`).
-- **3.8 Stable read APIs + rollups** — `/api/v1` fleet list (filter/sort/paginate), vehicle detail, KPI materialized views refreshed by worker; Realtime subscriptions.
+- **3.8 Stable read APIs + rollups** — zod request/response schemas + generated OpenAPI checked against `openapi.yaml`; `/api/v1` fleet list (filter/sort/paginate), vehicle detail, KPI materialized views refreshed by worker; Realtime subscriptions.
 - **3.9 Preview (placeholder) APIs** — the preview routes from §3a, served by the simulator in demo orgs and `501 capability_unavailable` elsewhere; `/api/v1/capabilities`; contract tests assert both behaviours and that preview routes never return `200` with empty data for unconnected orgs.
 
 ### Phase 4 — Tesla Fleet API (read-only)

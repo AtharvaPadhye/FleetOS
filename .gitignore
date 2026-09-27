@@ -31,3 +31,4 @@ test-results/
 # keys (Tesla virtual-key private key lives in Supabase Vault, never in git)
 *.pem
 !**/public/.well-known/**/*.pem
+coverage/

@@ -1,6 +1,6 @@
 # FleetOS — API Contract
 
-> Roadmap task 1.3 · 2026-09-26. Machine-readable contract: [`openapi.yaml`](openapi.yaml) (OpenAPI 3.1). Until task 3.1 generates the spec from the zod schemas in `packages/domain`, **`openapi.yaml` is the source of truth**; afterwards the generated spec must match it (CI diff), and this file keeps the conventions.
+> Roadmap task 1.3 · 2026-09-26. Machine-readable contract: [`openapi.yaml`](openapi.yaml) (OpenAPI 3.1). Until task 3.8 generates the spec from the zod schemas that back the route handlers, **`openapi.yaml` is the source of truth**; afterwards the generated spec must match it (CI diff), and this file keeps the conventions.
 
 ## 1. Conventions
 

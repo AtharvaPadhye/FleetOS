@@ -43,7 +43,7 @@ Progress also logged in Obsidian: `claude_memory/projects/FleetOS/progress-log.m
 - [ ] Phase 2 exit check → checkpoint
 
 ## Phase 3 — Data platform & simulator
-- [ ] 3.1 packages/domain
+- [x] 3.1 packages/domain (status rules + debounce, vehicle-time accounting, P&L/rates/baselines/revenue at risk, SLA, labels, anomalies, grade, covenants; 85 tests incl. kpis.md E1–E7; 100% lines, 98.8% branches)
 - [ ] 3.2 Vehicle/hub schema
 - [ ] 3.3 VehicleProvider interface + contract tests
 - [ ] 3.4 Simulator provider
