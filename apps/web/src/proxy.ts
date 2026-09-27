@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { DEV_LOGIN_PATH, devAutoLoginEmail } from "@/lib/dev-login";
 
 /**
  * Runs before every page request (Next 16 `proxy`, formerly middleware): refreshes the Supabase session
@@ -36,6 +37,14 @@ export async function proxy(request: NextRequest) {
   const signedIn = Boolean(data?.claims?.sub);
   const path = request.nextUrl.pathname;
 
+  // Local dev with DEV_AUTO_LOGIN_EMAIL: skip the sign-in page entirely (lib/dev-login.ts).
+  if (!signedIn && devAutoLoginEmail() && (path === "/sign-in" || !isPublic(path))) {
+    const url = request.nextUrl.clone();
+    url.pathname = DEV_LOGIN_PATH;
+    const next = path === "/sign-in" ? request.nextUrl.searchParams.get("next") : path + request.nextUrl.search;
+    url.search = next && next !== "/" ? `?next=${encodeURIComponent(next)}` : "";
+    return withCookies(NextResponse.redirect(url), response);
+  }
   if (!signedIn && !isPublic(path)) {
     const url = request.nextUrl.clone();
     url.pathname = "/sign-in";

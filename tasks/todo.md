@@ -51,6 +51,7 @@ Progress also logged in Obsidian: `claude_memory/projects/FleetOS/progress-log.m
 - [x] 3.4 Simulator provider (84 Cybercabs, 3 Phoenix hubs, trips/fares, charging queues, cleaning/faults/breakdowns/tyres/signal loss, sleep, Fleet-Telemetry-style streaming; deterministic by seed; passes the contract; `pnpm sim:day` scores a day with the rulebook in ~0.4 s; SUBSTITUTE markers for tesla/rides/cabin_events/vendor_tracking)
 - [x] 3.5 Engine + per-minute tick (`packages/engine`; simulator save/restore; `/api/internal/tick` via pg_cron→pg_net; demo-fleet onboarding; live freshness chip; engine matches simulator truth within 3 pts over a day; 61 e2e)
 - [x] 3.6 Rides & revenue + CSV import (rides + one `ledger_entries` table + `revenue_imports`; tick books simulator fares and platform fees; Financials → Import payouts with auto-detect, manual mapping, row/column errors, idempotent commit; Uber-Fleet-Portal-style headers are an assumption until a real export is checked)
+- [x] Dev auto-login: `next dev` + `DEV_AUTO_LOGIN_EMAIL` skips the magic link and signs in as org owner with a demo fleet (`/auth/dev-login`; real sign-in unchanged under `next start`/CI; e2e port configurable)
 - [ ] 3.7 Cost ledger
 - [ ] 3.8 Stable read APIs + rollups
 - [ ] 3.9 Preview (placeholder) APIs + capability registry

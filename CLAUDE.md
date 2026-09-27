@@ -9,6 +9,7 @@ Operations control tower for autonomous (Tesla Cybercab) fleet owners. Plan: `do
 - Before committing code, run the CI sequence (README → Checks). After any visual change, screenshot desktop + phone and look at them; stop dev servers by port (`kill $(lsof -tiTCP:3000 -sTCP:LISTEN)`).
 - `apps/web` uses **Next.js 16**: read `apps/web/AGENTS.md` and the bundled docs in `node_modules/next/dist/docs/` before writing Next code (Turbopack default, `proxy` not `middleware`, async params, no `next lint`).
 - Toolchain pins and why: TypeScript 6.0 (typescript-eslint needs < 6.1), ESLint 9 (Next's plugins don't support 10), pnpm 10 (corepack 0.34 can't run 12). See `tasks/lessons.md`.
+- Local `pnpm dev` auto-signs-in `DEV_AUTO_LOGIN_EMAIL` (from `pnpm db:env`) via `/auth/dev-login`; it's inert outside `next dev`. Don't weaken that guard. E2E alongside dev: `PORT=3100`.
 - After each task, append an entry to the Obsidian progress log (`claude_memory/projects/FleetOS/fleetos-progress-log.md`, via the `obsidian` CLI when the app is running).
 - Record corrections in `tasks/lessons.md`.
 - Before each build task, show Akshat a mental map (diagram) of what's being added and how it connects; after each task, explain what it achieved in product terms, not just files and test counts.

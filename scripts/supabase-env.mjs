@@ -20,6 +20,9 @@ const lines = [
   `MAILPIT_URL=${s.MAILPIT_URL}`,
   "# Local dev only: must match supabase/seed.sql (the pg_cron job that calls /api/internal/tick).",
   "TICK_SECRET=local-dev-tick-secret",
+  "# Local dev only: `next dev` signs this user in automatically (apps/web/src/lib/dev-login.ts). Delete to use",
+  "# the real magic-link sign-in. Ignored by `next start`, CI and production.",
+  `DEV_AUTO_LOGIN_EMAIL=${process.env.DEV_AUTO_LOGIN_EMAIL ?? "akshat1198@gmail.com"}`,
   "",
 ];
 writeFileSync(`${root}/apps/web/.env.local`, lines.join("\n"));

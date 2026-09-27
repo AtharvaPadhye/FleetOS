@@ -4,7 +4,7 @@ import { defineConfig, devices } from "@playwright/test";
 // Local Supabase URL/keys and the Mailpit inbox (written by `pnpm db:env`).
 if (existsSync(".env.local")) process.loadEnvFile(".env.local");
 
-const PORT = 3000;
+const PORT = Number(process.env.PORT ?? 3000); // PORT=3100 runs e2e alongside `pnpm dev`
 const AUTH_FILE = "e2e/.auth/user.json";
 
 export default defineConfig({
@@ -27,7 +27,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: process.env.CI ? "pnpm start" : "pnpm build && pnpm start",
+    command: `${process.env.CI ? "" : "pnpm build && "}pnpm exec next start --port ${PORT}`,
     url: `http://localhost:${PORT}/api/health`,
     // Only reuse a running server when asked; a stale server from an older build serves missing CSS.
     reuseExistingServer: !!process.env.PW_REUSE_SERVER,
