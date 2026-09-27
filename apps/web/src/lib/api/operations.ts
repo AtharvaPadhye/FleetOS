@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { Capability } from "@fleetos/domain";
 import {
+  AttentionGroup,
   Attachment,
   CreateTicketFromException,
   PageQuery,
@@ -370,6 +371,17 @@ export const deleteExceptionRule = op({
   response: z.null(),
 });
 
+// Overview (task 5.3)
+export const getAttention = op({
+  operationId: "getAttention",
+  method: "GET",
+  path: "/attention",
+  stability: "stable",
+  org: "required",
+  query: NoQuery,
+  response: z.array(AttentionGroup),
+});
+
 // Service tickets (task 5.5)
 const ops = ["owner", "admin", "ops"] as const;
 export const getTickets = op({
@@ -638,6 +650,7 @@ export const OPERATIONS: Operation[] = [
   postExceptionRule,
   patchExceptionRule,
   deleteExceptionRule,
+  getAttention,
   getTickets,
   postTicket,
   getTicketById,

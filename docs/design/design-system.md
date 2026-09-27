@@ -195,14 +195,15 @@ shadcn/ui primitives (Radix) themed with the tokens above, plus FleetOS componen
 | `PnlStatement` | custom | Ledger lines, flags ("+38% vs avg"), subtotal rules, accounting/economic toggle |
 | `SlaCountdown` | custom | Remaining time (`mono`, tabular), on-track / at-risk (≤ 20% left) / breached states with shape + text |
 | `VehicleMap` | MapLibre GL + Mapbox tiles | Hub geofences, vehicle markers with status shapes; list alternative for keyboard/screen readers |
-| `Chart` wrappers | Recharts | `TrendChart` (line, target band, anomaly markers), `CompareBars` (sorted, value labels), `CauseDonut` (≤ 5 slices, else bars), `CapacityBars` (limit line, over-capacity hatched); each has a text summary + "View as table" |
+| `Chart` wrappers | Recharts | `TrendChart` (line, target band, anomaly markers), `CompareBars` (sorted, value labels), `LabelledBars` (sorted, one hue, direct labels), `CapacityBars` (limit line, over-capacity hatched); each has a text summary + "View as table" |
 | `CopilotPanel` | shadcn `Sheet` + custom | ✦ glyph, streaming answer, citations as record chips, proposal cards with Confirm / Dismiss |
 | Base | shadcn | Button (primary chalk / secondary outline / ghost / danger), Input, Select, Combobox, Checkbox, Switch, Tabs, Dialog, Sheet, Popover, Tooltip, Toast (Sonner), Skeleton, Command (⌘K) |
 
 ### Charts (validated with the `dataviz` skill when built)
 - Trends → line with target band; anomalies get a **marker shape + annotation**, not just colour.
 - Comparisons → horizontal bars, sorted descending, direct value labels.
-- Proportions → donut only for ≤ 5 categories (downtime by cause); otherwise bars.
+- Proportions → labelled horizontal bars. (Task 5.3: a donut of downtime by cause in status hues failed the dataviz validator: charging blue and cleaning violet are indistinguishable with protanopia, ΔE 0.0. Bars carry identity in the label, one hue.)
+- Series colours: `--fo-chart-1` blue, `--fo-chart-2` yellow (dataviz reference palette, validated on both surfaces). Ember is never a series colour; it belongs to the Bleed line.
 - Categorical series reuse the status hues (charging blue, cleaning violet, maintenance amber, incident red) so a colour means the same thing everywhere; lines also differ by dash pattern.
 - Gridlines use `border.divider`; data marks ≥ 3:1 against the surface; labels ≥ 4.5:1.
 - Every chart has a one-sentence text summary for screen readers and a "View as table" toggle (NFR A11Y-4).

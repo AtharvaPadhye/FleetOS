@@ -750,3 +750,16 @@ export const Attachment = z.object({
   url: z.url(),
   uploaded_at: isoDateTime,
 });
+export const AttentionGroup = z.object({
+  key: z.string(),
+  severity: Severity,
+  title: z.string(),
+  subtitle: z.string(),
+  affected_count: z.number().int(),
+  affected_label: z.string(),
+  revenue_at_risk_cents: cents,
+  recommended_action: z.string(),
+  action: z.object({ kind: z.string(), target: z.string() }),
+  exception_ids: z.array(z.uuid()),
+  bleed: z.object({ started_at: isoDateTime, rate_cents_per_min: z.number(), lost_cents: cents }).nullable(),
+});

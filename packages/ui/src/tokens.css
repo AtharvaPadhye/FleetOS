@@ -62,6 +62,9 @@
   --fo-money-loss: var(--fo-ember);
   --fo-money-gain: var(--fo-green);
   --fo-data-simulated: var(--fo-violet);
+  /* chart series (dataviz reference palette, dark steps; validated on the dark surface: CVD ΔE 27.4) */
+  --fo-chart-1: #3987e5;
+  --fo-chart-2: #c98500;
 }
 
 [data-theme="paper"] {
@@ -97,6 +100,8 @@
   --fo-money-loss: #b8461a;
   --fo-money-gain: #12804f;
   --fo-data-simulated: #6a4fd1;
+  --fo-chart-1: #2a78d6;
+  --fo-chart-2: #eda100;
 }
 
 /* ---- shadcn/ui variables mapped onto semantic tokens (generated components inherit the theme) ---- */

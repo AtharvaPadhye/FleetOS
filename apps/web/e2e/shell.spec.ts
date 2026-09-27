@@ -66,12 +66,19 @@ test("skip link moves focus to the main content", async ({ page }) => {
 
 test("placeholders never show fake numbers", async ({ page }) => {
   for (const s of SECTIONS.filter(
-    (x) => !["/financials", "/fleet", "/vendors", "/exceptions", "/service"].includes(x.path),
+    (x) => !["/", "/financials", "/fleet", "/vendors", "/exceptions", "/service"].includes(x.path),
   )) {
     await page.goto(s.path);
     await expect(page.getByText("is being built")).toBeVisible();
     await expect(page.locator("main")).not.toContainText("$");
   }
+});
+
+test("Overview names missing revenue and an empty queue instead of showing $0", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByText("Awaiting revenue data")).toBeVisible();
+  await expect(page.getByText(/Nothing needs attention/)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Finish setting up" })).toBeVisible();
 });
 
 test("Financials names an empty ledger instead of showing $0", async ({ page }) => {

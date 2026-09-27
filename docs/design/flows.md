@@ -137,7 +137,7 @@ Format: the story ID, then the criteria that complete it. They're written to be 
 | Story | Acceptance criteria |
 |---|---|
 | **GL-5** bell | Badge counts unread critical/high exceptions + ticket updates for the user; opening the panel lists newest first with links; "Mark all read" clears the badge; new critical items arrive in ≤ 15 s without reload. |
-| **OV-3** charts | Availability chart shows 30 daily points + target band; revenue vs cost shows 7 days; downtime donut shows today's hours by cause (≤ 5 slices); hub margin bars sorted descending; each has a text summary + table view; values match `/kpis/*`. |
+| **OV-3** charts | Availability chart shows 30 daily points + target band; revenue vs cost shows 7 days; downtime by cause shows the period's hours as labelled bars (a donut failed colour-blind validation); hub margin bars sorted descending; each has a text summary + table view; values match `/kpis/*`. |
 | **FL-3** columns/sort | Column chooser persists per user; clicking a numeric header toggles asc/desc with `aria-sort`; sort is server-side and reflected in the URL. |
 | **FL-4** export | Export downloads CSV of the current filters (all pages, not just visible rows), money in dollars with 2 dp, header row, filename `fleet-YYYY-MM-DD.csv`; > 10k rows runs async with a download link. |
 | **FL-6** row → detail | Clicking or pressing Enter on any row opens `/fleet/{number}` for that vehicle; back returns to the same filters and scroll position. |

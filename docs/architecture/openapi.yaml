@@ -5547,6 +5547,26 @@ components:
               type: string
             target:
               type: string
+        bleed:
+          description: >-
+            Money being lost while the cars are out of service (design-system "Bleed line"): lost so far and the
+            current rate, from each blocking exception's baseline rate (kpis.md §3.2). Null when nothing blocks.
+          oneOf:
+            - type: object
+              required:
+                - started_at
+                - rate_cents_per_min
+                - lost_cents
+              properties:
+                started_at:
+                  type: string
+                  format: date-time
+                rate_cents_per_min:
+                  type: number
+                lost_cents:
+                  type: integer
+                  description: Minor units (cents) in the org currency
+            - type: "null"
         exception_ids:
           type: array
           items:
