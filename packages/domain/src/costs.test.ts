@@ -1,4 +1,5 @@
 import {
+  currentTariff,
   dailyAllocationCents,
   isVehicleDay,
   localTime,
@@ -97,5 +98,24 @@ describe("isVehicleDay", () => {
     expect(isVehicleDay(v, "2026-09-21")).toBe(false);
     expect(isVehicleDay({ ...v, lifecycle: "pending" }, "2026-09-15")).toBe(false);
     expect(isVehicleDay({ lifecycle: "commissioned", commissionedOn: null, retiredOn: null }, "2026-09-15")).toBe(true);
+  });
+});
+
+describe("currentTariff", () => {
+  it("returns the rate now and when it changes", () => {
+    // Monday 15:30 Phoenix: off-peak until the 16:00 peak.
+    expect(currentTariff(TOU, PHX, new Date("2026-09-28T22:30:00Z"))).toEqual({
+      centsPerKwh: 10,
+      label: "off-peak",
+      validUntil: new Date("2026-09-28T23:00:00Z"),
+    });
+    // Monday 17:00 Phoenix: peak until 19:00.
+    expect(currentTariff(TOU, PHX, new Date("2026-09-29T00:00:00Z"))).toMatchObject({
+      centsPerKwh: 30,
+      validUntil: new Date("2026-09-29T02:00:00Z"),
+    });
+  });
+  it("has no end for a flat rate", () => {
+    expect(currentTariff([TOU[1]!], PHX, new Date("2026-09-28T22:30:00Z")).validUntil).toBeNull();
   });
 });

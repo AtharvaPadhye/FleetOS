@@ -1,6 +1,19 @@
 import { z } from "zod";
+import type { Capability } from "@fleetos/domain";
 import {
+  AutonomyEvent,
+  CabinEvent,
   Capabilities,
+  ChargerLive,
+  DispatchAvailability,
+  DispatchChange,
+  Earnings,
+  Ride,
+  RideListQuery,
+  TariffLive,
+  TariffLiveQuery,
+  VendorTracking,
+  VendorTrackingUpdate,
   ChargingSession,
   FleetKpis,
   HistoryQuery,
@@ -22,7 +35,11 @@ import {
  * Every implemented /api/v1 operation. Route handlers are built from these (apiRoute), and the contract test
  * compares each one with docs/architecture/openapi.yaml, so an endpoint can't ship without a matching spec.
  */
-export interface Operation<Q extends z.ZodType = z.ZodType, R extends z.ZodType = z.ZodType> {
+export interface Operation<
+  Q extends z.ZodType = z.ZodType,
+  R extends z.ZodType = z.ZodType,
+  B extends z.ZodType = z.ZodType,
+> {
   operationId: string;
   method: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
   /** Spec path, e.g. "/vehicles/{id}". */
@@ -33,11 +50,15 @@ export interface Operation<Q extends z.ZodType = z.ZodType, R extends z.ZodType 
   roles?: readonly (typeof ROLES)[number][];
   query: Q;
   response: R;
+  /** JSON request body, validated before the handler runs (422 on failure). */
+  body?: B;
+  /** Preview operations name their capability; without it the org gets 501 capability_unavailable. */
+  capability?: Capability;
 }
 
 const NoQuery = z.object({});
 
-const op = <Q extends z.ZodType, R extends z.ZodType>(o: Operation<Q, R>) => o;
+const op = <Q extends z.ZodType, R extends z.ZodType, B extends z.ZodType = z.ZodUnknown>(o: Operation<Q, R, B>) => o;
 
 export const getMe = op({
   operationId: "getMe",
@@ -140,6 +161,122 @@ export const getPnl = op({
   response: Pnl,
 });
 
+// Preview operations (task 3.9): simulated in demo orgs, 501 capability_unavailable elsewhere (ADR-0006).
+const preview = { stability: "preview", org: "required" } as const;
+
+export const getVehicleEarnings = op({
+  ...preview,
+  operationId: "getVehiclesBy_idEarnings",
+  method: "GET",
+  path: "/vehicles/{id}/earnings",
+  capability: "earnings",
+  query: KpiPeriodQuery,
+  response: Earnings,
+});
+
+export const getVehicleCabinEvents = op({
+  ...preview,
+  operationId: "getVehiclesBy_idCabinEvents",
+  method: "GET",
+  path: "/vehicles/{id}/cabin-events",
+  capability: "cabin_events",
+  query: HistoryQuery,
+  response: page(CabinEvent),
+});
+
+export const getVehicleAutonomyEvents = op({
+  ...preview,
+  operationId: "getVehiclesBy_idAutonomyEvents",
+  method: "GET",
+  path: "/vehicles/{id}/autonomy-events",
+  capability: "autonomy_events",
+  query: HistoryQuery,
+  response: page(AutonomyEvent),
+});
+
+export const getRides = op({
+  ...preview,
+  operationId: "getRides",
+  method: "GET",
+  path: "/rides",
+  capability: "rides",
+  query: RideListQuery,
+  response: page(Ride),
+});
+
+export const getRide = op({
+  ...preview,
+  operationId: "getRidesBy_id",
+  method: "GET",
+  path: "/rides/{id}",
+  capability: "rides",
+  query: NoQuery,
+  response: Ride,
+});
+
+export const getDispatchAvailability = op({
+  ...preview,
+  operationId: "getDispatchAvailability",
+  method: "GET",
+  path: "/dispatch/availability",
+  capability: "dispatch",
+  query: NoQuery,
+  response: z.array(DispatchAvailability),
+});
+
+export const postDispatchAvailability = op({
+  ...preview,
+  operationId: "postDispatchAvailability",
+  method: "POST",
+  path: "/dispatch/availability",
+  capability: "dispatch",
+  roles: ["owner", "admin", "ops"],
+  query: NoQuery,
+  body: DispatchChange,
+  response: z.array(DispatchAvailability),
+});
+
+export const getHubChargersLive = op({
+  ...preview,
+  operationId: "getHubsBy_idChargersLive",
+  method: "GET",
+  path: "/hubs/{id}/chargers/live",
+  capability: "charger_telemetry",
+  query: NoQuery,
+  response: z.array(ChargerLive),
+});
+
+export const getTariffsLive = op({
+  ...preview,
+  operationId: "getEnergyTariffsLive",
+  method: "GET",
+  path: "/energy/tariffs/live",
+  capability: "live_tariffs",
+  query: TariffLiveQuery,
+  response: z.array(TariffLive),
+});
+
+export const getVendorTracking = op({
+  ...preview,
+  operationId: "getVendorJobsBy_idTracking",
+  method: "GET",
+  path: "/vendor-jobs/{id}/tracking",
+  capability: "vendor_tracking",
+  query: NoQuery,
+  response: VendorTracking,
+});
+
+export const postVendorTracking = op({
+  ...preview,
+  operationId: "postVendorJobsBy_idTracking",
+  method: "POST",
+  path: "/vendor-jobs/{id}/tracking",
+  capability: "vendor_tracking",
+  query: NoQuery,
+  body: VendorTrackingUpdate,
+  response: VendorTracking,
+});
+
 export const OPERATIONS: Operation[] = [
   getMe,
   getOrgs,
@@ -151,4 +288,15 @@ export const OPERATIONS: Operation[] = [
   getFleetKpis,
   getVehicleKpis,
   getPnl,
+  getVehicleEarnings,
+  getVehicleCabinEvents,
+  getVehicleAutonomyEvents,
+  getRides,
+  getRide,
+  getDispatchAvailability,
+  postDispatchAvailability,
+  getHubChargersLive,
+  getTariffsLive,
+  getVendorTracking,
+  postVendorTracking,
 ];

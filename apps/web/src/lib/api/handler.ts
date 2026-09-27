@@ -1,6 +1,7 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
 import { createClient as createBearerClient, type SupabaseClient } from "@supabase/supabase-js";
+import { capabilityStatuses } from "@fleetos/domain";
 import type { z } from "zod";
 import { publicEnv } from "@/lib/env";
 import { createClient as createCookieClient } from "@/lib/supabase/server";
@@ -39,7 +40,9 @@ export interface OrgContext {
   isDemo: boolean;
 }
 
-export interface ApiContext<Q> {
+const CAPABILITY_DOCS = "https://github.com/AtharvaPadhye/FleetOS/blob/main/docs/requirements/data-sources.md";
+
+export interface ApiContext<Q, B = unknown> {
   request: Request;
   requestId: string;
   db: SupabaseClient;
@@ -47,6 +50,8 @@ export interface ApiContext<Q> {
   /** Present when the operation needs an org (the default). */
   org: OrgContext;
   query: Q;
+  /** Parsed JSON body, for operations that declare one. */
+  body: B;
   params: Record<string, string>;
 }
 
@@ -94,9 +99,9 @@ function queryObject(url: URL): Record<string, string | string[]> {
   return out;
 }
 
-export function apiRoute<Q extends z.ZodType, R extends z.ZodType>(
-  op: Operation<Q, R>,
-  handler: (ctx: ApiContext<z.infer<Q>>) => Promise<ApiResult<z.infer<R>>>,
+export function apiRoute<Q extends z.ZodType, R extends z.ZodType, B extends z.ZodType = z.ZodUnknown>(
+  op: Operation<Q, R, B>,
+  handler: (ctx: ApiContext<z.infer<Q>, z.infer<B>>) => Promise<ApiResult<z.infer<R>>>,
 ) {
   return async (request: Request, route?: { params?: Promise<Record<string, string>> }) => {
     const requestId = request.headers.get("x-request-id")?.slice(0, 64) || randomUUID();
@@ -146,6 +151,44 @@ export function apiRoute<Q extends z.ZodType, R extends z.ZodType>(
       if (op.roles && org && !op.roles.includes(org.role))
         return problem("forbidden", `This needs one of these roles: ${op.roles.join(", ")}.`, requestId, headers);
 
+      // Preview operations (ADR-0006): without the data source, 501 — never an empty 200.
+      if (op.capability && org) {
+        const cap = capabilityStatuses({ isDemo: org.isDemo }).find((c) => c.name === op.capability);
+        if (!cap || cap.state === "unavailable") {
+          headers.set("Content-Type", "application/json");
+          return new Response(
+            JSON.stringify({
+              error: "capability_unavailable",
+              capability: op.capability,
+              message: `This organization has no ${op.capability.replaceAll("_", " ")} source connected yet${cap?.fallback ? ` (fallback: ${cap.fallback})` : ""}.`,
+              docs: CAPABILITY_DOCS,
+              request_id: requestId,
+            }),
+            { status: 501, headers },
+          );
+        }
+      }
+
+      let requestBody: unknown = undefined;
+      if (op.body) {
+        let raw: unknown;
+        try {
+          raw = await request.json();
+        } catch {
+          return problem("invalid_request", "Send a JSON body.", requestId, headers);
+        }
+        const parsed = op.body.safeParse(raw);
+        if (!parsed.success)
+          return problem(
+            "validation_failed",
+            "Check the request body.",
+            requestId,
+            headers,
+            parsed.error.issues.map((i) => ({ field: i.path.join("."), message: i.message })),
+          );
+        requestBody = parsed.data;
+      }
+
       const result = await handler({
         request,
         requestId,
@@ -153,6 +196,7 @@ export function apiRoute<Q extends z.ZodType, R extends z.ZodType>(
         user: auth.user,
         org: org as OrgContext,
         query: parsedQuery.data,
+        body: requestBody as z.infer<B>,
         params: (await route?.params) ?? {},
       });
       const body = op.response.safeParse(result.body);
@@ -160,7 +204,8 @@ export function apiRoute<Q extends z.ZodType, R extends z.ZodType>(
         console.error(`[api] ${op.operationId} response failed its schema`, requestId, body.error.issues.slice(0, 5));
         return problem("internal", "The server built an invalid response. It's been logged.", requestId, headers);
       }
-      if (result.dataSource) headers.set("X-FleetOS-Data-Source", result.dataSource);
+      const dataSource = result.dataSource ?? (op.capability ? "simulated" : undefined);
+      if (dataSource) headers.set("X-FleetOS-Data-Source", dataSource);
       headers.set("Content-Type", "application/json");
       return new Response(JSON.stringify(body.data), { status: result.status ?? 200, headers });
     } catch (e) {

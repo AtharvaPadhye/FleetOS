@@ -12,6 +12,7 @@ import {
 } from "@fleetos/providers";
 import { demoHubPricing, writeCharging, writeOps } from "./costs";
 import { statePatches, statusMessages } from "./broadcast";
+import { writeAutonomyEvents, writeCabinEvents, type CabinEventRecord } from "./preview";
 import type { StatusEventOut } from "@fleetos/engine";
 
 /**
@@ -105,12 +106,14 @@ export async function tickOrg(db: SupabaseClient, orgId: string, now = new Date(
     const rides: RideRecord[] = [];
     const charges: ChargeRecord[] = [];
     const jobs: OpsRecord[] = [];
+    const cabin: CabinEventRecord[] = [];
     const ac = new AbortController();
     await provider.subscribe((e) => events.push(e), ac.signal);
     const stopObserving = provider.world.observe({
       onRide: (r) => rides.push(r),
       onCharge: (c) => charges.push(c),
       onOps: (o) => jobs.push(o),
+      onCabinEvent: (e) => cabin.push(e),
     });
     await provider.advance(step);
     stopObserving();
@@ -121,6 +124,8 @@ export async function tickOrg(db: SupabaseClient, orgId: string, now = new Date(
     await writeRides(db, orgId, rides, vehicleIdByVin, day);
     await writeCharging(db, orgId, charges, vehicleIdByVin, pricing, timeZone, day);
     await writeOps(db, orgId, jobs, vehicleIdByVin, day);
+    await writeCabinEvents(db, orgId, cabin, vehicleIdByVin);
+    await writeAutonomyEvents(db, orgId, jobs, vehicleIdByVin);
     previous = new Map(r.live.map((l) => [l.vehicleId, l]));
     statusEvents.push(...r.statusEvents);
     minutes += (provider.now().getTime() - from.getTime()) / 60_000;

@@ -126,3 +126,33 @@ export function isVehicleDay(
   if (v.commissionedOn && v.commissionedOn > day) return false;
   return !(v.retiredOn && v.retiredOn < day);
 }
+
+/**
+ * The rate in force now and until when (the `live_tariffs` preview endpoint, and "electricity price" on hub
+ * screens). Scans ahead minute by minute, up to 8 days, for the next change of rate or period.
+ */
+export function currentTariff(
+  schedule: readonly TariffPeriod[],
+  timeZone: string,
+  now: Date,
+): { centsPerKwh: number; label: string | null; validUntil: Date | null } {
+  const periodAt = (t: Date) => {
+    const lt = localTime(t, timeZone);
+    return schedule.find(
+      (p) =>
+        (!p.months || p.months.includes(lt.month)) &&
+        p.days.includes(lt.day) &&
+        lt.minute >= minutesOf(p.from) &&
+        lt.minute < minutesOf(p.to),
+    );
+  };
+  const current = periodAt(now);
+  if (!current) throw new RangeError(`Tariff doesn't cover ${now.toISOString()} in ${timeZone}`);
+  const start = Math.ceil(now.getTime() / 60_000) * 60_000;
+  for (let t = start; t < start + 8 * 24 * 60 * 60_000; t += 60_000) {
+    const p = periodAt(new Date(t));
+    if (!p || p.cents_per_kwh !== current.cents_per_kwh || p.label !== current.label)
+      return { centsPerKwh: current.cents_per_kwh, label: current.label ?? null, validUntil: new Date(t) };
+  }
+  return { centsPerKwh: current.cents_per_kwh, label: current.label ?? null, validUntil: null };
+}

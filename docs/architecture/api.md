@@ -46,24 +46,28 @@
 
 ## 3. Capability registry
 
-`GET /api/v1/capabilities` →
+`GET /api/v1/capabilities` (implemented in task 3.9; `capabilityStatuses()` in `packages/domain`). Demo org:
 
 ```json
 {
   "org_id": "…",
   "capabilities": [
-    {"name": "tesla",             "state": "simulated",   "source": "simulator"},
-    {"name": "rides",             "state": "simulated",   "source": "simulator"},
-    {"name": "earnings",          "state": "unavailable", "source": null},
-    {"name": "cabin_events",      "state": "simulated",   "source": "simulator"},
-    {"name": "autonomy_events",   "state": "simulated",   "source": "simulator"},
-    {"name": "dispatch",          "state": "unavailable", "source": null},
-    {"name": "charger_telemetry", "state": "unavailable", "source": null, "fallback": "inferred"},
-    {"name": "live_tariffs",      "state": "unavailable", "source": null, "fallback": "static:urdb"},
-    {"name": "vendor_tracking",   "state": "unavailable", "source": null, "fallback": "manual"}
+    {"name": "tesla",             "state": "simulated",   "source": "simulator", "fallback": null},
+    {"name": "rides",             "state": "simulated",   "source": "simulator", "fallback": null},
+    {"name": "earnings",          "state": "simulated",   "source": "simulator", "fallback": null},
+    {"name": "cabin_events",      "state": "simulated",   "source": "simulator", "fallback": null},
+    {"name": "autonomy_events",   "state": "simulated",   "source": "simulator", "fallback": null},
+    {"name": "dispatch",          "state": "simulated",   "source": "simulator", "fallback": null},
+    {"name": "charger_telemetry", "state": "simulated",   "source": "simulator", "fallback": null},
+    {"name": "live_tariffs",      "state": "simulated",   "source": "simulator", "fallback": null},
+    {"name": "vendor_tracking",   "state": "unavailable", "source": null,        "fallback": "manual"}
   ]
 }
 ```
+
+Any other org (until Phase 4 connects Tesla): every capability `unavailable`, with fallbacks `earnings: csv`, `charger_telemetry: inferred`, `live_tariffs: static`, `vendor_tracking: manual`. `vendor_tracking` stays unavailable even in demo orgs until vendor jobs exist (task 5.5): there's nothing to track yet.
+
+**Preview endpoints (task 3.9)** are gated in one place: an operation declares its capability and `apiRoute` answers `501 capability_unavailable` (with `capability`, `message`, `docs`) before the handler runs, so an unconnected org can never get an empty `200`. In demo orgs they serve: rides and earnings from simulator trips; cabin events from the simulator's cabin camera; autonomy "stuck" events from simulated breakdowns; dispatch availability derived from status plus a FleetOS-side on/off switch (`dispatch_overrides`, no network is told); live charger status inferred from cars charging at the hub; the live tariff from the hub's time-of-use schedule. Each stand-in carries a `SUBSTITUTE` marker.
 
 `fallback` tells the UI which stable approximation is being shown instead. The capability names are the same ones used in `SUBSTITUTE(<capability>, …)` markers (ADR-0012).
 
@@ -139,7 +143,7 @@ export interface VehicleProvider {
 
 ## 6. Status of the spec
 
-**Implemented (task 3.8):** `GET /me`, `GET /orgs`, `GET /capabilities`, `GET /vehicles`, `GET /vehicles/{id}`, `GET /vehicles/{id}/status-events`, `GET /vehicles/{id}/charging-sessions`, `GET /kpis/fleet`, `GET /kpis/vehicles/{id}`, `GET /financials/pnl`. The fleet list pages with opaque offset cursors (fleets are hundreds of cars); history endpoints use keyset cursors on (time, id). Documented filters that need later features (`profitability`, `issue`, `format=csv`) answer `400` naming the parameter until they ship; the list's `today` money, `open_issue` and `next_action` fields are omitted until 3.8c / Phase 5. Monthly insurance and financing on a vehicle are `null` for roles without money access. Status-event ids are opaque strings (database identities, not UUIDs).
+**Implemented (task 3.8):** `GET /me`, `GET /orgs`, `GET /capabilities`, `GET /vehicles`, `GET /vehicles/{id}`, `GET /vehicles/{id}/status-events`, `GET /vehicles/{id}/charging-sessions`, `GET /kpis/fleet`, `GET /kpis/vehicles/{id}`, `GET /financials/pnl`, and all 11 preview operations (§3). The fleet list pages with opaque offset cursors (fleets are hundreds of cars); history endpoints use keyset cursors on (time, id). Documented filters that need later features (`profitability`, `issue`, `format=csv`) answer `400` naming the parameter until they ship; the list's `today` money, `open_issue` and `next_action` fields are omitted until 3.8c / Phase 5. Monthly insurance and financing on a vehicle are `null` for roles without money access. Status-event ids are opaque strings (database identities, not UUIDs).
 
 **KPIs:** periods resolve to whole local days in the org's time zone (defaults: `/kpis/fleet` today, `/kpis/vehicles/{id}` last 30 days, `/financials/pnl` month to date). Hours come from the `vehicle_day_hours` rollup (refreshed by the engine tick; it finishes yesterday after midnight and catches up after a pause, up to 31 days); money comes from the ledger at request time, so money-role RLS applies. Money fields are `null` (not 0) for roles without money access; `/financials/pnl` is owner/admin/finance only. Downtime cost uses the fleet revenue per available hour over the trailing `baseline_days`. `utilization.estimated` is `true` until a platform trip feed (`rides`) replaces In Service inferred from telemetry. P&L `scope=hub` answers 400 until ledger lines carry hub attribution for every category. Without a session or valid Bearer token every `/api/v1` route answers `401` JSON (the app's sign-in redirect never applies to `/api`). `/me` and `/orgs` don't need `X-FleetOS-Org` (the spec lists it everywhere; `/me` echoes it as `active_org_id` when valid).
 

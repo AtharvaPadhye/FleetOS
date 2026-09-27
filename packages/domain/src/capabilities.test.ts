@@ -21,8 +21,10 @@ describe("capabilityStatuses", () => {
   it("demo orgs run on the simulator; others show their fallbacks", () => {
     const demo = Object.fromEntries(capabilityStatuses({ isDemo: true }).map((c) => [c.name, c]));
     const real = Object.fromEntries(capabilityStatuses({ isDemo: false }).map((c) => [c.name, c]));
-    expect(demo.tesla).toMatchObject({ state: "simulated", source: "simulator" });
-    expect(real.tesla).toMatchObject({ state: "unavailable", source: null });
+    for (const c of CAPABILITIES.filter((x) => x !== "vendor_tracking"))
+      expect(demo[c]).toMatchObject({ state: "simulated", source: "simulator" });
+    expect(demo.vendor_tracking).toMatchObject({ state: "unavailable", fallback: "manual" });
+    expect(real.tesla).toMatchObject({ state: "unavailable", source: null, fallback: null });
     expect(real.earnings).toMatchObject({ state: "unavailable", fallback: "csv" });
     expect(real.live_tariffs).toMatchObject({ fallback: "static" });
   });

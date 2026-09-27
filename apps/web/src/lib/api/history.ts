@@ -4,7 +4,7 @@ import { ApiProblem } from "./handler";
 import { decodeCursor, encodeCursor, isKeysetCursor } from "./cursor";
 
 /**
- * Newest-first history pages for one vehicle, keyset-paginated on (time, id) so pages stay fast and stable
+ * Newest-first history pages for one vehicle (or the whole org when `vehicleId` is null), keyset-paginated on (time, id) so pages stay fast and stable
  * as rows keep arriving. `from`/`to` are half-open.
  */
 export async function historyPage<Row extends { id: string | number }>(
@@ -14,21 +14,24 @@ export async function historyPage<Row extends { id: string | number }>(
     columns: string;
     timeColumn: string;
     orgId: string;
-    vehicleId: string;
+    vehicleId: string | null;
     query: { from?: string; to?: string; limit: number; cursor?: string };
   },
 ): Promise<{ rows: Row[]; nextCursor: string | null; total: number }> {
   const { table, columns, timeColumn: t, orgId, vehicleId, query } = opts;
-  const { count: exists } = await db
-    .from("vehicles")
-    .select("id", { count: "exact", head: true })
-    .eq("org_id", orgId)
-    .eq("id", vehicleId);
-  if (!exists) throw new ApiProblem("not_found", "No such vehicle.");
+  if (vehicleId) {
+    const { count: exists } = await db
+      .from("vehicles")
+      .select("id", { count: "exact", head: true })
+      .eq("org_id", orgId)
+      .eq("id", vehicleId);
+    if (!exists) throw new ApiProblem("not_found", "No such vehicle.");
+  }
 
   const cursor = decodeCursor(query.cursor, isKeysetCursor);
   const base = () => {
-    let q = db.from(table).select(columns, { count: "exact" }).eq("org_id", orgId).eq("vehicle_id", vehicleId);
+    let q = db.from(table).select(columns, { count: "exact" }).eq("org_id", orgId);
+    if (vehicleId) q = q.eq("vehicle_id", vehicleId);
     if (query.from) q = q.gte(t, query.from);
     if (query.to) q = q.lt(t, query.to);
     return q;

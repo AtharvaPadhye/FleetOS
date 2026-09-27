@@ -242,3 +242,93 @@ export const PnlQuery = z.strictObject({
   view: z.enum(["accounting", "economic"]).default("accounting"),
   ...PeriodQuery,
 });
+
+// Preview capabilities (task 3.9). Shapes may change until a real source makes them stable (ADR-0006).
+export const CapabilityUnavailable = z.object({
+  error: z.literal("capability_unavailable"),
+  capability: z.enum(CAPABILITIES),
+  message: z.string(),
+  docs: z.url(),
+  request_id: z.string(),
+});
+
+export const Earnings = z.object({
+  vehicle_id: z.uuid(),
+  gross_cents: cents,
+  platform_fee_cents: cents,
+  net_cents: cents,
+  trips: z.number().int(),
+  period: Period,
+});
+
+export const CabinEvent = z.object({
+  id: z.uuid(),
+  vehicle_id: z.uuid(),
+  at: isoDateTime,
+  kind: z.enum(["spill", "debris", "lost_item", "odor", "damage", "other"]),
+  confidence: z.number().optional(),
+  ride_id: z.uuid().nullable(),
+});
+
+export const AutonomyEvent = z.object({
+  id: z.uuid(),
+  vehicle_id: z.uuid(),
+  at: isoDateTime,
+  kind: z.enum(["disengagement", "remote_assist", "incident", "stuck"]),
+  location: GeoPoint.nullable(),
+  severity: z.enum(["critical", "high", "medium", "low"]).nullable(),
+  detail: z.string().nullable(),
+});
+
+export const Ride = z.object({
+  id: z.uuid(),
+  vehicle_id: z.uuid(),
+  started_at: isoDateTime,
+  ended_at: isoDateTime.nullable(),
+  distance_m: z.number(),
+  fare_cents: cents,
+  platform_fee_cents: cents,
+  pickup: GeoPoint.nullable(),
+  dropoff: GeoPoint.nullable(),
+});
+
+export const DispatchAvailability = z.object({
+  vehicle_id: z.uuid(),
+  on_network: z.boolean(),
+  zone: z.string().nullable(),
+  updated_at: isoDateTime,
+});
+export const DispatchChange = z.strictObject({
+  vehicle_ids: z.array(z.uuid()).min(1).max(500),
+  on_network: z.boolean(),
+  reason: z.string().max(500).optional(),
+});
+
+export const ChargerLive = z.object({
+  charger_id: z.uuid(),
+  status: z.enum(["available", "preparing", "charging", "finishing", "faulted", "unavailable"]),
+  power_kw: z.number().nullable(),
+  vehicle_id: z.uuid().nullable(),
+  at: isoDateTime,
+});
+
+export const TariffLive = z.object({
+  hub_id: z.uuid(),
+  price_cents_per_kwh: z.number(),
+  period: z.string(),
+  valid_until: isoDateTime.optional(),
+});
+
+export const VendorTracking = z.object({
+  job_id: z.uuid(),
+  status: z.enum(["accepted", "en_route", "on_scene", "completed", "cancelled"]),
+  eta_at: isoDateTime.nullable(),
+  location: GeoPoint.nullable(),
+  at: isoDateTime,
+  evidence_urls: z.array(z.string()),
+});
+
+export const RideListQuery = HistoryQuery.extend({ vehicle_id: z.uuid().optional() });
+export const TariffLiveQuery = z.strictObject({ hub_id: z.uuid().optional() });
+/** Webhook body: vendors may not know an ETA, location or evidence yet. */
+export const VendorTrackingUpdate = VendorTracking.partial({ eta_at: true, location: true, evidence_urls: true });

@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { parse } from "yaml";
 import { z } from "zod";
 import { OPERATIONS } from "./operations";
+import { CapabilityUnavailable } from "./schemas";
 
 /**
  * The API contract check (task 3.8, docs/architecture/api.md): every implemented operation must match
@@ -63,6 +64,10 @@ function norm(input: unknown): Norm {
   }
   if (typeof type === "string") out.type = type;
   if (typeof s.format === "string") out.format = s.format;
+  if (s.const !== undefined) {
+    out.enum = [String(s.const)];
+    out.type ??= typeof s.const;
+  }
   if (Array.isArray(s.enum)) {
     out.enum = (s.enum as unknown[])
       .filter((e) => e !== null)
@@ -107,6 +112,21 @@ function diff(impl: Norm, api: Norm, at: string): string[] {
   return out;
 }
 
+/** Request bodies: the implementation must accept every documented field and require no more than the spec. */
+function diffRequest(impl: Norm, api: Norm, at: string): string[] {
+  const out: string[] = [];
+  if (impl.type !== api.type) return [`${at}: type ${impl.type} ≠ spec ${api.type}`];
+  if (impl.type === "object" && api.properties) {
+    const implProps = impl.properties ?? {};
+    for (const k of Object.keys(api.properties))
+      if (!(k in implProps)) out.push(`${at}.${k}: documented but not accepted`);
+    for (const k of Object.keys(implProps)) if (!(k in api.properties)) out.push(`${at}.${k}: not in the spec`);
+    for (const k of impl.required ?? [])
+      if (!(api.required ?? []).includes(k)) out.push(`${at}.${k}: required here but optional in the spec`);
+  }
+  return out;
+}
+
 const specOp = (method: string, path: string) =>
   ((spec.paths as Json)[path] as Json | undefined)?.[method.toLowerCase()] as Json | undefined;
 
@@ -129,6 +149,19 @@ describe("implemented /api/v1 operations match openapi.yaml", () => {
             diff(norm(z.toJSONSchema(shape[p.name as string]!, { io: "input" })), norm(p.schema), `?${p.name}`),
           ).toEqual([]);
       });
+      it("reads the documented request body", () => {
+        const documented = ((s?.requestBody as Json | undefined)?.content as Json | undefined)?.["application/json"] as
+          Json | undefined;
+        expect(Boolean(o.body), "request body declared in one place but not the other").toBe(Boolean(documented));
+        if (o.body && documented)
+          expect(diffRequest(norm(z.toJSONSchema(o.body, { io: "input" })), norm(documented.schema), "body")).toEqual(
+            [],
+          );
+      });
+      it("declares its capability when preview, and documents the 501", () => {
+        expect(Boolean(o.capability)).toBe(o.stability === "preview");
+        if (o.stability === "preview") expect(Object.keys((s?.responses as Json) ?? {})).toContain("501");
+      });
       it("returns the documented response shape", () => {
         const responses = (s?.responses as Json) ?? {};
         const ok = (responses["200"] ?? responses["201"]) as Json;
@@ -137,6 +170,24 @@ describe("implemented /api/v1 operations match openapi.yaml", () => {
       });
     });
   }
+});
+
+describe("preview operations (ADR-0006)", () => {
+  it("every preview operation in the spec is implemented", () => {
+    const inSpec = Object.entries(spec.paths as Json).flatMap(([path, ops]) =>
+      Object.entries(ops as Json)
+        .filter(([, o]) => (o as Json)["x-fleetos-stability"] === "preview")
+        .map(([m]) => `${m.toUpperCase()} ${path}`),
+    );
+    const implemented = OPERATIONS.filter((o) => o.stability === "preview").map((o) => `${o.method} ${o.path}`);
+    expect(implemented.sort()).toEqual(inSpec.sort());
+  });
+  it("answers 501 with the documented capability_unavailable body", () => {
+    const api = norm(
+      (spec.components as Json).schemas && ((spec.components as Json).schemas as Json).CapabilityUnavailable,
+    );
+    expect(diff(norm(z.toJSONSchema(CapabilityUnavailable)), api, "501")).toEqual([]);
+  });
 });
 
 describe("every /api/v1 route is a registered operation", () => {

@@ -33,8 +33,10 @@ export interface CapabilityStatus {
 }
 
 /**
- * Capability states for an org (GET /api/v1/capabilities). Until Phase 4 connects Tesla, nothing is live:
- * demo orgs run on the simulator; other orgs show fallbacks (CSV revenue, inferred charger use, static tariffs).
+ * Capability states for an org (GET /api/v1/capabilities); preview endpoints answer 501 when unavailable.
+ * Until Phase 4 connects Tesla, nothing is live. Demo orgs serve every preview capability from the simulator
+ * except `vendor_tracking`, which needs vendor jobs (task 5.5) before there's anything to track. Other orgs
+ * see fallbacks (CSV revenue, inferred charger use, static tariffs, manual vendor updates).
  */
 export function capabilityStatuses(org: { isDemo: boolean }): CapabilityStatus[] {
   const sim = (name: Capability): CapabilityStatus => ({
@@ -49,16 +51,11 @@ export function capabilityStatuses(org: { isDemo: boolean }): CapabilityStatus[]
     source: null,
     fallback,
   });
-  const byName: Record<Capability, CapabilityStatus> = {
-    tesla: org.isDemo ? sim("tesla") : none("tesla"),
-    rides: org.isDemo ? sim("rides") : none("rides"),
-    earnings: none("earnings", "csv"),
-    cabin_events: org.isDemo ? sim("cabin_events") : none("cabin_events"),
-    autonomy_events: none("autonomy_events"),
-    dispatch: none("dispatch"),
-    charger_telemetry: none("charger_telemetry", "inferred"),
-    live_tariffs: none("live_tariffs", "static"),
-    vendor_tracking: org.isDemo ? sim("vendor_tracking") : none("vendor_tracking", "manual"),
+  const fallbacks: Partial<Record<Capability, string>> = {
+    earnings: "csv",
+    charger_telemetry: "inferred",
+    live_tariffs: "static",
+    vendor_tracking: "manual",
   };
-  return CAPABILITIES.map((c) => byName[c]);
+  return CAPABILITIES.map((c) => (org.isDemo && c !== "vendor_tracking" ? sim(c) : none(c, fallbacks[c] ?? null)));
 }
