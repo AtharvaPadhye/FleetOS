@@ -14,6 +14,8 @@ const nextConfig: NextConfig = {
   typedRoutes: true,
   // Workspace packages ship TypeScript source (no build step); Next compiles it.
   transpilePackages: ["@fleetos/ui", "@fleetos/domain", "@fleetos/providers", "@fleetos/engine"],
+  // The API reference (/api/openapi.json) reads the spec from the repo's docs at runtime.
+  outputFileTracingIncludes: { "/api/openapi.json": ["../../docs/architecture/openapi.yaml"] },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

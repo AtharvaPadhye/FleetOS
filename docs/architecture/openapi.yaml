@@ -3954,7 +3954,7 @@ components:
       type: apiKey
       in: cookie
       name: sb-access-token
-      description: Supabase session cookie (browser)
+      description: "Supabase session cookie. In a signed-in browser it is sent automatically: leave the value empty."
     BearerJWT:
       type: http
       scheme: bearer

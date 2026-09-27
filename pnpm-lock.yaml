@@ -35,6 +35,9 @@ importers:
       '@fleetos/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      '@scalar/nextjs-api-reference':
+        specifier: 0.12.4
+        version: 0.12.4(next@16.3.6(@babel/core@7.29.7)(@playwright/test@1.63.0)(@types/node@24.19.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)
       '@supabase/ssr':
         specifier: 0.12.7
         version: 0.12.7(@supabase/supabase-js@2.117.2)
@@ -1710,6 +1713,33 @@ packages:
   '@rtsao/scc@1.1.0':
     resolution: {integrity: sha512-zt6OdqaDoOnJ1ZYsCYGt9YmWzDXl4vQdKTyJev62gFhRGKdx7mcT54V9KIjg+d2wi9EXsPvAPKe7i7WjfVWB8g==}
 
+  '@scalar/client-side-rendering@0.4.5':
+    resolution: {integrity: sha512-6dhBKaRecrrk2WyVLxrA8oyTiY+4zzhwf5OUjUyuyQXZHt/751QDf/TvW14p2osEaNELfY/gjtN8meX+UslFQw==}
+    engines: {node: '>=22'}
+
+  '@scalar/helpers@0.15.0':
+    resolution: {integrity: sha512-eUnaVQ1EE2YFIVrPOQxVaUiVYZjM6Yg2Oh0yUI87pyI0ilH6jOLA6wIJVWP/AXLv5WnhsfJW33xlZcztozEZ2A==}
+    engines: {node: '>=22'}
+
+  '@scalar/nextjs-api-reference@0.12.4':
+    resolution: {integrity: sha512-hiN88o3mjVbe4qyHXYUA4BqtG5s3EETv/zj5DpbGrqrQ0mJnfDiq4/X2hooAF3BMChV2Akxb7yvK3LaPkml27w==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      next: ^15.0.0 || ^16.0.0
+      react: ^19.0.0
+
+  '@scalar/schemas@0.12.1':
+    resolution: {integrity: sha512-D/1h/ek2mCwZFOBHQQ8gqD/pQ6Dz5xwur3s6aCwA71AnDF8/Wh+nwUNyIz+H4iquYIq5AUQD02mRyhUE/nIqtg==}
+    engines: {node: '>=22'}
+
+  '@scalar/types@0.22.1':
+    resolution: {integrity: sha512-h8/oe1tG1UIPoAKETiOBtYpyoH7GW3mp4Yu3Znl1RWa2iYLWl7ZtnqJ2A+n5s7MvZEDAb33pt4W/eswB3VVr6Q==}
+    engines: {node: '>=22'}
+
+  '@scalar/validation@0.6.5':
+    resolution: {integrity: sha512-t/dtbqesbOLsTusFI2kXfiFEQOiZC7+oAY+jZnE82Y64xLamo/1KrZpta8GkuAfIHyeOHOx5bDFid04eO13MIg==}
+    engines: {node: '>=20'}
+
   '@supabase/auth-js@2.117.2':
     resolution: {integrity: sha512-Z3WnGwrphYZubrLbxp5Iv0tLA9A5GhvKzJ/ZXglxqwd2QEH2R4dXRltjVJ8sIn4xEW2BSFIGT0yALVJIgZeDYw==}
     engines: {node: '>=22.0.0'}
@@ -3244,6 +3274,11 @@ packages:
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
     hasBin: true
 
+  nanoid@5.1.16:
+    resolution: {integrity: sha512-kVrnsrJqMR8+oLJnGEmSWw9BivK5mt7H3FZatVRjrc5wGqFYuBxX1yG7+A7Gi5AefkX6t/oCkizcQgpu0cY1dQ==}
+    engines: {node: ^18 || >=20}
+    hasBin: true
+
   napi-postinstall@0.3.4:
     resolution: {integrity: sha512-PHI5f1O0EP5xJ9gQmFGMS6IZcrVvTjpXjz7Na41gTE7eE2hK11lg04CECCYEEjdc17EV4DO+fkGEtt7TpTaTiQ==}
     engines: {node: ^12.20.0 || ^14.18.0 || >=16.0.0}
@@ -3702,6 +3737,10 @@ packages:
     resolution: {integrity: sha512-ot0WnXS9fgdkgIcePe6RHNk1WA8+muPa6cSjeR3V8K27q9BB1rTE3R1p7Hv0z1ZyAc8s6Vvv8DIyWf681MAt0w==}
     engines: {node: '>= 0.4'}
 
+  tagged-tag@1.0.0:
+    resolution: {integrity: sha512-yEFYrVhod+hdNyx7g5Bnkkb0G6si8HJurOoOEgC8B/O0uXLHlaey/65KRv6cuWBNhBgHKAROVpc7QyYqE5gFng==}
+    engines: {node: '>=20'}
+
   tailwind-merge@3.7.0:
     resolution: {integrity: sha512-XPPUyAc+cvspz3lHTcR/QgPfW2A0lv/xQNIjX3HGhLR+Nq2lHaLq5MtTesHn8GUr3W3DguT2KT5x3NVgRtYwmA==}
 
@@ -3771,6 +3810,10 @@ packages:
   type-check@0.4.0:
     resolution: {integrity: sha512-XleUoc9uwGXqjWwXaUTZAmzMcFZ5858QA2vvx1Ur5xIcixXIP+8LnFDgRplU30us6teqdlskFfu+ae4K79Ooew==}
     engines: {node: '>= 0.8.0'}
+
+  type-fest@5.10.0:
+    resolution: {integrity: sha512-NoSdpq/WEiAg5sjmBkmV/hfxv6HJH4NqPNrqjtSO5CwRmpsDfaf4begxW34KdJykH/l1yHtwBWQkCRdoXO8mPA==}
+    engines: {node: '>=20'}
 
   typed-array-buffer@1.0.3:
     resolution: {integrity: sha512-nAYYwfY3qnzX30IkA6AQZjVbtK6duGontcQm1WSG1MD94YLqK0515GNApXkoxKOWMusVssAHWLh9SeaoefYFGw==}
@@ -5341,6 +5384,35 @@ snapshots:
   '@rolldown/pluginutils@1.0.1': {}
 
   '@rtsao/scc@1.1.0': {}
+
+  '@scalar/client-side-rendering@0.4.5':
+    dependencies:
+      '@scalar/helpers': 0.15.0
+      '@scalar/schemas': 0.12.1
+      '@scalar/types': 0.22.1
+      '@scalar/validation': 0.6.5
+
+  '@scalar/helpers@0.15.0': {}
+
+  '@scalar/nextjs-api-reference@0.12.4(next@16.3.6(@babel/core@7.29.7)(@playwright/test@1.63.0)(@types/node@24.19.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)':
+    dependencies:
+      '@scalar/client-side-rendering': 0.4.5
+      next: 16.3.6(@babel/core@7.29.7)(@playwright/test@1.63.0)(@types/node@24.19.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      react: 19.2.8
+
+  '@scalar/schemas@0.12.1':
+    dependencies:
+      '@scalar/helpers': 0.15.0
+      '@scalar/validation': 0.6.5
+
+  '@scalar/types@0.22.1':
+    dependencies:
+      '@scalar/helpers': 0.15.0
+      nanoid: 5.1.16
+      type-fest: 5.10.0
+      zod: 4.6.5
+
+  '@scalar/validation@0.6.5': {}
 
   '@supabase/auth-js@2.117.2':
     dependencies:
@@ -6943,6 +7015,8 @@ snapshots:
 
   nanoid@3.3.19: {}
 
+  nanoid@5.1.16: {}
+
   napi-postinstall@0.3.4: {}
 
   natural-compare@1.4.0: {}
@@ -7491,6 +7565,8 @@ snapshots:
 
   supports-preserve-symlinks-flag@1.0.0: {}
 
+  tagged-tag@1.0.0: {}
+
   tailwind-merge@3.7.0: {}
 
   tailwindcss@4.3.3: {}
@@ -7557,6 +7633,10 @@ snapshots:
   type-check@0.4.0:
     dependencies:
       prelude-ls: 1.2.1
+
+  type-fest@5.10.0:
+    dependencies:
+      tagged-tag: 1.0.0
 
   typed-array-buffer@1.0.3:
     dependencies:

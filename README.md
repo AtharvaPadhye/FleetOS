@@ -55,7 +55,7 @@ pnpm db:stop
 ### Live demo fleet (local)
 
 1. `pnpm db:start && pnpm db:env` (first time), then `pnpm dev`.
-2. Open http://localhost:3000. `pnpm dev` signs you in automatically as `DEV_AUTO_LOGIN_EMAIL` (written to `apps/web/.env.local` by `pnpm db:env`, default akshat1198@gmail.com; override with `DEV_AUTO_LOGIN_EMAIL=you@x.com pnpm db:env`) and gives that account a demo org it owns. Delete the line to test the real flow: sign in with any email, the link arrives at http://localhost:54324. `next start`, CI and production always use the real sign-in. To run e2e while `pnpm dev` holds port 3000: `PORT=3100 pnpm --filter @fleetos/web exec playwright test`.
+2. Open http://localhost:3000. `pnpm dev` signs you in automatically as `DEV_AUTO_LOGIN_EMAIL` (written to `apps/web/.env.local` by `pnpm db:env`, default akshat1198@gmail.com; override with `DEV_AUTO_LOGIN_EMAIL=you@x.com pnpm db:env`) and gives that account a demo org it owns. Delete the line to test the real flow: sign in with any email, the link arrives at http://localhost:54324. `next start`, CI and production always use the real sign-in. API reference: http://localhost:3000/docs/api (every endpoint, implemented vs planned, with a working "Try it"). To run e2e while `pnpm dev` holds port 3000: `PORT=3100 pnpm --filter @fleetos/web exec playwright test`.
 3. Choose **Explore with a demo fleet**: 84 simulated Cybercabs appear and move every minute, driven by a
    `pg_cron` job in the local database that calls `/api/internal/tick` (`pnpm tick` triggers one by hand).
    Watch the tables fill in Supabase Studio (http://localhost:54323).

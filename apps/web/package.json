@@ -16,6 +16,7 @@
     "@fleetos/engine": "workspace:*",
     "@fleetos/providers": "workspace:*",
     "@fleetos/ui": "workspace:*",
+    "@scalar/nextjs-api-reference": "0.12.4",
     "@supabase/ssr": "0.12.7",
     "@supabase/supabase-js": "2.117.2",
     "lucide-react": "1.48.0",
