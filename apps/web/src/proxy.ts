@@ -6,7 +6,8 @@ import { createServerClient } from "@supabase/ssr";
  * cookie and keeps signed-out visitors out of the app (NFR SEC-2). Public: sign-in, auth callback,
  * design reference pages, health check.
  */
-const PUBLIC_PREFIXES = ["/sign-in", "/auth/", "/design", "/api/health"];
+// /api/internal/* is machine-to-machine: each route checks its own bearer secret.
+const PUBLIC_PREFIXES = ["/sign-in", "/auth/", "/design", "/api/health", "/api/internal/"];
 const isPublic = (path: string) => PUBLIC_PREFIXES.some((p) => path === p || path.startsWith(p));
 
 export async function proxy(request: NextRequest) {

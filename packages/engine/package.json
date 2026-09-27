@@ -1,0 +1,29 @@
+{
+  "name": "@fleetos/engine",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Turns provider events into FleetOS state: live vehicle rows, status history, samples, alerts (task 3.5). Pure; the database adapter lives in apps/web.",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@fleetos/domain": "workspace:*",
+    "@fleetos/providers": "workspace:*"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.39.5",
+    "@types/node": "24.19.0",
+    "@vitest/coverage-v8": "5.0.2",
+    "eslint": "9.39.5",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.70.1",
+    "vitest": "5.0.2"
+  }
+}

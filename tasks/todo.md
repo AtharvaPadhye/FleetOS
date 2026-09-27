@@ -49,7 +49,7 @@ Progress also logged in Obsidian: `claude_memory/projects/FleetOS/progress-log.m
 - [x] 3.2 Vehicle/hub schema (tariffs, hubs, chargers, bays, vehicles, live state, status events, alerts, holds, battery health, day-partitioned telemetry + 1m/1h rollups; PostGIS; composite org FKs; engine-only writes; raw telemetry limited to owner/admin/ops; pg_cron partition upkeep; 20 new pgTAP tests, sabotage-verified)
 - [x] 3.3 VehicleProvider interface + contract tests (`packages/providers`: Tesla-shaped types, errors, reusable contract suite; VIN check digit added to domain)
 - [x] 3.4 Simulator provider (84 Cybercabs, 3 Phoenix hubs, trips/fares, charging queues, cleaning/faults/breakdowns/tyres/signal loss, sleep, Fleet-Telemetry-style streaming; deterministic by seed; passes the contract; `pnpm sim:day` scores a day with the rulebook in ~0.4 s; SUBSTITUTE markers for tesla/rides/cabin_events/vendor_tracking)
-- [ ] 3.5 Engine + per-minute tick (pg_cron, no Fly yet)
+- [x] 3.5 Engine + per-minute tick (`packages/engine`; simulator save/restore; `/api/internal/tick` via pg_cron→pg_net; demo-fleet onboarding; live freshness chip; engine matches simulator truth within 3 pts over a day; 61 e2e)
 - [ ] 3.6 Rides & revenue + CSV import
 - [ ] 3.7 Cost ledger
 - [ ] 3.8 Stable read APIs + rollups

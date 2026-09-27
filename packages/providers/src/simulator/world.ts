@@ -129,6 +129,15 @@ const ALERTS: Record<Problem, string> = {
   tyre: "SIM_TPMS_w201_tirePressureLow",
 };
 
+export interface WorldSnapshot {
+  version: 1;
+  rngState: number;
+  now: number;
+  stepSeconds: number;
+  tripSeq: number;
+  vehicles: SimVehicle[];
+}
+
 export class SimulatorWorld {
   readonly rng: Rng;
   readonly vehicles: SimVehicle[] = [];
@@ -148,6 +157,27 @@ export class SimulatorWorld {
       for (let i = 0; i < count && n < total; i++) this.vehicles.push(this.newVehicle(++n, hub));
     }
     while (n < total) this.vehicles.push(this.newVehicle(++n, HUBS[0] as HubSpec));
+  }
+
+  /** Serializable state (dates as ms). Restoring it continues the day exactly (tests prove this). */
+  snapshot(): WorldSnapshot {
+    return {
+      version: 1,
+      rngState: this.rng.state,
+      now: this.now,
+      stepSeconds: this.stepSeconds,
+      tripSeq: this.tripSeq,
+      vehicles: structuredClone(this.vehicles),
+    };
+  }
+
+  static restore(snap: WorldSnapshot): SimulatorWorld {
+    if (snap.version !== 1) throw new Error(`Unsupported simulator snapshot version ${snap.version}`);
+    const w = new SimulatorWorld({ seed: 1, start: new Date(snap.now), vehicles: 0, stepSeconds: snap.stepSeconds });
+    w.rng.state = snap.rngState;
+    w.tripSeq = snap.tripSeq;
+    w.vehicles.push(...structuredClone(snap.vehicles));
+    return w;
   }
 
   observe(o: WorldObserver): () => void {

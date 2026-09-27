@@ -27,3 +27,9 @@ Until a real Tesla is connected (Phase 4), run on **Vercel + Supabase + GitHub o
 - **Fly worker from day one:** extra account, deploys and cost for no prototype benefit.
 - **Vercel Cron:** Hobby cron runs too rarely for a live simulator; `pg_cron` is free and per-minute.
 - **Compute simulator state on read (pure function of time):** no stored history for KPIs and timelines.
+
+## Implementation notes (task 3.5)
+- Tick endpoint: `POST /api/internal/tick` (bearer `TICK_SECRET`, timing-safe compare; exempt from the sign-in proxy). It restores each demo org's simulator from `simulator_state`, advances it to now in ≤ 15-minute chunks (jumping ahead if > 24 h behind), runs `packages/engine`, writes live state / status events / samples / alerts with idempotent upserts, then saves the simulator.
+- **Local schedule:** `supabase/seed.sql` stores a local-only secret in Vault and registers `engine-tick` (`* * * * *`) → `net.http_post` to `host.docker.internal:3000`.
+- **Hosted schedule (task 2.6/4.0):** store a real random `TICK_SECRET` in Vault and in the Vercel env, and register the same cron job pointing at the deployed URL. Never reuse the local secret.
+- Raw samples are downsampled to one per field per minute (~20 MB/day for 84 cars) to fit the free tier.

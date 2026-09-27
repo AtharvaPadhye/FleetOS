@@ -33,7 +33,7 @@ The worker recomputes status for a vehicle whenever new telemetry arrives, a tic
 | Precedence | Status | Condition (all inputs are from stable sources unless tagged) |
 |---|---|---|
 | 1 | **Incident** | an open exception of class `incident` with `blocks_service = true` |
-| 2 | **Offline** | last telemetry older than **15 min** and NOT (roster state = `asleep` and last known position inside a hub geofence) |
+| 2 | **Offline** | last telemetry older than **15 min** and NOT (roster state = `asleep` and last known position inside a hub geofence). A vehicle whose telemetry connection is up counts as seen even when silent, because streams only send fields that change (clarified in task 3.5). |
 | 3 | **Maintenance** | an open maintenance ticket with `blocks_service = true`, OR a manual "Pull from service" hold, OR Tesla `service_data` reports the vehicle in service |
 | 4 | **Cleaning** | an open cleaning ticket with `blocks_service = true` (e.g. auto-created by policy CLN-02 from a cabin event [P:cabin_events], or manually) |
 | 5 | **Charging** | charging state ∈ {Charging, Starting}, OR plugged in at a hub with SOC < charge target, OR navigating to a hub with a charge task |

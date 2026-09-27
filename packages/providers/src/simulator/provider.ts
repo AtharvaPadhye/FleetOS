@@ -15,7 +15,7 @@ import type {
 } from "../types";
 import { distanceM } from "./geo";
 import { PHOENIX } from "./phoenix";
-import { SimulatorWorld, type SimVehicle, type WorldOptions } from "./world";
+import { SimulatorWorld, type SimVehicle, type WorldOptions, type WorldSnapshot } from "./world";
 
 const KM_PER_MILE = 1.609344;
 const MPS_TO_MPH = 2.236936;
@@ -52,6 +52,12 @@ const STREAM: Partial<Record<TelemetryField, { intervalS: number; delta?: number
   Version: { intervalS: 0 },
 };
 
+export interface ProviderSnapshot {
+  world: WorldSnapshot;
+  lastSent: [string, { value: TelemetryValue; at: number }][];
+  lastConnectivity: [string, "connected" | "disconnected"][];
+}
+
 export interface SimulatorProviderOptions extends WorldOptions {
   commandsEnabled?: boolean;
 }
@@ -62,7 +68,7 @@ export interface SimulatorProviderOptions extends WorldOptions {
 //   Docs: docs/requirements/data-sources.md §2, ADR-0005
 export class SimulatorProvider implements VehicleProvider {
   readonly kind = "simulator" as const;
-  readonly world: SimulatorWorld;
+  world: SimulatorWorld;
   private listeners = new Set<(e: ProviderEvent) => void>();
   private lastSent = new Map<string, { value: TelemetryValue; at: number }>();
   private lastConnectivity = new Map<string, "connected" | "disconnected">();
@@ -70,6 +76,10 @@ export class SimulatorProvider implements VehicleProvider {
 
   constructor(private readonly opts: SimulatorProviderOptions) {
     this.world = new SimulatorWorld(opts);
+    this.attachWorld();
+  }
+
+  private attachWorld() {
     this.world.observe({
       onAlert: (a) =>
         this.publish({
@@ -91,6 +101,24 @@ export class SimulatorProvider implements VehicleProvider {
           source: "simulator",
         }),
     });
+  }
+
+  /** Everything needed to resume streaming exactly where this provider stopped. */
+  snapshot(): ProviderSnapshot {
+    return {
+      world: this.world.snapshot(),
+      lastSent: [...this.lastSent.entries()],
+      lastConnectivity: [...this.lastConnectivity.entries()],
+    };
+  }
+
+  static restore(snap: ProviderSnapshot, opts: { commandsEnabled?: boolean } = {}): SimulatorProvider {
+    const p = new SimulatorProvider({ seed: 1, start: new Date(snap.world.now), vehicles: 0, ...opts });
+    (p as unknown as { world: SimulatorWorld }).world = SimulatorWorld.restore(snap.world);
+    p.attachWorld();
+    p.lastSent = new Map(snap.lastSent);
+    p.lastConnectivity = new Map(snap.lastConnectivity);
+    return p;
   }
 
   capabilities(): ProviderCapabilities {

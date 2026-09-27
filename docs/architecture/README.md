@@ -57,6 +57,7 @@ flowchart LR
 | `apps/web` | All UI; `/api/v1` route handlers (validate with zod, call Postgres as the user); Tesla OAuth callbacks; CSV upload; Copilot endpoint; hosts the Tesla public key | 0002, 0006, 0008, 0013 |
 | `apps/worker` | Long-running: telemetry consumer, normaliser, dedupe, status derivation, exception rules, pg-boss jobs (SLA timers, rollups, partitions, reports, forecasts), Realtime broadcast, Tesla REST client, `tesla-http-proxy` | 0005, 0007, 0009, 0010, 0011 |
 | `tesla/fleet-telemetry` | Terminates vehicle mTLS WebSockets, publishes records to Redis | 0007 |
+| `packages/engine` | Pure tick logic: provider events → live state, debounced status events, downsampled samples, alerts; provisional alert→blocking rules until task 5.4 (task 3.5) | 0007, 0014 |
 | `packages/domain` | Pure TS: types, zod schemas (→ OpenAPI), status state machine, KPI calculators, rules evaluation. No I/O | 0005 |
 | `packages/providers` | `VehicleProvider` interface, `SimulatorProvider`, `TeslaProvider`, contract tests | 0005 |
 | `packages/ui` | Design tokens + shared components (task 1.4) | — |

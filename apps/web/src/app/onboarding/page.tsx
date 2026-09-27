@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Brand } from "@/components/shell/brand";
 import { getAppContext } from "@/lib/session";
+import { DemoForm } from "./demo-form";
 import { OnboardingForm } from "./onboarding-form";
 
 export const metadata: Metadata = { title: "Create your organization" };
@@ -23,6 +24,14 @@ export default async function OnboardingPage() {
             </p>
           </div>
           <OnboardingForm />
+        </div>
+        <div className="flex flex-col gap-3 rounded-md border border-dashed border-border-strong bg-surface p-6 sm:p-8">
+          <h2 className="text-title font-semibold">Just looking around?</h2>
+          <p className="text-fg-muted">
+            Create a demo organization with 84 simulated Cybercabs driving around three Phoenix hubs. Data updates every
+            minute and is clearly marked as simulated.
+          </p>
+          <DemoForm />
         </div>
       </div>
     </main>

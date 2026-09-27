@@ -4,6 +4,13 @@ export class Rng {
   constructor(seed: number) {
     this.s = seed >>> 0 || 0x9e3779b9;
   }
+  /** Internal state, for saving and restoring the simulator between ticks. */
+  get state(): number {
+    return this.s;
+  }
+  set state(v: number) {
+    this.s = v >>> 0;
+  }
   next(): number {
     let t = (this.s += 0x6d2b79f5);
     t = Math.imul(t ^ (t >>> 15), t | 1);

@@ -18,6 +18,8 @@ const lines = [
   "# Server-only (never NEXT_PUBLIC_): used by e2e tests and server admin code.",
   `SUPABASE_SECRET_KEY=${s.SECRET_KEY}`,
   `MAILPIT_URL=${s.MAILPIT_URL}`,
+  "# Local dev only: must match supabase/seed.sql (the pg_cron job that calls /api/internal/tick).",
+  "TICK_SECRET=local-dev-tick-secret",
   "",
 ];
 writeFileSync(`${root}/apps/web/.env.local`, lines.join("\n"));

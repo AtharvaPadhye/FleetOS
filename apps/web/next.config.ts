@@ -13,7 +13,7 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   typedRoutes: true,
   // Workspace packages ship TypeScript source (no build step); Next compiles it.
-  transpilePackages: ["@fleetos/ui", "@fleetos/domain"],
+  transpilePackages: ["@fleetos/ui", "@fleetos/domain", "@fleetos/providers", "@fleetos/engine"],
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

@@ -27,7 +27,7 @@ export function Header({ orgs, active, email }: { orgs: OrgSummary[]; active: Or
       </div>
       <div className="ml-auto flex items-center gap-2 sm:gap-3">
         <span className="hidden md:inline-flex">
-          <FreshnessChip />
+          <FreshnessChip orgId={active.id} />
         </span>
         <CommandMenu />
         <UserMenu email={email} roleLabel={`${ROLE_LABEL[active.role]} · ${active.name}`} />

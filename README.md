@@ -52,6 +52,14 @@ pnpm db:test             # pgTAP tests: tenant isolation, roles, audit
 pnpm db:stop
 ```
 
+### Live demo fleet (local)
+
+1. `pnpm db:start && pnpm db:env` (first time), then `pnpm dev`.
+2. Open http://localhost:3000, sign in with any email (the link arrives at http://localhost:54324).
+3. Choose **Explore with a demo fleet**: 84 simulated Cybercabs appear and move every minute, driven by a
+   `pg_cron` job in the local database that calls `/api/internal/tick` (`pnpm tick` triggers one by hand).
+   Watch the tables fill in Supabase Studio (http://localhost:54323).
+
 ### Simulated fleet
 
 ```bash
