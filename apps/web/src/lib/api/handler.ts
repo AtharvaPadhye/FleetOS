@@ -123,7 +123,11 @@ export function apiRoute<Q extends z.ZodType, R extends z.ZodType>(
           "Check the query parameters.",
           requestId,
           headers,
-          parsedQuery.error.issues.map((i) => ({ param: i.path.join("."), message: i.message })),
+          parsedQuery.error.issues.flatMap((i) =>
+            i.code === "unrecognized_keys"
+              ? i.keys.map((k) => ({ param: k, message: "Unknown or not yet supported parameter." }))
+              : [{ param: i.path.join("."), message: i.message }],
+          ),
         );
 
       let org: OrgContext | undefined;

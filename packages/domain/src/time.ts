@@ -111,3 +111,14 @@ export function averageSoc(vehicles: readonly { soc: number | null; fresh: boole
 export function lowSocCount(vehicles: readonly { soc: number | null; fresh: boolean }[], threshold: number): number {
   return vehicles.filter((v) => v.fresh && v.soc !== null && v.soc < threshold).length;
 }
+
+export const FRESH_WITHIN_MS = 5 * 60_000;
+
+/**
+ * kpis.md §1 freshness: last telemetry under 5 minutes old. Streams only send changed fields, so a car that's
+ * connected but quiet (parked) is fresh too; "silent" alone doesn't mean "stale".
+ */
+export function isFresh(v: { connectivity: string; lastTelemetryAt: Date | null }, now: Date): boolean {
+  if (v.connectivity === "online") return true;
+  return v.lastTelemetryAt !== null && now.getTime() - v.lastTelemetryAt.getTime() < FRESH_WITHIN_MS;
+}

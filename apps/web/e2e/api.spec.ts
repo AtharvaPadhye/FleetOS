@@ -1,6 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { createClient } from "@supabase/supabase-js";
-import { uniqueEmail } from "./helpers/auth";
+import { userToken } from "./helpers/api";
 
 /** /api/v1 platform endpoints (task 3.8a): auth, org scoping, error shape, headers. */
 
@@ -50,20 +49,9 @@ test.describe("without a session", () => {
   });
 
   test("accepts a user's Bearer token", async ({ request }) => {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const admin = createClient(url, process.env.SUPABASE_SECRET_KEY!, { auth: { persistSession: false } });
-    const email = uniqueEmail("api");
-    await admin.auth.admin.createUser({ email, email_confirm: true });
-    const { data: link, error } = await admin.auth.admin.generateLink({ type: "magiclink", email });
-    expect(error).toBeNull();
-    const anon = createClient(url, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!, {
-      auth: { persistSession: false },
-    });
-    const { data } = await anon.auth.verifyOtp({ type: "magiclink", token_hash: link.properties!.hashed_token });
-    const res = await request.get("/api/v1/me", {
-      headers: { Authorization: `Bearer ${data.session!.access_token}` },
-    });
+    const u = await userToken("api");
+    const res = await request.get("/api/v1/me", { headers: { Authorization: `Bearer ${u.token}` } });
     expect(res.status()).toBe(200);
-    expect(await res.json()).toMatchObject({ email, memberships: [] });
+    expect(await res.json()).toMatchObject({ email: u.email, memberships: [] });
   });
 });

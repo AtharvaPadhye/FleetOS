@@ -1,5 +1,17 @@
 import { z } from "zod";
-import { Capabilities, Me, OrgList, type ROLES } from "./schemas";
+import {
+  Capabilities,
+  ChargingSession,
+  HistoryQuery,
+  Me,
+  OrgList,
+  StatusEvent,
+  Vehicle,
+  VehicleListItem,
+  VehicleListQuery,
+  page,
+  type ROLES,
+} from "./schemas";
 
 /**
  * Every implemented /api/v1 operation. Route handlers are built from these (apiRoute), and the contract test
@@ -52,4 +64,52 @@ export const getCapabilities = op({
   response: Capabilities,
 });
 
-export const OPERATIONS: Operation[] = [getMe, getOrgs, getCapabilities];
+export const getVehicles = op({
+  operationId: "getVehicles",
+  method: "GET",
+  path: "/vehicles",
+  stability: "stable",
+  org: "required",
+  query: VehicleListQuery,
+  response: page(VehicleListItem),
+});
+
+export const getVehicle = op({
+  operationId: "getVehiclesBy_id",
+  method: "GET",
+  path: "/vehicles/{id}",
+  stability: "stable",
+  org: "required",
+  query: NoQuery,
+  response: Vehicle,
+});
+
+export const getVehicleStatusEvents = op({
+  operationId: "getVehiclesBy_idStatusEvents",
+  method: "GET",
+  path: "/vehicles/{id}/status-events",
+  stability: "stable",
+  org: "required",
+  query: HistoryQuery,
+  response: page(StatusEvent),
+});
+
+export const getVehicleChargingSessions = op({
+  operationId: "getVehiclesBy_idChargingSessions",
+  method: "GET",
+  path: "/vehicles/{id}/charging-sessions",
+  stability: "stable",
+  org: "required",
+  query: HistoryQuery,
+  response: page(ChargingSession),
+});
+
+export const OPERATIONS: Operation[] = [
+  getMe,
+  getOrgs,
+  getCapabilities,
+  getVehicles,
+  getVehicle,
+  getVehicleStatusEvents,
+  getVehicleChargingSessions,
+];

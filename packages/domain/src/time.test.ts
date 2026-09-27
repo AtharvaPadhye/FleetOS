@@ -7,6 +7,7 @@ import {
   utilization,
   downtimeByCause,
   averageSoc,
+  isFresh,
   lowSocCount,
   emptyHours,
 } from "./time";
@@ -79,4 +80,14 @@ describe("SOC", () => {
   it("averages fresh vehicles only", () => expect(averageSoc(cars)).toBeCloseTo(0.475));
   it("counts fresh vehicles below the threshold", () => expect(lowSocCount(cars, 0.4)).toBe(1));
   it("returns null with no fresh SOC", () => expect(averageSoc([{ soc: 0.5, fresh: false }])).toBeNull());
+});
+
+describe("isFresh", () => {
+  const now = new Date("2026-09-27T12:00:00Z");
+  it("is fresh while connected, or within 5 minutes of the last telemetry", () => {
+    expect(isFresh({ connectivity: "online", lastTelemetryAt: null }, now)).toBe(true);
+    expect(isFresh({ connectivity: "asleep", lastTelemetryAt: new Date("2026-09-27T11:56:00Z") }, now)).toBe(true);
+    expect(isFresh({ connectivity: "asleep", lastTelemetryAt: new Date("2026-09-27T11:55:00Z") }, now)).toBe(false);
+    expect(isFresh({ connectivity: "offline", lastTelemetryAt: null }, now)).toBe(false);
+  });
 });

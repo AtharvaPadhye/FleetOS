@@ -4580,7 +4580,7 @@ components:
       properties:
         id:
           type: string
-          format: uuid
+          description: Opaque id (a database identity, not a UUID)
         vehicle_id:
           type: string
           format: uuid

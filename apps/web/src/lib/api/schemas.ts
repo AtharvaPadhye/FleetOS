@@ -75,3 +75,97 @@ export const PageInfo = z.object({
 });
 
 export const VehicleStatus = z.enum(VEHICLE_STATUSES);
+
+const isoDateTime = z.iso.datetime({ offset: true });
+const cents = z.number().int();
+
+export const GeoPoint = z.object({ lat: z.number(), lng: z.number() });
+
+export const VehicleState = z.object({
+  status: VehicleStatus,
+  status_since: isoDateTime.optional(),
+  soc: z.number().nullable(),
+  range_m: z.number().nullable(),
+  charge_state: z.string().nullable(),
+  charge_power_kw: z.number().nullable(),
+  location: GeoPoint.nullable(),
+  heading: z.number().nullable(),
+  speed_mps: z.number().nullable(),
+  odometer_m: z.number().nullable(),
+  locked: z.boolean().nullable(),
+  tpms: z.object({ fl: z.number(), fr: z.number(), rl: z.number(), rr: z.number() }).partial().nullable(),
+  connectivity: z.enum(["online", "asleep", "offline"]),
+  current_hub_id: z.uuid().nullable(),
+  last_telemetry_at: isoDateTime.nullable(),
+  fresh: z.boolean(),
+});
+
+export const VehicleListItem = z.object({
+  id: z.uuid(),
+  number: z.string(),
+  vin: z.string(),
+  home_hub: z.object({ id: z.uuid(), name: z.string() }).nullable(),
+  state: VehicleState,
+});
+
+export const Vehicle = VehicleListItem.extend({
+  model: z.string().nullable(),
+  lifecycle: z.enum(["pending", "commissioned", "retired"]),
+  provider: z.enum(["simulator", "tesla"]),
+  commissioned_at: isoDateTime.nullable(),
+  /** null for roles without money access. */
+  insurance_monthly_cents: cents.nullable(),
+  financing_monthly_cents: cents.nullable(),
+  virtual_key_paired: z.boolean().nullable(),
+  telemetry_synced: z.boolean().nullable(),
+  holds: z.array(z.object({ id: z.uuid(), reason: z.string(), created_at: isoDateTime })),
+});
+
+export const page = <T extends z.ZodType>(item: T) => z.object({ data: z.array(item), page: PageInfo });
+
+export const StatusEvent = z.object({
+  id: z.string(),
+  vehicle_id: z.uuid(),
+  from_status: VehicleStatus.nullable(),
+  to_status: VehicleStatus,
+  at: isoDateTime,
+  cause_type: z.enum(["telemetry", "ticket", "exception", "policy", "manual", "platform"]),
+  cause_id: z.uuid().nullable(),
+  detail: z.string().nullable(),
+});
+
+export const ChargingSession = z.object({
+  id: z.uuid(),
+  hub_id: z.uuid().nullable(),
+  started_at: isoDateTime,
+  ended_at: isoDateTime.nullable(),
+  energy_kwh: z.number(),
+  cost_cents: cents,
+  source: z.enum(["tesla_supercharger", "depot_inferred", "ocpp", "simulator"]),
+});
+
+// Query parameters (strings on the wire, coerced here).
+export const Limit = z.coerce.number().int().min(1).max(200).default(25);
+export const Cursor = z.string().max(200).optional();
+const listOf = <T extends z.ZodType>(item: T) =>
+  z.preprocess((v) => (v === undefined || Array.isArray(v) ? v : [v]), z.array(item)).optional();
+
+export const VEHICLE_SORTS = ["number", "status", "soc", "status_since", "last_telemetry_at"] as const;
+
+export const VehicleListQuery = z.strictObject({
+  status: listOf(VehicleStatus),
+  hub_id: z.uuid().optional(),
+  soc_lt: z.coerce.number().min(0).max(1).optional(),
+  soc_gte: z.coerce.number().min(0).max(1).optional(),
+  q: z.string().trim().max(80).optional(),
+  sort: z.enum([...VEHICLE_SORTS, ...VEHICLE_SORTS.map((s) => `-${s}` as const)]).default("number"),
+  limit: Limit,
+  cursor: Cursor,
+});
+
+export const HistoryQuery = z.strictObject({
+  from: isoDateTime.optional(),
+  to: isoDateTime.optional(),
+  limit: Limit,
+  cursor: Cursor,
+});
