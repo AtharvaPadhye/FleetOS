@@ -32,13 +32,14 @@ Progress also logged in Obsidian: `claude_memory/projects/FleetOS/progress-log.m
 - [ ] Phase 1 review → checkpoint
 
 ## Phase 2 — Foundation
+> **Order changed 2026-09-26:** database setup is parked while Akshat and Atharva decide (Supabase vs. alternatives, and any role for Airtable). Next up, in order: **2.5 app shell → 3.1 domain → 3.3 provider interface → 3.4 simulator** (none depend on the database).
 - [x] 2.1 Monorepo + move MVP to prototype/ + Pages path filter (pnpm 10.34.5 + Turborepo; prototype build byte-identical)
   - Verified 2026-09-26: Pages run 36284425903 succeeded with the pnpm build; live `index.html`, `main.js`, `style.css` byte-identical to the pre-move build; this docs-only commit triggered no Pages run.
 - [x] 2.2 Next.js app + CI + `pnpm substitutes` marker inventory (Next 16.3.6, React 19.2.8, Tailwind 4.3.3, TS 6.0.3, ESLint 9.39.5, Vitest 5, Playwright 1.63; 21 ui + 1 web unit tests, 4 script tests, 8 e2e incl. axe WCAG 2.2 AA)
-- [ ] 2.3 Supabase baseline + RLS tests
-- [ ] 2.4 Auth, orgs, roles
+- [ ] 2.3 Supabase baseline + RLS tests — **parked** (database choice pending: Akshat + Atharva, incl. whether Airtable plays a role)
+- [ ] 2.4 Auth, orgs, roles — **parked** (depends on 2.3)
 - [ ] 2.5 App shell
-- [ ] 2.6 Env + observability
+- [ ] 2.6 Env + observability — local parts can proceed; hosted parts parked with 2.3
 - [ ] Phase 2 exit check → checkpoint
 
 ## Phase 3 — Data platform & simulator
