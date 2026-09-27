@@ -4,10 +4,16 @@ import { PHOENIX, SimulatorProvider } from "@fleetos/providers";
 import { tickOrg } from "./tick";
 
 /**
- * Fill a new org with the simulated Phoenix fleet (flows.md F2 "Demo data"): 3 hubs, 84 Cybercabs, and a
+ * Fill a new org with the simulated Phoenix fleet (flows.md F2 "Demo data"): 3 hubs, 84 Cybercabs (or `vehicles`), and a
  * simulator whose clock follows real time. Uses the service role; every row carries the org_id.
  */
-export async function provisionDemoFleet(db: SupabaseClient, orgId: string, seed: number, now = new Date()) {
+export async function provisionDemoFleet(
+  db: SupabaseClient,
+  orgId: string,
+  seed: number,
+  now = new Date(),
+  vehicles?: number, // default: the full Phoenix fleet (84)
+) {
   const { error: oErr } = await db.from("orgs").update({ is_demo: true, city: "Phoenix, AZ" }).eq("id", orgId);
   if (oErr) throw new Error(oErr.message);
 
@@ -49,7 +55,7 @@ export async function provisionDemoFleet(db: SupabaseClient, orgId: string, seed
 
   // Start one minute in the past so the first tick simulates exactly one real minute.
   const start = new Date(now.getTime() - 60_000);
-  const provider = new SimulatorProvider({ seed, start });
+  const provider = new SimulatorProvider({ seed, start, vehicles });
   const { error: vErr } = await db.from("vehicles").insert(
     provider.world.vehicles.map((v) => ({
       org_id: orgId,
