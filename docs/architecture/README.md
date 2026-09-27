@@ -123,6 +123,7 @@ User question → server route calls Claude with tools → each tool calls `/api
 | [0012](adr/0012-mark-every-substitute-data-source-in-code.md) | Mark every substitute data source in code |
 | [0013](adr/0013-copilot-rls-scoped-tools-propose-only.md) | Copilot: RLS-scoped tools, propose-only actions |
 | [0014](adr/0014-prototype-infrastructure-vercel-supabase-only.md) | **Prototype:** Vercel + Supabase only; per-minute `pg_cron` tick instead of worker/Redis/Fly until Phase 4 |
+| [0015](adr/0015-supabase-system-of-record-airtable-as-optional-input.md) | Supabase is the system of record; Airtable only as an optional one-way input (vendor forms, vendor directory, revenue sheets, onboarding) |
 
 ## 7. To verify when building (Phase 2)
 - TimescaleDB availability on our Supabase Postgres version (ADR-0009).

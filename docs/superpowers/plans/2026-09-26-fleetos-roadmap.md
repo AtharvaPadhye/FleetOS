@@ -30,6 +30,7 @@ Full reasoning for architecture decisions: `docs/architecture/adr/` (ADR-0001…
 | Requirements defaults | Recommended answers to the open questions in `prd.md` §9, `kpis.md` §7 and `vehicle-states.md` §9 accepted by Akshat on 2026-09-26 (contribution = revenue − variable costs, proposed grade weights, 24 h service window, 40% low-SOC, Incident outranks Offline, …) | — |
 | Substitute data | Every stand-in for a real source (simulator, CSV, manual, inferred, static, fixture) carries a `SUBSTITUTE(<capability>, <kind>)` comment with the real source and replacement step; inventoried by `pnpm substitutes`. Rule lives in `CLAUDE.md` | Tracking substitutes only in docs (drifts from code) |
 | Prototype infra | **Vercel + Supabase only** (free tiers) with a per-minute `pg_cron` tick until a real Tesla is connected; always-on container + domain added in task 4.0 (ADR-0014) | Fly worker from day one (cost/setup with no prototype benefit) |
+| Database / Airtable | **Supabase confirmed** (Akshat + Atharva). Airtable only as an optional one-way input per org: vendor job forms, vendor directory, revenue sheets, onboarding (ADR-0015) | Airtable as main database (no RLS, transactions, time-series or realtime) |
 | Charts | Recharts (or ECharts for dense time-series), validated with the `dataviz` skill | — |
 
 ## 1. What the MVP implements (inventory)
@@ -206,6 +207,7 @@ Exit: every MVP screen is live-data driven with working interactions; Playwright
 - **5.3 Overview** — KPI strip, needs-attention queue, charts (dataviz-validated), live updates.
 - **5.4 Exceptions engine** — declarative rules (condition → severity → recommended action), revenue-at-risk calc, dedupe, lifecycle, UI filters, rules editor in Settings.
 - **5.5 Service tickets** — create from exception, SLA policies, countdown timers (worker jobs), actions (assign, escalate, arrived, complete, return to service), evidence uploads (Storage), activity log.
+- **5.6a (optional) Airtable inputs** — vendor job forms → `vendor_jobs`/`ticket_events`, vendor directory → `vendors` (ADR-0015); one-way, idempotent, marked `SUBSTITUTE(vendor_tracking, manual)`.
 - **5.6 Vendors** — directory CRUD, categories, PostGIS service areas, pricing, SLA stats from jobs, dispatch ranking (ETA × cost × SLA).
 - **5.7 Hubs** — capacity model, live charger/bay occupancy, hourly utilization forecast from SOC projections, overload alerts, rebalancing recommendations with Apply.
 - **5.8 Financials** — fleet & vehicle P&L from ledger, period picker, cost breakdown, cohort anomaly insights, export.
