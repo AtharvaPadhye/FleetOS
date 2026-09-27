@@ -112,7 +112,7 @@ Browser ── Next.js app (Vercel): UI, route handlers, server actions, Copilot
 | `/api/v1/tickets`, `/tickets/{id}`, `/tickets/{id}/events`, `/tickets/{id}/attachments` | GET, POST, PATCH | native + Storage |
 | `/api/v1/vendors`, `/vendors/{id}`, `/vendors/{id}/jobs` | GET, POST, PATCH | native |
 | `/api/v1/revenue/imports` | POST (CSV), GET | payout-statement CSV |
-| `/api/v1/revenue-lines`, `/api/v1/cost-lines` | GET, POST | CSV + native ledger |
+| `/api/v1/revenue-lines`, `/api/v1/cost-lines` | GET, POST | filtered views of `ledger_entries` (CSV + native) |
 | `/api/v1/kpis/fleet`, `/kpis/hubs`, `/kpis/vehicles/{id}` | GET | derived |
 | `/api/v1/financials/pnl?scope=fleet\|hub\|vehicle&period` | GET | derived from ledger |
 | `/api/v1/reports`, `/reports/{id}`, `/reports/{id}/pdf` | GET, POST | derived snapshots |
@@ -183,8 +183,8 @@ Exit: simulator runs 24 h for 84 Cybercabs across 3 Phoenix hubs; state, rides, 
 - **3.3 `VehicleProvider` interface** — `listVehicles`, `getSnapshot`, `streamTelemetry`, `sendCommand`; contract tests any provider must pass.
 - **3.4 Simulator provider** — seeded RNG; Phoenix geography; SOC drain/charge; trips with fares; events (cleanliness, tire pressure, fault, breakdown, offline); emits Tesla-shaped payloads.
 - **3.5 Worker ingestion** — `apps/worker` Dockerfile; normalize → upsert current state, append samples, derive status events; Realtime broadcast; deploy to Fly.
-- **3.6 Rides & revenue + CSV import** — rides, revenue_lines; payout CSV importer with column mapping + validation report; default layout modelled on the Uber Fleet Portal vehicle-earnings export.
-- **3.7 Cost ledger** — hub tariffs → energy cost; vendor job costs; per-vehicle allocations (insurance, financing, platform fees) → cost_lines.
+- **3.6 Rides & revenue + CSV import** — `rides`, `revenue_imports`, revenue categories in `ledger_entries`; payout CSV importer with column mapping + validation report; default layout modelled on the Uber Fleet Portal vehicle-earnings export.
+- **3.7 Cost ledger** — hub tariffs → energy cost; vendor job costs; per-vehicle allocations (insurance, financing, platform fees) → cost categories in `ledger_entries` (one ledger, see `docs/architecture/erd.md`).
 - **3.8 Stable read APIs + rollups** — `/api/v1` fleet list (filter/sort/paginate), vehicle detail, KPI materialized views refreshed by worker; Realtime subscriptions.
 - **3.9 Preview (placeholder) APIs** — the preview routes from §3a, served by the simulator in demo orgs and `501 capability_unavailable` elsewhere; `/api/v1/capabilities`; contract tests assert both behaviours and that preview routes never return `200` with empty data for unconnected orgs.
 
