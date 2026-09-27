@@ -54,6 +54,10 @@ Progress also logged in Obsidian: `claude_memory/projects/FleetOS/progress-log.m
 - [x] Dev auto-login: `next dev` + `DEV_AUTO_LOGIN_EMAIL` skips the magic link and signs in as org owner with a demo fleet (`/auth/dev-login`; real sign-in unchanged under `next start`/CI; e2e port configurable)
 - [x] 3.7 Cost ledger (`charging_sessions` priced by hub time-of-use tariff → electricity; simulator vendor jobs → cleaning / maintenance / roadside (tow and repair split); monthly insurance & financing → one line per vehicle-day, month sums exact, back-fills up to 31 missed days, all orgs; demo hubs get an illustrative Phoenix TOU tariff; Financials shows month-to-date P&L via `ledger_totals`, names an empty ledger instead of $0; 68 e2e, 73 pgTAP)
 - [ ] 3.8 Stable read APIs + rollups
+  - [x] 3.8a API foundation: `apiRoute` (cookie or Bearer auth, `X-FleetOS-Org` membership check → foreign org 404, 401/400 JSON errors with request id, stability header, runtime response validation); operation registry + contract test against `openapi.yaml` (catches undocumented fields, types, formats, nulls, enums, unregistered routes); `GET /me`, `/orgs`, `/capabilities`; proxy no longer redirects `/api`
+  - [ ] 3.8b Vehicles: `GET /vehicles` (filters, sort, cursor pages), `/vehicles/{id}`, `/status-events`, `/charging-sessions`
+  - [ ] 3.8c KPIs: per-vehicle-day rollup refreshed by the tick → `GET /kpis/fleet`, `/kpis/vehicles/{id}`, `/financials/pnl`
+  - [ ] 3.8d Realtime: tick broadcasts vehicle state on a private `org:{id}:vehicles` channel
 - [ ] 3.9 Preview (placeholder) APIs + capability registry
 - [ ] Phase 3 exit check → checkpoint
 

@@ -7,8 +7,9 @@ import { DEV_LOGIN_PATH, devAutoLoginEmail } from "@/lib/dev-login";
  * cookie and keeps signed-out visitors out of the app (NFR SEC-2). Public: sign-in, auth callback,
  * design reference pages, health check.
  */
-// /api/internal/* is machine-to-machine: each route checks its own bearer secret.
-const PUBLIC_PREFIXES = ["/sign-in", "/auth/", "/design", "/api/health", "/api/internal/"];
+// /api/* is never redirected: /api/v1 answers 401 JSON itself (lib/api/handler.ts) and /api/internal/* checks
+// its own bearer secret.
+const PUBLIC_PREFIXES = ["/sign-in", "/auth/", "/design", "/api/"];
 const isPublic = (path: string) => PUBLIC_PREFIXES.some((p) => path === p || path.startsWith(p));
 
 export async function proxy(request: NextRequest) {

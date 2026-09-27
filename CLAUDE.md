@@ -41,6 +41,7 @@ export function inferChargerOccupancy(vehicles: VehicleSnapshot[], hub: Hub): nu
 ```
 
 ## API rules
+- Every `/api/v1` route is built with `apiRoute(op, handler)` (`apps/web/src/lib/api/handler.ts`) from an operation in `operations.ts`; the contract test fails if the route, its query params or its response schema drift from `docs/architecture/openapi.yaml`. Change the spec first, then the code.
 - One `/api/v1`. Each operation is tagged `stable` or `preview`. Preview endpoints return simulated data in demo orgs and `501 capability_unavailable` elsewhere, **never `200` with empty data**. `/api/v2` is only for breaking changes to stable endpoints. See roadmap §3a.
 
 ## Tesla rules

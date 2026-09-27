@@ -15,7 +15,10 @@ export async function provisionDemoFleet(
   now = new Date(),
   vehicles?: number, // default: the full Phoenix fleet (84)
 ) {
-  const { error: oErr } = await db.from("orgs").update({ is_demo: true, city: "Phoenix, AZ" }).eq("id", orgId);
+  const { error: oErr } = await db
+    .from("orgs")
+    .update({ is_demo: true, city: "Phoenix, AZ", timezone: PHOENIX.timezone })
+    .eq("id", orgId);
   if (oErr) throw new Error(oErr.message);
 
   const { data: hubs, error: hErr } = await db

@@ -1,6 +1,6 @@
 # FleetOS — API Contract
 
-> Roadmap task 1.3 · 2026-09-26. Machine-readable contract: [`openapi.yaml`](openapi.yaml) (OpenAPI 3.1). Until task 3.8 generates the spec from the zod schemas that back the route handlers, **`openapi.yaml` is the source of truth**; afterwards the generated spec must match it (CI diff), and this file keeps the conventions.
+> Roadmap task 1.3 · 2026-09-26. Machine-readable contract: [`openapi.yaml`](openapi.yaml) (OpenAPI 3.1), **the source of truth**. Since task 3.8 every implemented operation is registered in `apps/web/src/lib/api/operations.ts` with zod request/response schemas; `apps/web/src/lib/api/contract.test.ts` converts them to JSON Schema and fails CI if they send anything the spec doesn't allow (undocumented fields, types, formats, nulls, enum values) or if a route handler isn't registered. Handlers also validate every response against its schema at runtime. This file keeps the conventions.
 
 ## 1. Conventions
 
@@ -136,5 +136,8 @@ export interface VehicleProvider {
 **Contract tests** (`packages/providers/contract`) every provider must pass: roster shape; `getSnapshot` doesn't wake an asleep vehicle; events carry vehicle time; duplicate delivery is tolerated downstream; late events are ordered by `eventTime`; commands respect the enable switch; unknown vehicles error cleanly.
 
 ## 6. Status of the spec
+
+**Implemented (task 3.8):** `GET /me`, `GET /orgs`, `GET /capabilities`. Without a session or valid Bearer token every `/api/v1` route answers `401` JSON (the app's sign-in redirect never applies to `/api`). `/me` and `/orgs` don't need `X-FleetOS-Org` (the spec lists it everywhere; `/me` echoes it as `active_org_id` when valid).
+
 
 `openapi.yaml` defines every operation above with request/response schemas for the core resources (vehicles, telemetry, status events, hubs, exceptions, tickets, vendors, ledger, KPIs, capabilities, errors). Less central operations (members, invitations, notifications, policies) use generic schemas and get detailed as their Phase 5 tasks start. Lint: `npx @redocly/cli lint docs/architecture/openapi.yaml`.
