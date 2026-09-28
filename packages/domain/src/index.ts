@@ -10,3 +10,4 @@ export * from "./costs";
 export * from "./vendors";
 export * from "./exceptions";
 export * from "./tickets";
+export * from "./hub-forecast";

@@ -27,7 +27,12 @@ test.beforeAll(async () => {
   const ok = (r: { error: { message: string } | null }) => {
     if (r.error) throw new Error(r.error.message);
   };
-  ok(await db.from("orgs").insert({ id: ORG, name: "API Fixture Co", slug: `api-fixture-${ORG.slice(0, 8)}` }));
+  ok(
+    await db
+      .from("orgs")
+      // UTC, so the fixture's "today" (a UTC date) is the org's today at any hour.
+      .insert({ id: ORG, name: "API Fixture Co", slug: `api-fixture-${ORG.slice(0, 8)}`, timezone: "UTC" }),
+  );
   ok(
     await db.from("memberships").insert([
       { org_id: ORG, user_id: o.id, role: "owner" },

@@ -126,6 +126,7 @@ export async function tickOrg(db: SupabaseClient, orgId: string, now = new Date(
     const roster = new Map((await provider.listVehicles()).map((v) => [v.vehicleRef, v.connectivity]));
     const r = runTick(cfg, engineVehicles, previous, events, { from, to: provider.now() }, roster, exceptions);
     await writeResult(db, orgId, r);
+    await writeHubVisits(db, orgId, previous, r.live, provider.now());
     await writeExceptions(db, orgId, exceptions.rules, r.exceptions.opened, r.exceptions.cleared);
     await writeRides(db, orgId, rides, vehicleIdByVin, day);
     await writeCharging(db, orgId, charges, vehicleIdByVin, pricing, timeZone, day);
@@ -258,6 +259,27 @@ async function writeResult(db: SupabaseClient, orgId: string, r: ReturnType<type
     })),
     (b) => db.from("vehicle_alerts").upsert(b, { onConflict: "vehicle_id,name,started_at" }),
   );
+}
+
+/**
+ * Hub visits (task 5.7, average turnaround): a car whose hub changed between the start and end of the chunk
+ * left its old hub and/or arrived at the new one, stamped at the chunk end (one-minute precision when live).
+ */
+async function writeHubVisits(
+  db: SupabaseClient,
+  orgId: string,
+  before: ReadonlyMap<string, VehicleLive>,
+  after: readonly VehicleLive[],
+  at: Date,
+) {
+  const moves = after
+    .filter(
+      (l) => before.has(l.vehicleId) && (before.get(l.vehicleId)!.currentHubId ?? null) !== (l.currentHubId ?? null),
+    )
+    .map((l) => ({ vehicle_id: l.vehicleId, hub_id: l.currentHubId, at: at.toISOString() }));
+  if (!moves.length) return;
+  const { error } = await db.rpc("engine_hub_visits", { p_org: orgId, p_moves: moves });
+  if (error) throw new Error(error.message);
 }
 
 // SUBSTITUTE(rides, simulated): simulator trips become rides and ledger revenue lines.

@@ -763,3 +763,68 @@ export const AttentionGroup = z.object({
   exception_ids: z.array(z.uuid()),
   bleed: z.object({ started_at: isoDateTime, rate_cents_per_min: z.number(), lost_cents: cents }).nullable(),
 });
+
+// Hubs (task 5.7)
+export const Hub = z.object({
+  id: z.uuid(),
+  name: z.string(),
+  address: z.string().nullable(),
+  location: GeoPoint,
+  chargers_total: z.number().int(),
+  bays: z.object({ cleaning: z.number().int(), maintenance: z.number().int(), parking: z.number().int() }),
+  vehicles_assigned: z.number().int(),
+  vehicles_present: z.number().int(),
+  chargers_occupied: z.number().int(),
+  chargers_occupied_source: z.enum(["inferred", "ocpp"]),
+  electricity_price_cents_per_kwh: z.number().nullable(),
+  tariff_source: z.enum(["manual", "urdb", "arcadia"]),
+  peak_forecast_utilization: z.number().nullable(),
+});
+export const HubCreate = z.strictObject({
+  name: z.string().trim().min(1).max(80),
+  address: z.string().trim().max(200).optional(),
+  location: z.strictObject({ lat: z.number().min(-90).max(90), lng: z.number().min(-180).max(180) }),
+  geofence: z.record(z.string(), z.unknown()).optional(),
+  chargers: z
+    .array(z.strictObject({ label: z.string().max(20).optional(), max_kw: z.number().positive().max(1000).optional() }))
+    .max(500)
+    .optional(),
+  bays: z
+    .array(
+      z.strictObject({ kind: z.enum(["cleaning", "maintenance", "parking"]), label: z.string().max(40).optional() }),
+    )
+    .max(500)
+    .optional(),
+  tariff_id: z.uuid().optional(),
+  operating_hours: z.record(z.string(), z.unknown()).optional(),
+});
+export const HubOccupancy = z.object({
+  hub_id: z.uuid(),
+  vehicles_present: z.array(
+    z.object({
+      vehicle_id: z.uuid(),
+      number: z.string(),
+      status: VehicleStatus,
+      soc: z.number().min(0).max(1).nullable(),
+    }),
+  ),
+  chargers_total: z.number().int(),
+  chargers_occupied: z.number().int(),
+  source: z.enum(["inferred", "ocpp"]),
+});
+export const HubForecast = z.object({
+  hub_id: z.uuid(),
+  date: z.iso.date(),
+  capacity: z.number().int(),
+  hours: z.array(z.object({ hour: isoDateTime, demand: z.number(), utilization: z.number() })),
+});
+export const HubForecastQuery = z.strictObject({ date: z.iso.date().optional() });
+export const Recommendation = z.object({
+  id: z.string(),
+  title: z.string(),
+  detail: z.string(),
+  impact_cents: cents,
+  impact_note: z.string().nullable(),
+  status: z.enum(["proposed", "applied", "dismissed"]),
+  actions: z.array(z.record(z.string(), z.unknown())),
+});

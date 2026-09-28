@@ -16,7 +16,7 @@ export interface AttentionGroup {
   revenue_at_risk_cents: number;
   recommended_action: string;
   /** dispatch: one-click EX-4 dispatch of the recommended vendor (target = exception id); otherwise a URL. */
-  action: { kind: "dispatch" | "open_exception" | "open_fleet"; target: string };
+  action: { kind: "dispatch" | "open_exception" | "open_fleet" | "open_hub"; target: string };
   exception_ids: string[];
   bleed: { started_at: string; rate_cents_per_min: number; lost_cents: number } | null;
 }

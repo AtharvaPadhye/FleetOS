@@ -13,6 +13,7 @@ const HUB = crypto.randomUUID();
 const CAR = crypto.randomUUID();
 const email = uniqueEmail("vehicle");
 let cookies: Awaited<ReturnType<typeof sessionCookies>> = [];
+let FIXTURE_DAY = "";
 
 test.beforeAll(async ({ browser }) => {
   const db = admin();
@@ -41,9 +42,15 @@ test.beforeAll(async ({ browser }) => {
       insurance_monthly_cents: 48_600,
     }),
   );
+  // The fixture's events span the last 90 minutes; in the first hours after UTC midnight that would split them
+  // across two days, so anchor them earlier and open that day explicitly.
+  // Live state and telemetry use the real clock (`at`); the day's timeline rows use `ev`.
   const now = Date.now();
+  const anchor = (now % 86_400_000) / 60_000 < 100 ? now - 100 * 60_000 : now;
   const at = (minAgo: number) => new Date(now - minAgo * 60_000).toISOString();
-  const today = new Date(now).toISOString().slice(0, 10);
+  const ev = (minAgo: number) => new Date(anchor - minAgo * 60_000).toISOString();
+  const today = new Date(anchor).toISOString().slice(0, 10);
+  FIXTURE_DAY = today;
   ok(
     await db.from("vehicle_state_current").insert({
       vehicle_id: CAR,
@@ -61,13 +68,13 @@ test.beforeAll(async ({ browser }) => {
   );
   ok(
     await db.from("vehicle_status_events").insert([
-      { org_id: ORG, vehicle_id: CAR, from_status: null, to_status: "charging", at: at(90), cause_type: "telemetry" },
+      { org_id: ORG, vehicle_id: CAR, from_status: null, to_status: "charging", at: ev(90), cause_type: "telemetry" },
       {
         org_id: ORG,
         vehicle_id: CAR,
         from_status: "charging",
         to_status: "ready",
-        at: at(40),
+        at: ev(40),
         cause_type: "telemetry",
       },
       {
@@ -75,7 +82,7 @@ test.beforeAll(async ({ browser }) => {
         vehicle_id: CAR,
         from_status: "ready",
         to_status: "in_service",
-        at: at(20),
+        at: ev(20),
         cause_type: "telemetry",
       },
     ]),
@@ -85,8 +92,8 @@ test.beforeAll(async ({ browser }) => {
       org_id: ORG,
       vehicle_id: CAR,
       hub_id: HUB,
-      started_at: at(90),
-      ended_at: at(40),
+      started_at: ev(90),
+      ended_at: ev(40),
       energy_kwh: 30,
       cost_cents: 390,
       source: "simulator",
@@ -98,8 +105,8 @@ test.beforeAll(async ({ browser }) => {
       org_id: ORG,
       vehicle_id: CAR,
       name: "TpmsHardWarning",
-      started_at: at(30),
-      ended_at: at(25),
+      started_at: ev(30),
+      ended_at: ev(25),
       source: "simulator",
     }),
   );
@@ -107,7 +114,7 @@ test.beforeAll(async ({ browser }) => {
     org_id: ORG,
     vehicle_id: CAR,
     occurred_on: today,
-    occurred_at: at(10),
+    occurred_at: ev(10),
     category,
     amount_cents,
     source: "manual",
@@ -167,7 +174,7 @@ test("header facts, map and indicators; tabs move with the arrow keys", async ({
 });
 
 test("operations timeline lists the day's events newest first", async ({ page }) => {
-  await page.goto("/fleet/047/operations");
+  await page.goto(`/fleet/047/operations?day=${FIXTURE_DAY}`);
   const list = page.getByRole("list").filter({ hasText: "Finished charging" });
   await expect(list).toContainText("Finished charging: 30.0 kWh, $3.90");
   await expect(list).toContainText("Alert raised: TpmsHardWarning");

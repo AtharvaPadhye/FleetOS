@@ -1,6 +1,12 @@
 import { z } from "zod";
 import type { Capability } from "@fleetos/domain";
 import {
+  Hub,
+  HubCreate,
+  HubForecast,
+  HubForecastQuery,
+  HubOccupancy,
+  Recommendation,
   AttentionGroup,
   Attachment,
   CreateTicketFromException,
@@ -371,6 +377,85 @@ export const deleteExceptionRule = op({
   response: z.null(),
 });
 
+// Hubs (task 5.7)
+export const getHubs = op({
+  operationId: "getHubs",
+  method: "GET",
+  path: "/hubs",
+  stability: "stable",
+  org: "required",
+  query: NoQuery,
+  response: z.array(Hub),
+});
+export const postHub = op({
+  operationId: "postHubs",
+  method: "POST",
+  path: "/hubs",
+  stability: "stable",
+  org: "required",
+  roles: ["owner", "admin", "ops"],
+  query: NoQuery,
+  body: HubCreate,
+  response: Hub,
+});
+export const getHub = op({
+  operationId: "getHubsBy_id",
+  method: "GET",
+  path: "/hubs/{id}",
+  stability: "stable",
+  org: "required",
+  query: NoQuery,
+  response: Hub,
+});
+export const patchHub = op({
+  operationId: "patchHubsBy_id",
+  method: "PATCH",
+  path: "/hubs/{id}",
+  stability: "stable",
+  org: "required",
+  roles: ["owner", "admin", "ops"],
+  query: NoQuery,
+  body: HubCreate,
+  response: Hub,
+});
+export const getHubOccupancy = op({
+  operationId: "getHubsBy_idOccupancy",
+  method: "GET",
+  path: "/hubs/{id}/occupancy",
+  stability: "stable",
+  org: "required",
+  query: NoQuery,
+  response: HubOccupancy,
+});
+export const getHubForecast = op({
+  operationId: "getHubsBy_idForecast",
+  method: "GET",
+  path: "/hubs/{id}/forecast",
+  stability: "stable",
+  org: "required",
+  query: HubForecastQuery,
+  response: HubForecast,
+});
+export const getHubRecommendations = op({
+  operationId: "getHubsBy_idRecommendations",
+  method: "GET",
+  path: "/hubs/{id}/recommendations",
+  stability: "stable",
+  org: "required",
+  query: NoQuery,
+  response: z.array(Recommendation),
+});
+export const postHubRecommendationApply = op({
+  operationId: "postHubsBy_idRecommendationsBy_ridApply",
+  method: "POST",
+  path: "/hubs/{id}/recommendations/{rid}/apply",
+  stability: "stable",
+  org: "required",
+  roles: ["owner", "admin", "ops"],
+  query: NoQuery,
+  response: Recommendation,
+});
+
 // Overview (task 5.3)
 export const getAttention = op({
   operationId: "getAttention",
@@ -651,6 +736,14 @@ export const OPERATIONS: Operation[] = [
   patchExceptionRule,
   deleteExceptionRule,
   getAttention,
+  getHubs,
+  postHub,
+  getHub,
+  patchHub,
+  getHubOccupancy,
+  getHubForecast,
+  getHubRecommendations,
+  postHubRecommendationApply,
   getTickets,
   postTicket,
   getTicketById,

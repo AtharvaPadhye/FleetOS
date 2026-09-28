@@ -66,7 +66,11 @@ export function AttentionList({
                     href={(g.action.kind === "dispatch" ? `/exceptions/${g.action.target}` : g.action.target) as Route}
                     className={link}
                   >
-                    {g.action.kind === "open_fleet" ? `View ${g.affected_count} vehicles` : "Open"}
+                    {g.action.kind === "open_fleet"
+                      ? `View ${g.affected_count} vehicles`
+                      : g.action.kind === "open_hub"
+                        ? "Review plan"
+                        : "Open"}
                   </Link>
                 )}
               </div>
