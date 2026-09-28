@@ -1,6 +1,15 @@
 import { z } from "zod";
 import type { Capability } from "@fleetos/domain";
 import {
+  Org,
+  Invitation,
+  InvitationCreate,
+  Member,
+  MemberUpdate,
+  OrgUpdate,
+  Policy,
+  PolicyWrite,
+  SlaPolicy,
   Insight,
   InsightsQuery,
   Hub,
@@ -379,6 +388,121 @@ export const deleteExceptionRule = op({
   response: z.null(),
 });
 
+// Settings (task 5.10)
+const admins = ["owner", "admin"] as const;
+export const patchOrgCurrent = op({
+  operationId: "patchOrgsCurrent",
+  method: "PATCH",
+  path: "/orgs/current",
+  stability: "stable",
+  org: "required",
+  roles: admins,
+  query: NoQuery,
+  body: OrgUpdate,
+  response: Org,
+});
+export const getMembers = op({
+  operationId: "getMembers",
+  method: "GET",
+  path: "/members",
+  stability: "stable",
+  org: "required",
+  query: NoQuery,
+  response: z.array(Member),
+});
+export const patchMember = op({
+  operationId: "patchMembersBy_user_id",
+  method: "PATCH",
+  path: "/members/{user_id}",
+  stability: "stable",
+  org: "required",
+  roles: admins,
+  query: NoQuery,
+  body: MemberUpdate,
+  response: Member,
+});
+export const deleteMember = op({
+  operationId: "deleteMembersBy_user_id",
+  method: "DELETE",
+  path: "/members/{user_id}",
+  stability: "stable",
+  org: "required",
+  roles: admins,
+  query: NoQuery,
+  response: z.null(),
+});
+export const getInvitations = op({
+  operationId: "getInvitations",
+  method: "GET",
+  path: "/invitations",
+  stability: "stable",
+  org: "required",
+  roles: admins,
+  query: NoQuery,
+  response: z.array(Invitation),
+});
+export const postInvitation = op({
+  operationId: "postInvitations",
+  method: "POST",
+  path: "/invitations",
+  stability: "stable",
+  org: "required",
+  roles: admins,
+  query: NoQuery,
+  body: InvitationCreate,
+  response: Invitation,
+});
+export const deleteInvitation = op({
+  operationId: "deleteInvitationsBy_id",
+  method: "DELETE",
+  path: "/invitations/{id}",
+  stability: "stable",
+  org: "required",
+  roles: admins,
+  query: NoQuery,
+  response: z.null(),
+});
+export const getPolicies = op({
+  operationId: "getPolicies",
+  method: "GET",
+  path: "/policies",
+  stability: "stable",
+  org: "required",
+  query: NoQuery,
+  response: z.array(Policy),
+});
+export const putPolicies = op({
+  operationId: "putPolicies",
+  method: "PUT",
+  path: "/policies",
+  stability: "stable",
+  org: "required",
+  roles: admins,
+  query: NoQuery,
+  body: PolicyWrite,
+  response: z.array(Policy),
+});
+export const getSlaPolicies = op({
+  operationId: "getSlaPolicies",
+  method: "GET",
+  path: "/sla-policies",
+  stability: "stable",
+  org: "required",
+  query: NoQuery,
+  response: z.array(SlaPolicy),
+});
+export const putSlaPolicies = op({
+  operationId: "putSlaPolicies",
+  method: "PUT",
+  path: "/sla-policies",
+  stability: "stable",
+  org: "required",
+  roles: admins,
+  query: NoQuery,
+  body: z.array(SlaPolicy),
+  response: z.array(SlaPolicy),
+});
+
 // Financials (task 5.8)
 export const getInsights = op({
   operationId: "getFinancialsInsights",
@@ -750,6 +874,17 @@ export const OPERATIONS: Operation[] = [
   patchExceptionRule,
   deleteExceptionRule,
   getAttention,
+  patchOrgCurrent,
+  getMembers,
+  patchMember,
+  deleteMember,
+  getInvitations,
+  postInvitation,
+  deleteInvitation,
+  getPolicies,
+  putPolicies,
+  getSlaPolicies,
+  putSlaPolicies,
   getInsights,
   getHubs,
   postHub,

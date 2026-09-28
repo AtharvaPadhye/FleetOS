@@ -295,6 +295,9 @@ export async function financials(db: SupabaseClient, org: Org, q: PeriodInput, n
       cost_per_revenue_mile_cents: revenueMiles ? Math.round(operatingCents / revenueMiles) : null,
       revenue_miles: revenueMiles,
       downtime_cost_cents: kpis.downtime_cost_cents,
+      // kpis.md §3.2: reserve per car (Settings) × fleet size, for the period; against maintenance actually spent.
+      maintenance_reserve_cents: Math.round((settings.maintenanceReserveMonthlyCents * fleetSize * days) / 30.4375),
+      maintenance_spent_cents: opCosts.maintenance ?? 0,
       days,
     },
     money,

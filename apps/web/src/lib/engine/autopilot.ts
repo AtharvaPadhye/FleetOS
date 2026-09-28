@@ -3,9 +3,6 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { TICKET_TYPE_FOR_CLASS, type ExceptionClass } from "@fleetos/domain";
 import type { OpsRecord } from "@fleetos/providers";
 
-/** A person gets this long to dispatch before the demo autopilot does (flows.md F1 stays hands-on). */
-export const AUTOPILOT_DISPATCH_AFTER_MS = 5 * 60_000;
-
 interface Step {
   action: "dispatch" | "arrive" | "complete";
   at: string;
@@ -18,7 +15,7 @@ interface Step {
 //   Docs: docs/requirements/data-sources.md §5, ADR-0015
 /**
  * Per engine chunk `window`: dispatch the recommended vendor for blocking exceptions nobody picked up within
- * 5 minutes; mark vendors arrived at their ETA; complete the ticket when the simulator finishes the job, with
+ * the org's auto-dispatch delay (off = never); mark vendors arrived at their ETA; complete the ticket when the simulator finishes the job, with
  * the simulator's cost (it becomes the ticket's one ledger line, SV-6). Returns the simulator jobs a ticket
  * accounted for, so their cost isn't also booked from the simulator.
  */
@@ -28,17 +25,23 @@ export async function runAutopilot(
   window: { from: Date; to: Date },
   jobs: readonly OpsRecord[],
   vehicleIdByVin: ReadonlyMap<string, string>,
+  /** The org's auto-dispatch policy (Settings): minutes a person gets first; null = never dispatch. */
+  dispatchAfterMin: number | null,
 ): Promise<Set<OpsRecord>> {
-  const cutoff = new Date(window.to.getTime() - AUTOPILOT_DISPATCH_AFTER_MS).toISOString();
-  const { data: waiting, error } = await db
-    .from("exception_list")
-    .select("id, vehicle_id, class, title, detected_at, blocks_service, recommended_action")
-    .eq("org_id", orgId)
-    .in("status", ["open", "assigned"])
-    .eq("blocks_service", true)
-    .is("ticket_id", null)
-    .not("vehicle_id", "is", null)
-    .lte("detected_at", cutoff);
+  const afterMs = (dispatchAfterMin ?? 0) * 60_000;
+  const cutoff = new Date(window.to.getTime() - afterMs).toISOString();
+  const { data: waiting, error } =
+    dispatchAfterMin === null
+      ? { data: [], error: null }
+      : await db
+          .from("exception_list")
+          .select("id, vehicle_id, class, title, detected_at, blocks_service, recommended_action")
+          .eq("org_id", orgId)
+          .in("status", ["open", "assigned"])
+          .eq("blocks_service", true)
+          .is("ticket_id", null)
+          .not("vehicle_id", "is", null)
+          .lte("detected_at", cutoff);
   if (error) throw new Error(error.message);
   const dispatch: Step[] = (
     (waiting ?? []) as {
@@ -52,9 +55,7 @@ export async function runAutopilot(
   )
     .filter((e) => e.recommended_action?.vendor_id)
     .map((e) => {
-      const at = new Date(
-        Math.max(new Date(e.detected_at).getTime() + AUTOPILOT_DISPATCH_AFTER_MS, window.from.getTime()),
-      );
+      const at = new Date(Math.max(new Date(e.detected_at).getTime() + afterMs, window.from.getTime()));
       const eta = e.recommended_action!.eta_min ?? 30;
       return {
         action: "dispatch",

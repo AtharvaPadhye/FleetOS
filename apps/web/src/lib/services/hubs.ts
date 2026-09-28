@@ -231,7 +231,7 @@ export async function hubsSnapshot(
       chargerKw: kws.length ? kws.reduce((s, c) => s + Number(c.max_kw), 0) / kws.length : 50,
       batteryKwh: CYBERCAB_SPEC.batteryKwh,
       chargeAt: settings.lowSocThreshold,
-      chargeTarget: CYBERCAB_SPEC.chargeTarget,
+      chargeTarget: settings.chargeTarget,
       drainPerHour,
       cars: active
         .filter((c) => c.home_hub_id === h.id)

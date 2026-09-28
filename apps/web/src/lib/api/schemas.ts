@@ -59,6 +59,9 @@ export const Org = z.object({
   low_soc_threshold: z.number(),
   service_start: z.string(),
   service_end: z.string(),
+  charge_target: z.number().optional(),
+  auto_dispatch_after_min: z.number().int().nullable().optional(),
+  maintenance_reserve_monthly_cents: z.number().int().optional(),
 });
 export type Org = z.infer<typeof Org>;
 
@@ -840,3 +843,47 @@ export const Insight = z.object({
   drivers: z.array(z.object({ category: z.string(), share: z.number().min(0).max(1) })),
 });
 export const InsightsQuery = z.strictObject({ period: PeriodQuery.period });
+
+// Settings (task 5.10)
+export const OrgUpdate = z.strictObject({
+  name: z.string().trim().min(1).max(120).optional(),
+  timezone: z.string().max(64).optional(),
+  availability_target: z.number().min(0).max(1).optional(),
+  low_soc_threshold: z.number().min(0).max(1).optional(),
+  service_start: z.string().max(5).optional(),
+  service_end: z.string().max(5).optional(),
+  charge_target: z.number().min(0.5).max(1).optional(),
+  auto_dispatch_after_min: z.number().int().min(0).max(1440).nullable().optional(),
+  maintenance_reserve_monthly_cents: cents.min(0).optional(),
+});
+export const Member = z.object({
+  user_id: z.uuid(),
+  email: z.email(),
+  full_name: z.string().nullable(),
+  role: Role,
+  joined_at: isoDateTime,
+});
+export const MemberUpdate = z.strictObject({ role: Role });
+export const Invitation = z.object({ id: z.uuid(), email: z.email(), role: Role, expires_at: isoDateTime });
+export const InvitationCreate = z.strictObject({ email: z.email(), role: Role });
+export const Policy = z.object({
+  key: z.string(),
+  name: z.string(),
+  kind: z.string(),
+  config: z.record(z.string(), z.unknown()),
+  enabled: z.boolean(),
+});
+export const PolicyWrite = z.array(
+  z.strictObject({
+    key: z.string(),
+    name: z.string().optional(),
+    kind: z.string().optional(),
+    config: z.record(z.string(), z.unknown()).optional(),
+    enabled: z.boolean(),
+  }),
+);
+export const SlaPolicy = z.object({
+  ticket_type: TicketType,
+  response_min: z.number().int().min(1).max(10080),
+  resolution_min: z.number().int().min(1).max(43200),
+});

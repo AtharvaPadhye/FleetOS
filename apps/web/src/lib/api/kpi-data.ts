@@ -24,7 +24,9 @@ async function all<T>(
 export async function orgSettings(db: SupabaseClient, orgId: string) {
   const { data, error } = await db
     .from("orgs")
-    .select("availability_target, low_soc_threshold, baseline_days")
+    .select(
+      "availability_target, low_soc_threshold, baseline_days, charge_target, auto_dispatch_after_min, maintenance_reserve_monthly_cents",
+    )
     .eq("id", orgId)
     .single();
   if (error) throw new ApiProblem("internal", error.message);
@@ -32,6 +34,10 @@ export async function orgSettings(db: SupabaseClient, orgId: string) {
     availabilityTarget: Number(data.availability_target),
     lowSocThreshold: Number(data.low_soc_threshold),
     baselineDays: Number(data.baseline_days),
+    chargeTarget: Number(data.charge_target),
+    /** Minutes before a blocking exception's recommended vendor is dispatched automatically; null = never. */
+    autoDispatchAfterMin: data.auto_dispatch_after_min === null ? null : Number(data.auto_dispatch_after_min),
+    maintenanceReserveMonthlyCents: Number(data.maintenance_reserve_monthly_cents),
   };
 }
 

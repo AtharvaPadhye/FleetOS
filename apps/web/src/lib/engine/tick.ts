@@ -15,6 +15,7 @@ import { statePatches, statusMessages } from "./broadcast";
 import { writeAutonomyEvents, writeCabinEvents, type CabinEventRecord } from "./preview";
 import { loadExceptionState, writeExceptions } from "./exceptions";
 import { runAutopilot } from "./autopilot";
+import { orgSettings } from "@/lib/api/kpi-data";
 import type { StatusEventOut } from "@fleetos/engine";
 
 /**
@@ -99,6 +100,7 @@ export async function tickOrg(db: SupabaseClient, orgId: string, now = new Date(
   const pricing = await demoHubPricing(db, orgId);
   await ensureDemoVendors(db, orgId);
   let exceptions = await loadExceptionState(db, orgId, Boolean(org?.is_demo));
+  const autoDispatchAfterMin = (await orgSettings(db, orgId)).autoDispatchAfterMin;
   let minutes = 0;
   const totals = { events: 0, statusChanges: 0, samples: 0, alerts: 0, exceptionsOpened: 0 };
   const startLive = previous;
@@ -132,7 +134,7 @@ export async function tickOrg(db: SupabaseClient, orgId: string, now = new Date(
     await writeCharging(db, orgId, charges, vehicleIdByVin, pricing, timeZone, day);
     // Demo orgs: the autopilot dispatches, and tickets book the service cost instead of the simulator (5.5).
     const ticketed = org?.is_demo
-      ? await runAutopilot(db, orgId, { from, to: provider.now() }, jobs, vehicleIdByVin)
+      ? await runAutopilot(db, orgId, { from, to: provider.now() }, jobs, vehicleIdByVin, autoDispatchAfterMin)
       : new Set<OpsRecord>();
     await writeOps(
       db,

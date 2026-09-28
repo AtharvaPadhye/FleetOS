@@ -17,7 +17,8 @@ export async function provisionDemoFleet(
 ) {
   const { error: oErr } = await db
     .from("orgs")
-    .update({ is_demo: true, city: "Phoenix, AZ", timezone: PHOENIX.timezone })
+    // Auto-dispatch after 5 minutes: the demo's simulated vendors keep the loop moving if nobody acts.
+    .update({ is_demo: true, city: "Phoenix, AZ", timezone: PHOENIX.timezone, auto_dispatch_after_min: 5 })
     .eq("id", orgId);
   if (oErr) throw new Error(oErr.message);
 

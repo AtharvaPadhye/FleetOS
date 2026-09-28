@@ -3546,6 +3546,33 @@ paths:
           $ref: "#/components/responses/ValidationFailed"
         "429":
           $ref: "#/components/responses/RateLimited"
+  /invitations/{id}:
+    delete:
+      tags:
+        - Settings
+      summary: Revoke a pending invitation
+      operationId: deleteInvitationsBy_id
+      x-fleetos-stability: stable
+      x-fleetos-roles: owner, admin
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: No content
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
   /policies:
     get:
       tags:
@@ -3606,6 +3633,74 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Policy"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /sla-policies:
+    get:
+      tags:
+        - Settings
+      summary: SLA targets per ticket type
+      operationId: getSlaPolicies
+      x-fleetos-stability: stable
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SlaPolicy"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+    put:
+      tags:
+        - Settings
+      summary: Replace SLA targets (owner/admin)
+      operationId: putSlaPolicies
+      x-fleetos-stability: stable
+      x-fleetos-roles: owner, admin
+      parameters:
+        - $ref: "#/components/parameters/OrgHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/SlaPolicy"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-FleetOS-Stability:
+              $ref: "#/components/headers/Stability"
+            X-FleetOS-Data-Source:
+              $ref: "#/components/headers/DataSource"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SlaPolicy"
         "401":
           $ref: "#/components/responses/Unauthenticated"
         "403":
@@ -4236,6 +4331,21 @@ components:
           type: string
         service_end:
           type: string
+        charge_target:
+          type: number
+          minimum: 0.5
+          maximum: 1
+        auto_dispatch_after_min:
+          description: Minutes before a blocking exception's recommended vendor is dispatched automatically; null = off
+          oneOf:
+            - type: integer
+              minimum: 0
+              maximum: 1440
+            - type: "null"
+        maintenance_reserve_monthly_cents:
+          type: integer
+          minimum: 0
+          description: Minor units (cents) in the org currency
     OrgUpdate:
       type: object
       properties:
@@ -4255,6 +4365,21 @@ components:
           type: string
         service_end:
           type: string
+        charge_target:
+          type: number
+          minimum: 0.5
+          maximum: 1
+        auto_dispatch_after_min:
+          description: Minutes before a blocking exception's recommended vendor is dispatched automatically; null = off
+          oneOf:
+            - type: integer
+              minimum: 0
+              maximum: 1440
+            - type: "null"
+        maintenance_reserve_monthly_cents:
+          type: integer
+          minimum: 0
+          description: Minor units (cents) in the org currency
     Me:
       type: object
       required:
@@ -6684,6 +6809,29 @@ components:
           type: object
         enabled:
           type: boolean
+    SlaPolicy:
+      type: object
+      required:
+        - ticket_type
+        - response_min
+        - resolution_min
+      properties:
+        ticket_type:
+          type: string
+          enum:
+            - cleaning
+            - maintenance
+            - roadside
+            - charging
+            - other
+        response_min:
+          type: integer
+          minimum: 1
+          maximum: 10080
+        resolution_min:
+          type: integer
+          minimum: 1
+          maximum: 43200
     Notification:
       type: object
       required:

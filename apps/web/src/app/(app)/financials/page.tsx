@@ -185,7 +185,7 @@ export default async function FinancialsPage({ searchParams }: PageProps<"/finan
               </h2>
               {f.isDemo ? <DataSourceBadge source="simulated" /> : null}
             </div>
-            <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-md border border-divider bg-divider md:grid-cols-4">
+            <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-md border border-divider bg-divider md:grid-cols-3">
               {(
                 [
                   ["Ride revenue", formatCents(k.gross_revenue_cents), null],
@@ -215,6 +215,13 @@ export default async function FinancialsPage({ searchParams }: PageProps<"/finan
                     "Downtime cost",
                     formatCents(k.downtime_cost_cents),
                     "Lost rides; not a cost line, already missing from revenue",
+                  ],
+                  [
+                    "Maintenance reserve",
+                    k.maintenance_reserve_cents ? formatCents(k.maintenance_reserve_cents) : "Not set",
+                    k.maintenance_reserve_cents
+                      ? `${formatCents(k.maintenance_spent_cents)} spent on maintenance (${formatPct(k.maintenance_spent_cents / k.maintenance_reserve_cents, 0)})`
+                      : "Set a reserve per car in Settings",
                   ],
                 ] as [string, string, string | null][]
               ).map(([label, value, sub]) => (
