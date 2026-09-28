@@ -56,7 +56,15 @@ export function subscribeOrgChannel(
   onEvent: Listener,
   onStatus?: StatusListener,
 ): () => void {
-  const topic = `org:${orgId}:${kind}`;
+  return subscribeTopic(`org:${orgId}:${kind}`, onEvent, onStatus);
+}
+
+/** The signed-in user's own notifications (task 5.11): `user:<id>:notifications`. */
+export function subscribeUserNotifications(userId: string, onEvent: Listener): () => void {
+  return subscribeTopic(`user:${userId}:notifications`, onEvent);
+}
+
+function subscribeTopic(topic: string, onEvent: Listener, onStatus?: StatusListener): () => void {
   let entry = entries.get(topic);
   if (!entry) {
     entry = open(topic);

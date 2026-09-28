@@ -887,3 +887,38 @@ export const SlaPolicy = z.object({
   response_min: z.number().int().min(1).max(10080),
   resolution_min: z.number().int().min(1).max(43200),
 });
+
+// Notifications (task 5.11)
+export const Notification = z.object({
+  id: z.uuid(),
+  kind: z.string(),
+  payload: z.object({
+    severity: Severity,
+    title: z.string(),
+    body: z.string().nullable(),
+    href: z.string().nullable(),
+  }),
+  created_at: isoDateTime,
+  read_at: isoDateTime.nullable(),
+});
+export const NotificationQuery = z.strictObject({
+  unread: z
+    .enum(["true", "false"])
+    .transform((v) => v === "true")
+    .optional(),
+  limit: Limit,
+  cursor: Cursor,
+});
+export const NotificationRead = z.strictObject({
+  ids: z.array(z.uuid()).max(500).optional(),
+  all: z.boolean().optional(),
+});
+const ChannelPrefs = z.object({ in_app: z.boolean(), email: z.boolean(), slack: z.boolean() });
+export const NotificationSettings = z.object({
+  by_severity: z.record(z.string(), ChannelPrefs),
+  slack_webhook_configured: z.boolean(),
+});
+export const NotificationSettingsWrite = z.strictObject({
+  by_severity: z.partialRecord(z.enum(SEVERITIES), ChannelPrefs.partial()).optional(),
+  slack_webhook_configured: z.boolean().optional(),
+});

@@ -1,6 +1,11 @@
 import { z } from "zod";
 import type { Capability } from "@fleetos/domain";
 import {
+  Notification,
+  NotificationQuery,
+  NotificationRead,
+  NotificationSettings,
+  NotificationSettingsWrite,
   Org,
   Invitation,
   InvitationCreate,
@@ -386,6 +391,46 @@ export const deleteExceptionRule = op({
   roles: ["owner", "admin"],
   query: NoQuery,
   response: z.null(),
+});
+
+// Notifications (task 5.11)
+export const getNotifications = op({
+  operationId: "getNotifications",
+  method: "GET",
+  path: "/notifications",
+  stability: "stable",
+  org: "required",
+  query: NotificationQuery,
+  response: page(Notification),
+});
+export const postNotificationsRead = op({
+  operationId: "postNotificationsRead",
+  method: "POST",
+  path: "/notifications/read",
+  stability: "stable",
+  org: "required",
+  query: NoQuery,
+  body: NotificationRead,
+  response: z.null(),
+});
+export const getNotificationSettings = op({
+  operationId: "getNotificationsSettings",
+  method: "GET",
+  path: "/notifications/settings",
+  stability: "stable",
+  org: "required",
+  query: NoQuery,
+  response: NotificationSettings,
+});
+export const putNotificationSettings = op({
+  operationId: "putNotificationsSettings",
+  method: "PUT",
+  path: "/notifications/settings",
+  stability: "stable",
+  org: "required",
+  query: NoQuery,
+  body: NotificationSettingsWrite,
+  response: NotificationSettings,
 });
 
 // Settings (task 5.10)
@@ -874,6 +919,10 @@ export const OPERATIONS: Operation[] = [
   patchExceptionRule,
   deleteExceptionRule,
   getAttention,
+  getNotifications,
+  postNotificationsRead,
+  getNotificationSettings,
+  putNotificationSettings,
   patchOrgCurrent,
   getMembers,
   patchMember,

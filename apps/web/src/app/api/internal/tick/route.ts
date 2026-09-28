@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { serverEnv } from "@/lib/server-env";
 import { tickAll, tickOrg } from "@/lib/engine/tick";
 import { allocateFixedCosts } from "@/lib/engine/costs";
+import { deliverNotifications } from "@/lib/engine/deliveries";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -29,8 +30,10 @@ export async function POST(request: Request) {
   if (org && !UUID.test(org)) return Response.json({ error: "invalid_request" }, { status: 400 });
   const results = org ? [await tickOrg(db, org)] : await tickAll(db);
   const allocationLines = await allocateFixedCosts(db, new Date(), org ?? undefined);
+  // Email and Slack notifications queued by this tick's events (and any retries).
+  const notifications = await deliverNotifications(db);
   return Response.json(
-    { ok: true, at: new Date().toISOString(), orgs: results, allocationLines },
+    { ok: true, at: new Date().toISOString(), orgs: results, allocationLines, notifications },
     { headers: { "Cache-Control": "no-store" } },
   );
 }

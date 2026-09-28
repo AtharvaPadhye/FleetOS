@@ -2,6 +2,7 @@ import type { OrgSummary } from "@/lib/session";
 import { CommandMenu } from "./command-menu";
 import { FreshnessChip } from "./freshness-chip";
 import { MobileNav } from "./mobile-nav";
+import { NotificationBell } from "./notification-bell";
 import { UserMenu } from "./user-menu";
 
 const ROLE_LABEL = { owner: "Owner", admin: "Admin", ops: "Operations", finance: "Finance", viewer: "Viewer" } as const;
@@ -19,11 +20,15 @@ export function Header({
   orgs,
   active,
   email,
+  userId,
+  unreadNotifications,
   badges,
 }: {
   orgs: OrgSummary[];
   active: OrgSummary;
   email: string;
+  userId: string;
+  unreadNotifications: number;
   badges?: Record<string, number>;
 }) {
   return (
@@ -40,6 +45,7 @@ export function Header({
           <FreshnessChip orgId={active.id} />
         </span>
         <CommandMenu />
+        <NotificationBell userId={userId} initialUnread={unreadNotifications} />
         <UserMenu email={email} roleLabel={`${ROLE_LABEL[active.role]} · ${active.name}`} />
       </div>
     </header>

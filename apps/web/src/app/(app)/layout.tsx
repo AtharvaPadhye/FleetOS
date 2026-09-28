@@ -6,19 +6,22 @@ import { OrgBlock } from "@/components/shell/org-block";
 import { SidebarNav } from "@/components/shell/sidebar-nav";
 import { getAppContext } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
+import { unreadCount } from "@/lib/services/notifications";
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
   const { user, orgs, activeOrg } = await getAppContext();
   if (!user) redirect("/sign-in");
   if (!activeOrg) redirect("/onboarding");
   // Same rows the exception queue counts as active, so the badge and the queue agree (PRD EX-1).
-  const { count: activeExceptions } = await (
-    await createClient()
-  )
-    .from("exceptions")
-    .select("id", { count: "exact", head: true })
-    .eq("org_id", activeOrg.id)
-    .in("status", ["open", "assigned", "in_progress"]);
+  const db = await createClient();
+  const [{ count: activeExceptions }, unreadNotifications] = await Promise.all([
+    db
+      .from("exceptions")
+      .select("id", { count: "exact", head: true })
+      .eq("org_id", activeOrg.id)
+      .in("status", ["open", "assigned", "in_progress"]),
+    unreadCount(db, activeOrg, user.id),
+  ]);
   const badges = { exceptions: activeExceptions ?? 0 };
   return (
     <div className="min-h-dvh lg:pl-60">
@@ -33,7 +36,14 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
         <OrgBlock orgs={orgs} active={activeOrg} />
         <SidebarNav badges={badges} />
       </aside>
-      <Header orgs={orgs} active={activeOrg} email={user.email} badges={badges} />
+      <Header
+        orgs={orgs}
+        active={activeOrg}
+        email={user.email}
+        userId={user.id}
+        unreadNotifications={unreadNotifications}
+        badges={badges}
+      />
       <main id="main" className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {children}
       </main>
