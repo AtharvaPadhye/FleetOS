@@ -62,7 +62,8 @@ export interface GradeInputs {
   uptimeCovenant: number;
   contributionMargin: number;
   marginTarget: number;
-  reserveFunded: number;
+  /** Reserve funded 0–1; null when no reserve is configured (weight is redistributed). */
+  reserveFunded: number | null;
   /** Incidents per 10k rides; null when not tracked (weight is redistributed). */
   incidentsPer10k: number | null;
   incidentTargetPer10k: number;
@@ -80,7 +81,7 @@ export function assetHealthGrade(i: GradeInputs) {
   const components: Record<keyof typeof GRADE_WEIGHTS, number | null> = {
     uptime: linear(i.uptime, i.uptimeCovenant - 0.02, i.uptimeCovenant + 0.03),
     margin: linear(i.contributionMargin, i.marginTarget - 0.2, i.marginTarget),
-    reserve: 100 * clamp01(i.reserveFunded),
+    reserve: i.reserveFunded === null ? null : 100 * clamp01(i.reserveFunded),
     incidents:
       i.incidentsPer10k === null ? null : linear(i.incidentsPer10k, 3 * i.incidentTargetPer10k, i.incidentTargetPer10k),
     vendorSla: linear(i.vendorSla, 0.8, 0.95),

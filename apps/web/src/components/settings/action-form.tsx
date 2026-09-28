@@ -11,12 +11,19 @@ export function ActionForm({
   children,
   className,
   disabled,
+  pendingLabel = "Saving…",
+  linkLabel = "Invitation link",
+  linkNote = "works for 7 days",
 }: {
   action: (prev: SettingsState, form: FormData) => Promise<SettingsState>;
   submit: string;
   children: ReactNode;
   className?: string;
   disabled?: boolean;
+  pendingLabel?: string;
+  /** Names the link a successful action returns (state.link), e.g. an invitation or a share link. */
+  linkLabel?: string;
+  linkNote?: string;
 }) {
   const [state, run, pending] = useActionState(action, { status: "idle" } as SettingsState);
   return (
@@ -25,7 +32,7 @@ export function ActionForm({
       <div className="flex flex-wrap items-center gap-3">
         {disabled ? null : (
           <Button type="submit" variant="primary" disabled={pending}>
-            {pending ? "Saving…" : submit}
+            {pending ? pendingLabel : submit}
           </Button>
         )}
         <p aria-live="polite" className="text-label">
@@ -40,11 +47,13 @@ export function ActionForm({
       </div>
       {state.status === "ok" && state.link ? (
         <p className="flex flex-col gap-1 text-label">
-          <span className="text-fg-muted">Invitation link (works for 7 days):</span>
+          <span className="text-fg-muted">
+            {linkLabel} ({linkNote}):
+          </span>
           <input
             readOnly
             value={state.link}
-            aria-label="Invitation link"
+            aria-label={linkLabel}
             className="h-9 rounded-sm border border-border-control bg-canvas px-2 font-mono text-mono"
           />
         </p>

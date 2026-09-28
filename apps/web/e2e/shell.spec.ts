@@ -64,15 +64,10 @@ test("skip link moves focus to the main content", async ({ page }) => {
   await expect(page).toHaveURL(/#main$/);
 });
 
-test("placeholders never show fake numbers", async ({ page }) => {
-  for (const s of SECTIONS.filter(
-    (x) =>
-      !["/", "/financials", "/fleet", "/vendors", "/exceptions", "/service", "/hubs", "/settings"].includes(x.path),
-  )) {
-    await page.goto(s.path);
-    await expect(page.getByText("is being built")).toBeVisible();
-    await expect(page.locator("main")).not.toContainText("$");
-  }
+test("Reports starts empty with a way to generate one", async ({ page }) => {
+  await page.goto("/reports");
+  await expect(page.getByRole("heading", { name: "No reports yet" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Generate report" })).toBeVisible();
 });
 
 test("Overview names missing revenue and an empty queue instead of showing $0", async ({ page }) => {

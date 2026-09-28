@@ -9,7 +9,8 @@ import { DEV_LOGIN_PATH, devAutoLoginEmail } from "@/lib/dev-login";
  */
 // /api/* is never redirected: /api/v1 answers 401 JSON itself (lib/api/handler.ts) and /api/internal/* checks
 // its own bearer secret. /docs/api is the public API reference (the contract isn't secret).
-const PUBLIC_PREFIXES = ["/sign-in", "/auth/", "/design", "/docs/", "/api/"];
+// "/r/": lender share links open without an account (task 5.9, PRD RP-4); the token is the only key.
+const PUBLIC_PREFIXES = ["/sign-in", "/auth/", "/design", "/docs/", "/api/", "/r/"];
 const isPublic = (path: string) => PUBLIC_PREFIXES.some((p) => path === p || path.startsWith(p));
 
 export async function proxy(request: NextRequest) {

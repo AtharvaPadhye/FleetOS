@@ -83,3 +83,20 @@ describe("covenantStatus", () => {
     expect(covenantStatus(120, ">=", 100, "value")).toBe("pass");
   });
 });
+
+describe("asset health grade without a reserve", () => {
+  it("redistributes the reserve's weight instead of scoring it 0", () => {
+    const base = {
+      uptime: 0.972,
+      uptimeCovenant: 0.94,
+      contributionMargin: 0.541,
+      marginTarget: 0.5,
+      incidentsPer10k: 2.1,
+      incidentTargetPer10k: 2.5,
+      vendorSla: 0.93,
+    };
+    const none = assetHealthGrade({ ...base, reserveFunded: null });
+    expect(none.components.reserve).toBeNull();
+    expect(none.score).toBeGreaterThan(assetHealthGrade({ ...base, reserveFunded: 0 }).score);
+  });
+});

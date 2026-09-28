@@ -16,6 +16,8 @@ const nextConfig: NextConfig = {
   transpilePackages: ["@fleetos/ui", "@fleetos/domain", "@fleetos/providers", "@fleetos/engine"],
   // The API reference (/api/openapi.json) reads the spec from the repo's docs at runtime.
   outputFileTracingIncludes: { "/api/openapi.json": ["../../docs/architecture/openapi.yaml"] },
+  // Report PDFs launch headless Chromium at runtime (task 5.9); never bundle the driver.
+  serverExternalPackages: ["playwright-core"],
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

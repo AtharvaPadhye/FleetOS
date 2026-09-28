@@ -922,3 +922,35 @@ export const NotificationSettingsWrite = z.strictObject({
   by_severity: z.partialRecord(z.enum(SEVERITIES), ChannelPrefs.partial()).optional(),
   slack_webhook_configured: z.boolean().optional(),
 });
+
+// Reports (task 5.9)
+export const ReportSummary = z.object({
+  id: z.uuid(),
+  month: z.string(),
+  version: z.number().int(),
+  status: z.enum(["generating", "ready", "failed"]),
+  grade: z.string().nullable(),
+  generated_at: isoDateTime.nullable(),
+  preliminary: z.boolean(),
+});
+export const Report = ReportSummary.extend({ data: z.record(z.string(), z.unknown()) });
+export const ReportCreate = z.strictObject({ month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/) });
+export const ShareCreate = z.strictObject({
+  recipient: z.string().trim().min(1).max(120),
+  expires_in_days: z.number().int().min(1).max(365).default(30),
+});
+export const Share = z.object({ id: z.uuid(), url: z.url(), recipient: z.string(), expires_at: isoDateTime });
+export const COVENANT_METRICS = [
+  "uptime",
+  "availability",
+  "contribution_margin",
+  "vendor_sla",
+  "incidents_per_10k_rides",
+] as const;
+export const Covenant = z.object({
+  id: z.uuid().optional(),
+  metric: z.enum(COVENANT_METRICS),
+  operator: z.enum([">", ">=", "<", "<="]),
+  threshold: z.number(),
+  label: z.string().optional(),
+});

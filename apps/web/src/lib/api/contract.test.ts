@@ -173,8 +173,8 @@ describe("implemented /api/v1 operations match openapi.yaml", () => {
       });
       it("returns the documented response shape", () => {
         const responses = (s?.responses as Json) ?? {};
-        if (responses["204"] && !responses["200"]) {
-          // No content: the operation must say so with a null response schema.
+        if (!responses["200"] && !responses["201"]) {
+          // No content (204) or a redirect (302): the operation must say so with a null response schema.
           expect(z.toJSONSchema(o.response)).toMatchObject({ type: "null" });
           return;
         }

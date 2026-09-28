@@ -1,6 +1,12 @@
 import { z } from "zod";
 import type { Capability } from "@fleetos/domain";
 import {
+  Covenant,
+  Report,
+  ReportCreate,
+  ReportSummary,
+  Share,
+  ShareCreate,
   Notification,
   NotificationQuery,
   NotificationRead,
@@ -891,6 +897,91 @@ export const postVendorTracking = op({
   response: VendorTracking,
 });
 
+// Reports (task 5.9)
+const money = ["owner", "admin", "finance"] as const;
+export const getReports = op({
+  operationId: "getReports",
+  method: "GET",
+  path: "/reports",
+  stability: "stable",
+  org: "required",
+  roles: money,
+  query: NoQuery,
+  response: z.array(ReportSummary),
+});
+export const postReport = op({
+  operationId: "postReports",
+  method: "POST",
+  path: "/reports",
+  stability: "stable",
+  org: "required",
+  roles: money,
+  query: NoQuery,
+  body: ReportCreate,
+  response: ReportSummary,
+});
+export const getReport = op({
+  operationId: "getReportsBy_id",
+  method: "GET",
+  path: "/reports/{id}",
+  stability: "stable",
+  org: "required",
+  roles: money,
+  query: NoQuery,
+  response: Report,
+});
+export const getReportPdf = op({
+  operationId: "getReportsBy_idPdf",
+  method: "GET",
+  path: "/reports/{id}/pdf",
+  stability: "stable",
+  org: "required",
+  roles: money,
+  query: NoQuery,
+  response: z.null(),
+});
+export const postReportShare = op({
+  operationId: "postReportsBy_idShares",
+  method: "POST",
+  path: "/reports/{id}/shares",
+  stability: "stable",
+  org: "required",
+  roles: money,
+  query: NoQuery,
+  body: ShareCreate,
+  response: Share,
+});
+export const deleteReportShare = op({
+  operationId: "deleteReportsBy_idSharesBy_sid",
+  method: "DELETE",
+  path: "/reports/{id}/shares/{sid}",
+  stability: "stable",
+  org: "required",
+  roles: money,
+  query: NoQuery,
+  response: z.null(),
+});
+export const getCovenants = op({
+  operationId: "getCovenants",
+  method: "GET",
+  path: "/covenants",
+  stability: "stable",
+  org: "required",
+  query: NoQuery,
+  response: z.array(Covenant),
+});
+export const putCovenants = op({
+  operationId: "putCovenants",
+  method: "PUT",
+  path: "/covenants",
+  stability: "stable",
+  org: "required",
+  roles: ["owner", "admin"],
+  query: NoQuery,
+  body: z.array(Covenant).max(10),
+  response: z.array(Covenant),
+});
+
 export const OPERATIONS: Operation[] = [
   getMe,
   getOrgs,
@@ -966,4 +1057,12 @@ export const OPERATIONS: Operation[] = [
   getTariffsLive,
   getVendorTracking,
   postVendorTracking,
+  getReports,
+  postReport,
+  getReport,
+  getReportPdf,
+  postReportShare,
+  deleteReportShare,
+  getCovenants,
+  putCovenants,
 ];

@@ -3088,7 +3088,7 @@ paths:
     post:
       tags:
         - Reports
-      summary: Generate a report for a closed month (async)
+      summary: Generate a monthly report snapshot (a new version when the month already has one)
       operationId: postReports
       x-fleetos-stability: stable
       x-fleetos-roles: owner, admin, finance
@@ -3106,9 +3106,10 @@ paths:
               properties:
                 month:
                   type: string
-                  pattern: ^\d{4}-\d{2}$
+                  pattern: ^\d{4}-(0[1-9]|1[0-2])$
+                  description: A closed month, or the current month (marked preliminary)
       responses:
-        "202":
+        "201":
           description: OK
           headers:
             X-FleetOS-Stability:
@@ -6674,34 +6675,21 @@ components:
             - type: string
               format: date-time
             - type: "null"
+        preliminary:
+          type: boolean
+          description: Generated before the month closed
     Report:
       allOf:
         - $ref: "#/components/schemas/ReportSummary"
         - type: object
+          required:
+            - data
           properties:
-            sections:
+            data:
               type: object
-              description: Executive summary, availability, revenue, contribution, vehicles, maintenance, incidents, vendors, hubs, risk
-            covenants:
-              type: array
-              items:
-                type: object
-                properties:
-                  label:
-                    type: string
-                  value:
-                    oneOf:
-                      - type: number
-                      - type: "null"
-                  threshold:
-                    type: number
-                  status:
-                    type: string
-                    enum:
-                      - pass
-                      - at_risk
-                      - breach
-                      - not_tracked
+              description: >-
+                The frozen snapshot: summary, grade, covenants (value, threshold, status pass | at_risk | breach |
+                not_tracked), availability by day, P&L, vehicles, maintenance, incidents, vendors, hubs and risks.
     ShareCreate:
       type: object
       required:
@@ -6709,9 +6697,12 @@ components:
       properties:
         recipient:
           type: string
+          minLength: 1
+          maxLength: 120
         expires_in_days:
           type: integer
           default: 30
+          minimum: 1
           maximum: 365
     Share:
       type: object
@@ -6743,6 +6734,12 @@ components:
           format: uuid
         metric:
           type: string
+          enum:
+            - uptime
+            - availability
+            - contribution_margin
+            - vendor_sla
+            - incidents_per_10k_rides
         operator:
           type: string
           enum:
