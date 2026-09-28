@@ -828,3 +828,15 @@ export const Recommendation = z.object({
   status: z.enum(["proposed", "applied", "dismissed"]),
   actions: z.array(z.record(z.string(), z.unknown())),
 });
+
+// Financials (task 5.8)
+export const Insight = z.object({
+  id: z.string(),
+  scope: z.enum(["vehicle", "hub"]),
+  scope_id: z.uuid(),
+  title: z.string(),
+  detail: z.string(),
+  impact_cents: cents.nullable(),
+  drivers: z.array(z.object({ category: z.string(), share: z.number().min(0).max(1) })),
+});
+export const InsightsQuery = z.strictObject({ period: PeriodQuery.period });

@@ -116,28 +116,46 @@ export function AvailabilityTrend({
 }
 
 export function RevenueVsCost({ points }: { points: { day: string; revenue: number; cost: number }[] }) {
+  return (
+    <PairBars
+      points={points.map((p) => ({ x: p.day, a: p.revenue, b: p.cost }))}
+      names={["Ride revenue", "Operating cost"]}
+      tick="weekday"
+    />
+  );
+}
+
+/** Two series side by side (chart-1, chart-2), one money axis, legend in series order. */
+export function PairBars({
+  points,
+  names,
+  tick,
+}: {
+  points: { x: string; a: number; b: number }[];
+  names: [string, string];
+  tick: "weekday" | "week";
+}) {
   const c = useColors();
+  const fmtX = (d: string) => (tick === "weekday" ? weekday(d) : `Wk of ${dayLabel(d)}`);
   return (
     <div className={frame}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={points} margin={{ top: 12, right: 16, bottom: 4, left: 4 }} barGap={2} accessibilityLayer>
           <CartesianGrid stroke={c.grid} vertical={false} />
-          <XAxis dataKey="day" tickFormatter={weekday} tick={{ fill: c.text, fontSize: 12 }} stroke={c.grid} />
-          <YAxis tickFormatter={usd} tick={{ fill: c.text, fontSize: 12 }} stroke={c.grid} width={56} />
+          <XAxis dataKey="x" tickFormatter={fmtX} tick={{ fill: c.text, fontSize: 12 }} stroke={c.grid} />
+          <YAxis tickFormatter={usd} tick={{ fill: c.text, fontSize: 12 }} stroke={c.grid} width={64} />
           <Tooltip
-            formatter={(v, n) => [usd(Number(v)), n === "revenue" ? "Ride revenue" : "Operating cost"]}
-            labelFormatter={(d) => dayLabel(String(d))}
+            formatter={(v, n) => [usd(Number(v)), n === "a" ? names[0] : names[1]]}
+            labelFormatter={(d) => fmtX(String(d))}
             {...tooltipStyle(c)}
             cursor={{ fill: c.grid, opacity: 0.4 }}
           />
           <Legend
-            itemSorter={(i) => (i.dataKey === "revenue" ? 0 : 1)}
-            formatter={(n) => (
-              <span style={{ color: c.text, fontSize: 12 }}>{n === "revenue" ? "Ride revenue" : "Operating cost"}</span>
-            )}
+            itemSorter={(i) => (i.dataKey === "a" ? 0 : 1)}
+            formatter={(n) => <span style={{ color: c.text, fontSize: 12 }}>{n === "a" ? names[0] : names[1]}</span>}
           />
-          <Bar dataKey="revenue" fill={c.c1} radius={[4, 4, 0, 0]} isAnimationActive={false} />
-          <Bar dataKey="cost" fill={c.c2} radius={[4, 4, 0, 0]} isAnimationActive={false} />
+          <Bar dataKey="a" fill={c.c1} radius={[4, 4, 0, 0]} isAnimationActive={false} />
+          <Bar dataKey="b" fill={c.c2} radius={[4, 4, 0, 0]} isAnimationActive={false} />
         </BarChart>
       </ResponsiveContainer>
     </div>
@@ -151,16 +169,18 @@ export function LabelledBars({
   unit,
 }: {
   rows: { label: string; value: number }[];
-  format: "hours" | "pct";
+  format: "hours" | "pct" | "usd";
   unit: string;
 }) {
   const c = useColors();
   const fmt = (v: number) =>
     format === "pct"
       ? pct(v)
-      : v >= 1
-        ? `${Math.floor(v)} h ${String(Math.round((v % 1) * 60)).padStart(2, "0")} m`
-        : `${Math.round(v * 60)} m`;
+      : format === "usd"
+        ? usd(v)
+        : v >= 1
+          ? `${Math.floor(v)} h ${String(Math.round((v % 1) * 60)).padStart(2, "0")} m`
+          : `${Math.round(v * 60)} m`;
   return (
     <div
       className="w-full rounded-md border border-divider bg-surface p-2"

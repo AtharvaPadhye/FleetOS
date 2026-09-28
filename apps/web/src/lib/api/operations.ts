@@ -1,6 +1,8 @@
 import { z } from "zod";
 import type { Capability } from "@fleetos/domain";
 import {
+  Insight,
+  InsightsQuery,
   Hub,
   HubCreate,
   HubForecast,
@@ -377,6 +379,18 @@ export const deleteExceptionRule = op({
   response: z.null(),
 });
 
+// Financials (task 5.8)
+export const getInsights = op({
+  operationId: "getFinancialsInsights",
+  method: "GET",
+  path: "/financials/insights",
+  stability: "stable",
+  org: "required",
+  roles: ["owner", "admin", "finance"],
+  query: InsightsQuery,
+  response: z.array(Insight),
+});
+
 // Hubs (task 5.7)
 export const getHubs = op({
   operationId: "getHubs",
@@ -736,6 +750,7 @@ export const OPERATIONS: Operation[] = [
   patchExceptionRule,
   deleteExceptionRule,
   getAttention,
+  getInsights,
   getHubs,
   postHub,
   getHub,

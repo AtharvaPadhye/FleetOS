@@ -18,3 +18,7 @@ export const LabelledBarsLazy = dynamic(() => import("./overview-charts").then((
   ssr: false,
   loading: skeleton,
 });
+export const PairBarsLazy = dynamic(() => import("./overview-charts").then((m) => m.PairBars), {
+  ssr: false,
+  loading: skeleton,
+});
