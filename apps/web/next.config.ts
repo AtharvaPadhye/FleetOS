@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs/config";
 
-// Baseline security headers (NFR SEC-5). A nonce-based Content-Security-Policy is added in task 2.6.
+// Baseline security headers (NFR SEC-5). The nonce-based Content-Security-Policy is per request (proxy.ts).
 const securityHeaders = [
   { key: "X-Frame-Options", value: "DENY" },
   { key: "X-Content-Type-Options", value: "nosniff" },
@@ -23,4 +24,12 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// Sentry (NFR OBS-1): browser events go through the same-origin /monitoring tunnel, so the CSP stays 'self' and
+// ad blockers don't drop them. Source maps upload only when SENTRY_AUTH_TOKEN (+ SENTRY_ORG, SENTRY_PROJECT)
+// is set at build time; without them the build skips the upload and stack traces stay minified.
+export default withSentryConfig(nextConfig, {
+  tunnelRoute: "/monitoring",
+  silent: !process.env.CI,
+  telemetry: false,
+  sourcemaps: { disable: !process.env.SENTRY_AUTH_TOKEN },
+});

@@ -423,6 +423,8 @@ project_id = "lqycrqkadcchsosklxns"
 site_url = "https://fleet-os-omega.vercel.app"
 additional_redirect_urls = [
   "https://fleet-os-omega.vercel.app/**",
+  # Vercel preview deployments of the `fleet-os` project (Atharva's scope); they share this Supabase project.
+  "https://fleet-os-*-atharvapadhye.vercel.app/**",
   "http://localhost:3000/**",
 ]
 

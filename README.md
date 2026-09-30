@@ -87,6 +87,7 @@ pnpm --filter @fleetos/web e2e                                 # end-to-end + WC
 
 - Requirements: [`docs/requirements/`](docs/requirements/) — PRD, KPI dictionary, vehicle states, data sources (verified Tesla Fleet API reference), non-functional requirements
 - Architecture: [`docs/architecture/`](docs/architecture/) — overview, ADRs, ERD, API contract (`openapi.yaml`)
+- Deployment: [`docs/architecture/deployment.md`](docs/architecture/deployment.md) — who owns Vercel / Supabase / Sentry, where each setting lives, CSP, logs
 - Design: [`docs/design/`](docs/design/) — design system, UX flows
 - Project rules for contributors and Claude: [`CLAUDE.md`](CLAUDE.md)
 

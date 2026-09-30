@@ -4,6 +4,7 @@ import { serverEnv } from "@/lib/server-env";
 import { tickAll, tickOrg } from "@/lib/engine/tick";
 import { allocateFixedCosts } from "@/lib/engine/costs";
 import { deliverNotifications } from "@/lib/engine/deliveries";
+import { log } from "@/lib/log";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -32,6 +33,14 @@ export async function POST(request: Request) {
   const allocationLines = await allocateFixedCosts(db, new Date(), org ?? undefined);
   // Email and Slack notifications queued by this tick's events (and any retries).
   const notifications = await deliverNotifications(db);
+  // One summary line per tick (NFR OBS-2); failures throw and reach Sentry via instrumentation.ts.
+  log.info("tick.done", {
+    request_id: request.headers.get("x-request-id") ?? undefined,
+    org_id: org ?? undefined,
+    orgs: results.length,
+    allocationLines,
+    notifications,
+  });
   return Response.json(
     { ok: true, at: new Date().toISOString(), orgs: results, allocationLines, notifications },
     { headers: { "Cache-Control": "no-store" } },

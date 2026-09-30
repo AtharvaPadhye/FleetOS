@@ -40,9 +40,13 @@ Progress also logged in Obsidian: `claude_memory/projects/FleetOS/progress-log.m
 - [x] 2.3 Supabase baseline + RLS tests (local Supabase, Postgres 17; orgs/profiles/memberships/invitations/audit_log, role helpers, last-owner guard; 23 pgTAP tests proven to fail when isolation is broken; CI database job). Hosted project: later, `supabase db push`.
 - [x] 2.4 Auth, orgs, roles (magic-link sign-in via local inbox, proxy.ts route protection, onboarding + create_org with city, org switcher with roles, sign-out; 58 e2e incl. real magic-link journeys). Deferred: Google sign-in (needs Google credentials), MFA for owner/admin (NFR SEC-2) before integrations in Phase 4.
 - [x] 2.5 App shell (sidebar with 9 sections, header with org/date/freshness, ⌘K menu, phone nav sheet, skip link, focus on navigate, honest section placeholders; typed routes; 38 e2e incl. axe on every page + open menu)
-- [ ] 2.6 Env + observability — zod env schema + `pnpm db:env` done in 2.4; Sentry, CSP, structured logs and Vercel previews still to do
+- [ ] 2.6 Env + observability — zod env schema + `pnpm db:env` done in 2.4; open only for the live check below
   - [x] Hosted Supabase `FleetOS` (`lqycrqkadcchsosklxns`, us-east-1, Akshat's org): 25 migrations pushed; auth Site URL + redirects via `[remotes.production]` in `supabase/config.toml`; public URL + publishable key committed in `apps/web/.env.production`
-  - [ ] Secrets in Vercel (`SUPABASE_SECRET_KEY`, `TICK_SECRET`, Atharva) · custom SMTP for magic links · hosted `engine-tick` cron · live sign-in + onboarding check
+  - [x] Custom SMTP (Gmail) for magic links; test email delivered from the hosted project
+  - [x] CSP: per-request nonce + `'strict-dynamic'` (`lib/csp.ts`, `proxy.ts`), own policy for `/docs/api`, violations → Sentry; `e2e/security.spec.ts` fails on any violation (map included)
+  - [x] Sentry (`@sentry/nextjs` 11, errors only, `/monitoring` tunnel, PII scrubbing, `request_id`/`org_id` tags); DSN in `.env.production`, blanked for local/CI by `pnpm db:env`
+  - [x] Structured JSON logs (`lib/log.ts`) + `x-request-id` on every request; preview URLs allowed as auth redirects; `docs/architecture/deployment.md`
+  - [ ] Vercel secrets + project settings (Atharva) · hosted `engine-tick` cron · live sign-in, onboarding and Sentry check
 - [ ] Phase 2 exit check → checkpoint
 
 ## Phase 3 — Data platform & simulator

@@ -1,9 +1,11 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
 import { createClient as createBearerClient, type SupabaseClient } from "@supabase/supabase-js";
+import * as Sentry from "@sentry/nextjs";
 import { capabilityStatuses } from "@fleetos/domain";
 import type { z } from "zod";
 import { publicEnv } from "@/lib/env";
+import { log } from "@/lib/log";
 import { createClient as createCookieClient } from "@/lib/supabase/server";
 import type { ErrorCode } from "./schemas";
 import { ApiProblem } from "./problem";
@@ -208,7 +210,16 @@ export function apiRoute<Q extends z.ZodType, R extends z.ZodType, B extends z.Z
       }
       const body = op.response.safeParse(result.body);
       if (!body.success) {
-        console.error(`[api] ${op.operationId} response failed its schema`, requestId, body.error.issues.slice(0, 5));
+        log.error("api.response_invalid", {
+          request_id: requestId,
+          operation: op.operationId,
+          org_id: org?.id,
+          issues: body.error.issues.slice(0, 5),
+        });
+        Sentry.captureMessage(`${op.operationId} response failed its schema`, {
+          level: "error",
+          tags: { request_id: requestId, org_id: org?.id, operation: op.operationId },
+        });
         return problem("internal", "The server built an invalid response. It's been logged.", requestId, headers);
       }
       const dataSource = result.dataSource ?? (op.capability ? "simulated" : undefined);
@@ -217,7 +228,10 @@ export function apiRoute<Q extends z.ZodType, R extends z.ZodType, B extends z.Z
       return new Response(JSON.stringify(body.data), { status: result.status ?? 200, headers });
     } catch (e) {
       if (e instanceof ApiProblem) return problem(e.code, e.message, requestId, headers, e.details);
-      console.error(`[api] ${op.operationId} failed`, requestId, e);
+      // The org the request asked for (may be unverified if the failure came before the membership check).
+      const orgId = request.headers.get("x-fleetos-org") ?? undefined;
+      log.error("api.failed", { request_id: requestId, operation: op.operationId, org_id: orgId, err: e });
+      Sentry.captureException(e, { tags: { request_id: requestId, operation: op.operationId, org_id: orgId } });
       return problem("internal", "Something went wrong on our side. Try again.", requestId, headers);
     }
   };

@@ -16,6 +16,7 @@ import { writeAutonomyEvents, writeCabinEvents, type CabinEventRecord } from "./
 import { loadExceptionState, writeExceptions } from "./exceptions";
 import { runAutopilot } from "./autopilot";
 import { orgSettings } from "@/lib/api/kpi-data";
+import { log } from "@/lib/log";
 import type { StatusEventOut } from "@fleetos/engine";
 
 /**
@@ -173,7 +174,7 @@ export async function tickOrg(db: SupabaseClient, orgId: string, now = new Date(
     p_state: statePatches(startLive, [...previous.values()]),
     p_status: statusMessages(statusEvents),
   });
-  if (bErr) console.error(`[tick] broadcast failed for ${orgId}: ${bErr.message}`);
+  if (bErr) log.warn("tick.broadcast_failed", { org_id: orgId, message: bErr.message });
 
   const durationMs = Date.now() - t0;
   const nowIso = now.toISOString();

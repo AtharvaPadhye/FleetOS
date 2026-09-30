@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { connection } from "next/server";
 import { Archivo, IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
 
@@ -35,7 +36,10 @@ export const viewport: Viewport = {
   colorScheme: "dark",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  // Render every page per request so Next can put this request's CSP nonce on its scripts (proxy.ts, NFR SEC-5).
+  // A page prerendered at build time has no nonce, and 'strict-dynamic' would block its scripts.
+  await connection();
   return (
     <html lang="en" data-theme="night" className={`${display.variable} ${sans.variable} ${mono.variable}`}>
       <body className="min-h-dvh bg-canvas text-fg">{children}</body>
