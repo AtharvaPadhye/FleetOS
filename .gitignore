@@ -11,6 +11,8 @@ out/
 .env
 .env.*
 !.env.example
+# Public, non-secret production values (see the file's header).
+!apps/web/.env.production
 
 # logs & OS
 npm-debug.log*

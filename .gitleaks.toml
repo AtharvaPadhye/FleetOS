@@ -1,0 +1,7 @@
+# Gitleaks config for CI's secret scan: the default rules plus one narrow allowance.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Supabase publishable keys are public by design (apps/web/.env.production); secret keys (sb_secret_) stay flagged."
+regexes = ['''^sb_publishable_[A-Za-z0-9_-]+$''']

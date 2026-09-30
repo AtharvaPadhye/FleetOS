@@ -13,7 +13,7 @@ Progress also logged in Obsidian: `claude_memory/projects/FleetOS/progress-log.m
 - [x] Open questions from 0.1–0.3 resolved with recommended defaults
 - [x] Research archive + `SUBSTITUTE(...)` code-marker convention (`CLAUDE.md`)
 - [x] ADR-0014: prototype on Vercel + Supabase only (free tiers); container + domain from Phase 4
-- [x] Paused Atharva's legacy Vercel project `fleet-os` (auto-deploys failing since 2026-09-07) via root `vercel.json` `git.deploymentEnabled: false`; re-enable when the app's Vercel project is set up (2.6/4.0)
+- [x] Paused Atharva's legacy Vercel project `fleet-os` (auto-deploys failing since 2026-09-07) via root `vercel.json` `git.deploymentEnabled: false`; re-enable when the app's Vercel project is set up (2.6/4.0); re-enabled 2026-09-30 (Atharva removed `vercel.json`, PR #6) — `fleet-os` now deploys `main` to fleet-os-omega.vercel.app
 - [x] API versioning: single `/api/v1`; `stable` vs `preview` (placeholder) tags; `/api/v2` reserved for breaking changes
 
 ## Phase 0 — Requirements & discovery
@@ -40,7 +40,9 @@ Progress also logged in Obsidian: `claude_memory/projects/FleetOS/progress-log.m
 - [x] 2.3 Supabase baseline + RLS tests (local Supabase, Postgres 17; orgs/profiles/memberships/invitations/audit_log, role helpers, last-owner guard; 23 pgTAP tests proven to fail when isolation is broken; CI database job). Hosted project: later, `supabase db push`.
 - [x] 2.4 Auth, orgs, roles (magic-link sign-in via local inbox, proxy.ts route protection, onboarding + create_org with city, org switcher with roles, sign-out; 58 e2e incl. real magic-link journeys). Deferred: Google sign-in (needs Google credentials), MFA for owner/admin (NFR SEC-2) before integrations in Phase 4.
 - [x] 2.5 App shell (sidebar with 9 sections, header with org/date/freshness, ⌘K menu, phone nav sheet, skip link, focus on navigate, honest section placeholders; typed routes; 38 e2e incl. axe on every page + open menu)
-- [ ] 2.6 Env + observability — zod env schema + `pnpm db:env` done in 2.4; Sentry, CSP, Vercel previews and hosted Supabase still to do
+- [ ] 2.6 Env + observability — zod env schema + `pnpm db:env` done in 2.4; Sentry, CSP, structured logs and Vercel previews still to do
+  - [x] Hosted Supabase `FleetOS` (`lqycrqkadcchsosklxns`, us-east-1, Akshat's org): 25 migrations pushed; auth Site URL + redirects via `[remotes.production]` in `supabase/config.toml`; public URL + publishable key committed in `apps/web/.env.production`
+  - [ ] Secrets in Vercel (`SUPABASE_SECRET_KEY`, `TICK_SECRET`, Atharva) · custom SMTP for magic links · hosted `engine-tick` cron · live sign-in + onboarding check
 - [ ] Phase 2 exit check → checkpoint
 
 ## Phase 3 — Data platform & simulator
