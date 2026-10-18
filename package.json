@@ -30,9 +30,9 @@
     "tick": "node scripts/tick.mjs"
   },
   "devDependencies": {
-    "prettier": "3.9.9",
+    "prettier": "3.9.10",
     "prettier-plugin-tailwindcss": "0.8.1",
-    "supabase": "2.118.0",
-    "turbo": "2.11.4"
+    "supabase": "2.121.0",
+    "turbo": "2.11.8"
   }
 }
